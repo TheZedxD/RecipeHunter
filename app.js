@@ -8,7 +8,8 @@ const state = {
     searchActive: false,
     currentFilter: '',
     selectedTags: new Set(),
-    currentPage: 'home'
+    currentPage: 'home',
+    currentImageData: null
 };
 
 // ===== Initialization =====
@@ -49,15 +50,28 @@ function loadDataFromStorage() {
     // Add default tags if none exist
     if (state.tags.length === 0) {
         state.tags = [
-            { name: 'Breakfast', color: '#F59E0B' },
-            { name: 'Lunch', color: '#10B981' },
-            { name: 'Dinner', color: '#3B82F6' },
-            { name: 'Dessert', color: '#EC4899' },
-            { name: 'Vegetarian', color: '#059669' },
-            { name: 'Quick', color: '#8B5CF6' }
+            { name: 'Breakfast', color: '#F59E0B', defaultVisible: true },
+            { name: 'Lunch', color: '#10B981', defaultVisible: true },
+            { name: 'Dinner', color: '#3B82F6', defaultVisible: true },
+            { name: 'Dessert', color: '#EC4899', defaultVisible: true },
+            { name: 'Snack', color: '#F97316', defaultVisible: false },
+            { name: 'Appetizer', color: '#06B6D4', defaultVisible: false },
+            { name: 'Side Dish', color: '#84CC16', defaultVisible: false },
+            { name: 'Vegetarian', color: '#059669', defaultVisible: true },
+            { name: 'Vegan', color: '#14B8A6', defaultVisible: false },
+            { name: 'Quick', color: '#8B5CF6', defaultVisible: true },
+            { name: 'Slow Cooker', color: '#A855F7', defaultVisible: false },
+            { name: 'Healthy', color: '#22C55E', defaultVisible: false }
         ];
         saveTagsToStorage();
     }
+
+    // Ensure existing tags have defaultVisible property
+    state.tags.forEach(tag => {
+        if (tag.defaultVisible === undefined) {
+            tag.defaultVisible = true;
+        }
+    });
 }
 
 function saveRecipesToStorage() {
@@ -114,6 +128,9 @@ function setupEventListeners() {
     // Import
     setupImportListeners();
 
+    // Image Upload
+    setupImageUploadListeners();
+
     // Modal
     document.getElementById('modalClose').addEventListener('click', closeModal);
     document.getElementById('recipeModal').addEventListener('click', (e) => {
@@ -154,6 +171,78 @@ function setupImportListeners() {
     fileInput.addEventListener('change', (e) => {
         handleFilesDrop(e.target.files);
     });
+}
+
+function setupImageUploadListeners() {
+    const uploadBtn = document.getElementById('uploadImageBtn');
+    const removeBtn = document.getElementById('removeImageBtn');
+    const imageInput = document.getElementById('recipeImage');
+
+    uploadBtn.addEventListener('click', () => {
+        imageInput.click();
+    });
+
+    imageInput.addEventListener('change', (e) => {
+        handleImageUpload(e.target.files[0]);
+    });
+
+    removeBtn.addEventListener('click', () => {
+        removeRecipeImage();
+    });
+}
+
+function handleImageUpload(file) {
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('Image size must be less than 5MB', 'error');
+        return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+        showToast('Please select a valid image file', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        state.currentImageData = e.target.result;
+        displayImagePreview(state.currentImageData);
+        showToast('Image uploaded successfully', 'success');
+    };
+
+    reader.onerror = () => {
+        showToast('Error reading image file', 'error');
+    };
+
+    reader.readAsDataURL(file);
+}
+
+function displayImagePreview(imageData) {
+    const preview = document.getElementById('imagePreview');
+    const removeBtn = document.getElementById('removeImageBtn');
+
+    preview.innerHTML = `<img src="${imageData}" alt="Recipe preview">`;
+    removeBtn.style.display = 'inline-flex';
+}
+
+function removeRecipeImage() {
+    state.currentImageData = null;
+    const preview = document.getElementById('imagePreview');
+    const removeBtn = document.getElementById('removeImageBtn');
+    const imageInput = document.getElementById('recipeImage');
+
+    preview.innerHTML = `
+        <div class="image-placeholder">
+            <span class="image-icon">📷</span>
+            <p>No image selected</p>
+        </div>
+    `;
+    removeBtn.style.display = 'none';
+    imageInput.value = '';
+    showToast('Image removed', 'success');
 }
 
 // ===== Theme Management =====
@@ -240,7 +329,10 @@ function renderQuickTags() {
     const container = document.getElementById('quickTags');
     container.innerHTML = '';
 
-    state.tags.forEach(tag => {
+    // Only show tags that are set to be visible by default
+    const visibleTags = state.tags.filter(tag => tag.defaultVisible === true);
+
+    visibleTags.forEach(tag => {
         const tagEl = document.createElement('div');
         tagEl.className = 'tag';
         tagEl.textContent = tag.name;
@@ -332,6 +424,15 @@ function createRecipeCard(recipe) {
     card.className = 'recipe-card';
     card.onclick = () => openRecipeModal(recipe);
 
+    // Add image if exists
+    if (recipe.image) {
+        const img = document.createElement('img');
+        img.className = 'recipe-card-image';
+        img.src = recipe.image;
+        img.alt = recipe.name;
+        card.appendChild(img);
+    }
+
     const header = document.createElement('div');
     header.className = 'recipe-card-header';
 
@@ -413,6 +514,11 @@ function openRecipeModal(recipe) {
     modalName.textContent = recipe.name;
 
     let bodyHTML = '';
+
+    // Image
+    if (recipe.image) {
+        bodyHTML += `<img src="${recipe.image}" alt="${recipe.name}" class="modal-image">`;
+    }
 
     // Meta information
     if (recipe.prepTime || recipe.cookTime || recipe.servings) {
@@ -524,6 +630,8 @@ function resetRecipeForm() {
     document.getElementById('recipeId').value = '';
     document.getElementById('selectedTags').innerHTML = '';
     state.currentRecipe = null;
+    state.currentImageData = null;
+    removeRecipeImage();
 }
 
 function loadRecipeForEdit(recipe) {
@@ -543,6 +651,14 @@ function loadRecipeForEdit(recipe) {
     recipe.tags.forEach(tagName => {
         addSelectedTag(tagName);
     });
+
+    // Set image
+    if (recipe.image) {
+        state.currentImageData = recipe.image;
+        displayImagePreview(recipe.image);
+    } else {
+        removeRecipeImage();
+    }
 
     state.currentRecipe = recipe;
 }
@@ -578,6 +694,7 @@ function handleRecipeSubmit(e) {
         cookTime,
         servings,
         notes,
+        image: state.currentImageData || null,
         createdAt: state.currentRecipe?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
@@ -685,9 +802,19 @@ function renderTagsPage() {
                 <div class="tag-color-dot" style="background-color: ${tag.color};"></div>
                 <div class="tag-item-name">${tag.name}</div>
             </div>
-            <div class="tag-item-count">${count} recipe${count !== 1 ? 's' : ''}</div>
-            <button class="tag-item-delete">×</button>
+            <div class="tag-item-actions">
+                <label class="tag-visibility-toggle">
+                    <input type="checkbox" ${tag.defaultVisible ? 'checked' : ''}>
+                    <span>Show in quick tags</span>
+                </label>
+                <div class="tag-item-count">${count} recipe${count !== 1 ? 's' : ''}</div>
+                <button class="tag-item-delete">×</button>
+            </div>
         `;
+
+        tagItem.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
+            toggleTagVisibility(tag.name, e.target.checked);
+        });
 
         tagItem.querySelector('.tag-item-delete').addEventListener('click', () => {
             deleteTag(tag.name);
@@ -714,7 +841,7 @@ function handleAddTag() {
         return;
     }
 
-    state.tags.push({ name, color });
+    state.tags.push({ name, color, defaultVisible: true });
     saveTagsToStorage();
     renderTagsPage();
     renderQuickTags();
@@ -723,6 +850,16 @@ function handleAddTag() {
     colorInput.value = '#8B5CF6';
 
     showToast('Tag added successfully', 'success');
+}
+
+function toggleTagVisibility(tagName, visible) {
+    const tag = state.tags.find(t => t.name === tagName);
+    if (tag) {
+        tag.defaultVisible = visible;
+        saveTagsToStorage();
+        renderQuickTags();
+        showToast(`Tag "${tagName}" ${visible ? 'shown' : 'hidden'} in quick tags`, 'success');
+    }
 }
 
 function deleteTag(tagName) {
@@ -851,7 +988,8 @@ function normalizeRecipe(data) {
         prepTime: data.prepTime || data.prep_time || '',
         cookTime: data.cookTime || data.cook_time || '',
         servings: data.servings || null,
-        notes: data.notes || data.description || ''
+        notes: data.notes || data.description || '',
+        image: data.image || null
     };
 }
 
