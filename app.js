@@ -115,11 +115,32 @@ function setupEventListeners() {
         });
     });
 
+    // Preferences Modal
+    const preferencesBtn = document.getElementById('preferencesBtn');
+    const preferencesModal = document.getElementById('preferencesModal');
+    const preferencesClose = document.getElementById('preferencesClose');
+
+    preferencesBtn.addEventListener('click', () => {
+        preferencesModal.classList.add('visible');
+        updateActiveThemeCard();
+    });
+
+    preferencesClose.addEventListener('click', () => {
+        preferencesModal.classList.remove('visible');
+    });
+
+    preferencesModal.addEventListener('click', (e) => {
+        if (e.target === preferencesModal) {
+            preferencesModal.classList.remove('visible');
+        }
+    });
+
     // Theme switching
-    document.querySelectorAll('.theme-option').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+    document.querySelectorAll('.theme-card').forEach(card => {
+        card.addEventListener('click', (e) => {
             const theme = e.currentTarget.dataset.theme;
             setTheme(theme);
+            updateActiveThemeCard();
         });
     });
 
@@ -286,6 +307,13 @@ function setTheme(themeName) {
 function applyTheme() {
     const savedTheme = localStorage.getItem('theme') || 'claude';
     document.body.setAttribute('data-theme', savedTheme);
+}
+
+function updateActiveThemeCard() {
+    const currentTheme = document.body.getAttribute('data-theme');
+    document.querySelectorAll('.theme-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.theme === currentTheme);
+    });
 }
 
 // ===== Navigation =====
