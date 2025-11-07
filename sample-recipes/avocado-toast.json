@@ -1,0 +1,27 @@
+{
+  "name": "Perfect Avocado Toast",
+  "ingredients": [
+    "2 slices whole grain bread",
+    "1 ripe avocado",
+    "1 tbsp lemon juice",
+    "Salt and pepper to taste",
+    "Red pepper flakes (optional)",
+    "2 eggs (optional)",
+    "Cherry tomatoes, halved (optional)"
+  ],
+  "instructions": [
+    "Toast bread slices until golden and crispy",
+    "Cut avocado in half, remove pit, and scoop flesh into a bowl",
+    "Mash avocado with lemon juice, salt, and pepper",
+    "Spread mashed avocado evenly on toasted bread",
+    "Top with red pepper flakes if desired",
+    "Optional: add fried or poached eggs on top",
+    "Optional: garnish with cherry tomatoes",
+    "Serve immediately"
+  ],
+  "tags": ["Breakfast", "Vegetarian", "Quick", "Healthy"],
+  "prepTime": "5 min",
+  "cookTime": "5 min",
+  "servings": 2,
+  "notes": "Choose ripe avocados that yield slightly to gentle pressure. Add toppings like feta cheese, microgreens, or everything bagel seasoning for extra flavor."
+}

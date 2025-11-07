@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Hunter - Your Personal Recipe Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="claude">
+    <!-- Theme Switcher -->
+    <div class="theme-switcher">
+        <button class="theme-btn" data-theme="claude" title="Claude Theme">
+            <span class="theme-icon">🎨</span>
+        </button>
+        <div class="theme-dropdown">
+            <button class="theme-option" data-theme="claude">Claude (Default)</button>
+            <button class="theme-option" data-theme="dark">Dark Mode</button>
+            <button class="theme-option" data-theme="light">Light Mode</button>
+            <button class="theme-option" data-theme="forest">Forest</button>
+            <button class="theme-option" data-theme="ocean">Ocean</button>
+            <button class="theme-option" data-theme="sunset">Sunset</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container" id="mainContainer">
+        <!-- Header (hidden initially, shown after search) -->
+        <header class="header" id="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🍳</span>
+                    <span class="logo-text">Recipe Hunter</span>
+                </div>
+                <nav class="nav">
+                    <button class="nav-btn active" data-page="home">
+                        <span class="nav-icon">🏠</span>
+                        <span>Home</span>
+                    </button>
+                    <button class="nav-btn" data-page="tags">
+                        <span class="nav-icon">🏷️</span>
+                        <span>Tags</span>
+                    </button>
+                    <button class="nav-btn" data-page="import">
+                        <span class="nav-icon">📥</span>
+                        <span>Import</span>
+                    </button>
+                    <button class="nav-btn" data-page="add-recipe">
+                        <span class="nav-icon">➕</span>
+                        <span>Add Recipe</span>
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Search Section -->
+        <div class="search-section" id="searchSection">
+            <div class="search-container">
+                <div class="welcome-text">
+                    <h1>Welcome to Recipe Hunter</h1>
+                    <p>Search your recipes, discover new favorites</p>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search recipes by name, ingredients, or tags..." autocomplete="off">
+                    <button class="search-btn" id="searchBtn">
+                        <span class="search-icon">🔍</span>
+                    </button>
+                </div>
+                <div class="quick-tags" id="quickTags">
+                    <!-- Tags will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area" id="contentArea">
+            <!-- Home Page -->
+            <div class="page active" id="homePage">
+                <div class="results-container" id="resultsContainer">
+                    <!-- Recipe cards will be inserted here -->
+                </div>
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">📚</div>
+                    <h2>No recipes yet</h2>
+                    <p>Start by importing recipes or adding a new one</p>
+                    <button class="btn btn-primary" onclick="navigateTo('add-recipe')">Add Your First Recipe</button>
+                </div>
+            </div>
+
+            <!-- Tags Page -->
+            <div class="page" id="tagsPage">
+                <div class="page-header">
+                    <h2>Manage Tags</h2>
+                    <p>Organize your recipes with custom tags</p>
+                </div>
+                <div class="tags-management">
+                    <div class="add-tag-section">
+                        <input type="text" id="newTagInput" placeholder="Enter new tag name..." maxlength="30">
+                        <input type="color" id="newTagColor" value="#8B5CF6">
+                        <button class="btn btn-primary" id="addTagBtn">Add Tag</button>
+                    </div>
+                    <div class="tags-list" id="tagsList">
+                        <!-- Tags will be listed here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Import Page -->
+            <div class="page" id="importPage">
+                <div class="page-header">
+                    <h2>Import Recipes</h2>
+                    <p>Upload recipe files or folders in JSON format</p>
+                </div>
+                <div class="import-section">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📁</div>
+                        <h3>Drop files or folders here</h3>
+                        <p>or click to browse</p>
+                        <input type="file" id="fileInput" multiple accept=".json,.txt" webkitdirectory directory>
+                        <input type="file" id="singleFileInput" multiple accept=".json,.txt">
+                    </div>
+                    <div class="import-format-info">
+                        <h3>Expected JSON Format:</h3>
+                        <pre>{
+  "name": "Recipe Name",
+  "ingredients": ["ingredient 1", "ingredient 2"],
+  "instructions": ["step 1", "step 2"],
+  "tags": ["tag1", "tag2"],
+  "prepTime": "15 min",
+  "cookTime": "30 min",
+  "servings": 4,
+  "notes": "Optional notes"
+}</pre>
+                    </div>
+                    <div class="import-results" id="importResults"></div>
+                </div>
+            </div>
+
+            <!-- Add/Edit Recipe Page -->
+            <div class="page" id="addRecipePage">
+                <div class="page-header">
+                    <h2 id="recipeFormTitle">Add New Recipe</h2>
+                </div>
+                <form class="recipe-form" id="recipeForm">
+                    <input type="hidden" id="recipeId">
+
+                    <div class="form-group">
+                        <label for="recipeName">Recipe Name *</label>
+                        <input type="text" id="recipeName" required placeholder="e.g., Chocolate Chip Cookies">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="prepTime">Prep Time</label>
+                            <input type="text" id="prepTime" placeholder="e.g., 15 min">
+                        </div>
+                        <div class="form-group">
+                            <label for="cookTime">Cook Time</label>
+                            <input type="text" id="cookTime" placeholder="e.g., 30 min">
+                        </div>
+                        <div class="form-group">
+                            <label for="servings">Servings</label>
+                            <input type="number" id="servings" min="1" placeholder="4">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ingredients">Ingredients *</label>
+                        <textarea id="ingredients" required rows="6" placeholder="Enter each ingredient on a new line&#10;e.g.,&#10;2 cups flour&#10;1 cup sugar&#10;2 eggs"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="instructions">Instructions *</label>
+                        <textarea id="instructions" required rows="8" placeholder="Enter each step on a new line&#10;e.g.,&#10;1. Preheat oven to 350°F&#10;2. Mix dry ingredients&#10;3. Combine wet ingredients"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recipeTags">Tags</label>
+                        <div class="tags-input-container">
+                            <div class="selected-tags" id="selectedTags"></div>
+                            <input type="text" id="recipeTagsInput" placeholder="Type to add tags...">
+                        </div>
+                        <div class="tags-suggestions" id="tagsSuggestions"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea id="notes" rows="4" placeholder="Any additional notes or tips..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Recipe</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipe Detail Modal -->
+    <div class="modal" id="recipeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalRecipeName"></h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Recipe details will be inserted here -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="editRecipeBtn">Edit</button>
+                <button class="btn btn-danger" id="deleteRecipeBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
