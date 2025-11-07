@@ -44,6 +44,10 @@
                         <span class="nav-icon">📥</span>
                         <span>Import</span>
                     </button>
+                    <button class="nav-btn" data-page="export">
+                        <span class="nav-icon">📤</span>
+                        <span>Export</span>
+                    </button>
                     <button class="nav-btn" data-page="add-recipe">
                         <span class="nav-icon">➕</span>
                         <span>Add Recipe</span>
@@ -75,6 +79,10 @@
         <div class="content-area" id="contentArea">
             <!-- Home Page -->
             <div class="page active" id="homePage">
+                <div class="home-actions" id="homeActions" style="display: none;">
+                    <button class="btn btn-primary" onclick="exportAllRecipesZip()">📦 Export All (ZIP)</button>
+                    <button class="btn btn-secondary" onclick="navigateTo('export')">📤 Export Options</button>
+                </div>
                 <div class="results-container" id="resultsContainer">
                     <!-- Recipe cards will be inserted here -->
                 </div>
@@ -133,6 +141,46 @@
 }</pre>
                     </div>
                     <div class="import-results" id="importResults"></div>
+                </div>
+            </div>
+
+            <!-- Export Page -->
+            <div class="page" id="exportPage">
+                <div class="page-header">
+                    <h2>Export Recipes</h2>
+                    <p>Download your recipes and images for backup or sharing</p>
+                </div>
+                <div class="export-section">
+                    <div class="export-options">
+                        <div class="export-option-card">
+                            <div class="export-option-icon">📦</div>
+                            <h3>Export All as ZIP</h3>
+                            <p>Download all recipes with images in a single ZIP file</p>
+                            <button class="btn btn-primary" onclick="exportAllRecipesZip()">Download ZIP</button>
+                        </div>
+                        <div class="export-option-card">
+                            <div class="export-option-icon">📄</div>
+                            <h3>Export All as JSON</h3>
+                            <p>Download all recipes in a single JSON file (no images)</p>
+                            <button class="btn btn-primary" onclick="exportAllRecipesJSON()">Download JSON</button>
+                        </div>
+                        <div class="export-option-card">
+                            <div class="export-option-icon">🗂️</div>
+                            <h3>Export Individual Recipes</h3>
+                            <p>Select and download specific recipes</p>
+                            <button class="btn btn-primary" onclick="showIndividualExport()">Select Recipes</button>
+                        </div>
+                    </div>
+                    <div class="individual-export-container" id="individualExportContainer" style="display: none;">
+                        <h3>Select Recipes to Export</h3>
+                        <div class="recipe-selection-list" id="recipeSelectionList">
+                            <!-- Recipe checkboxes will be inserted here -->
+                        </div>
+                        <div class="export-selected-actions">
+                            <button class="btn btn-primary" onclick="exportSelectedRecipes()">Export Selected</button>
+                            <button class="btn btn-secondary" onclick="hideIndividualExport()">Cancel</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -235,6 +283,8 @@
     <!-- Notification Toast -->
     <div class="toast" id="toast"></div>
 
+    <!-- JSZip Library for creating ZIP files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

@@ -1,5 +1,32 @@
 // Recipe Hunter - Main Application JavaScript
 
+// ===== IndexedDB Setup =====
+let db;
+const DB_NAME = 'RecipeHunterDB';
+const DB_VERSION = 1;
+const IMAGE_STORE = 'images';
+
+function initIndexedDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            db = request.result;
+            resolve(db);
+        };
+
+        request.onupgradeneeded = (event) => {
+            const database = event.target.result;
+
+            // Create image store if it doesn't exist
+            if (!database.objectStoreNames.contains(IMAGE_STORE)) {
+                database.createObjectStore(IMAGE_STORE, { keyPath: 'id' });
+            }
+        };
+    });
+}
+
 // ===== State Management =====
 const state = {
     recipes: [],
@@ -9,15 +36,24 @@ const state = {
     currentFilter: '',
     selectedTags: new Set(),
     currentPage: 'home',
-    currentImageData: null
+    currentImageData: null,
+    currentImageId: null
 };
 
 // ===== Initialization =====
-document.addEventListener('DOMContentLoaded', () => {
-    initializeApp();
+document.addEventListener('DOMContentLoaded', async () => {
+    await initializeApp();
 });
 
-function initializeApp() {
+async function initializeApp() {
+    try {
+        await initIndexedDB();
+        console.log('IndexedDB initialized successfully');
+    } catch (error) {
+        console.error('Error initializing IndexedDB:', error);
+        showToast('Warning: Image storage may not work properly', 'warning');
+    }
+
     loadDataFromStorage();
     setupEventListeners();
     applyTheme();
@@ -191,12 +227,15 @@ function setupImageUploadListeners() {
     });
 }
 
-function handleImageUpload(file) {
+async function handleImageUpload(file) {
     if (!file) return;
 
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-        showToast('Image size must be less than 5MB', 'error');
+    // Check file size (max 10MB before compression)
+    const maxSizeMB = 10;
+    const fileSizeMB = file.size / (1024 * 1024);
+
+    if (fileSizeMB > maxSizeMB) {
+        showToast(`Image size must be less than ${maxSizeMB}MB (current: ${fileSizeMB.toFixed(2)}MB)`, 'error');
         return;
     }
 
@@ -206,18 +245,146 @@ function handleImageUpload(file) {
         return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        state.currentImageData = e.target.result;
-        displayImagePreview(state.currentImageData);
-        showToast('Image uploaded successfully', 'success');
-    };
+    try {
+        showToast('Compressing image...', 'info');
 
-    reader.onerror = () => {
-        showToast('Error reading image file', 'error');
-    };
+        // Compress the image
+        const compressedDataURL = await compressImage(file, 0.8, 1200);
 
-    reader.readAsDataURL(file);
+        // Generate unique image ID
+        const imageId = generateId();
+
+        // Store in IndexedDB
+        await storeImageInDB(imageId, compressedDataURL, file.name);
+
+        state.currentImageData = compressedDataURL;
+        state.currentImageId = imageId;
+        displayImagePreview(compressedDataURL);
+
+        const originalSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        const compressedSize = (compressedDataURL.length * 0.75) / (1024 * 1024);
+        const compressedSizeMB = compressedSize.toFixed(2);
+
+        showToast(`Image compressed: ${originalSizeMB}MB → ${compressedSizeMB}MB`, 'success');
+    } catch (error) {
+        console.error('Error processing image:', error);
+        showToast('Error processing image', 'error');
+    }
+}
+
+// Compress image to reduce file size
+function compressImage(file, quality = 0.8, maxWidth = 1200) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            const img = new Image();
+
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Calculate new dimensions
+                if (width > maxWidth) {
+                    height = (height / width) * maxWidth;
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convert to JPEG with quality compression
+                const compressedDataURL = canvas.toDataURL('image/jpeg', quality);
+                resolve(compressedDataURL);
+            };
+
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// Store image in IndexedDB
+function storeImageInDB(id, dataURL, filename) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Database not initialized'));
+            return;
+        }
+
+        const transaction = db.transaction([IMAGE_STORE], 'readwrite');
+        const store = transaction.objectStore(IMAGE_STORE);
+
+        const imageData = {
+            id: id,
+            data: dataURL,
+            filename: filename,
+            createdAt: new Date().toISOString()
+        };
+
+        const request = store.put(imageData);
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// Get image from IndexedDB
+function getImageFromDB(id) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Database not initialized'));
+            return;
+        }
+
+        const transaction = db.transaction([IMAGE_STORE], 'readonly');
+        const store = transaction.objectStore(IMAGE_STORE);
+        const request = store.get(id);
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// Get all images from IndexedDB
+function getAllImagesFromDB() {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Database not initialized'));
+            return;
+        }
+
+        const transaction = db.transaction([IMAGE_STORE], 'readonly');
+        const store = transaction.objectStore(IMAGE_STORE);
+        const request = store.getAll();
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// Delete image from IndexedDB
+function deleteImageFromDB(id) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Database not initialized'));
+            return;
+        }
+
+        const transaction = db.transaction([IMAGE_STORE], 'readwrite');
+        const store = transaction.objectStore(IMAGE_STORE);
+        const request = store.delete(id);
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
 }
 
 function displayImagePreview(imageData) {
@@ -228,8 +395,18 @@ function displayImagePreview(imageData) {
     removeBtn.style.display = 'inline-flex';
 }
 
-function removeRecipeImage() {
+async function removeRecipeImage() {
+    // Delete from IndexedDB if it exists
+    if (state.currentImageId && !state.currentRecipe) {
+        try {
+            await deleteImageFromDB(state.currentImageId);
+        } catch (error) {
+            console.error('Error deleting image from DB:', error);
+        }
+    }
+
     state.currentImageData = null;
+    state.currentImageId = null;
     const preview = document.getElementById('imagePreview');
     const removeBtn = document.getElementById('removeImageBtn');
     const imageInput = document.getElementById('recipeImage');
@@ -286,6 +463,9 @@ function navigateTo(page) {
             break;
         case 'import':
             // Import page is static
+            break;
+        case 'export':
+            renderExportPage();
             break;
         case 'add-recipe':
             resetRecipeForm();
@@ -368,28 +548,41 @@ function renderInitialView() {
         document.getElementById('emptyState').classList.add('visible');
     } else {
         renderQuickTags();
+        // Show home actions if there are recipes
+        const homeActions = document.getElementById('homeActions');
+        if (homeActions && state.recipes.length > 0) {
+            homeActions.style.display = 'flex';
+        }
     }
 }
 
 function renderRecipes() {
     const container = document.getElementById('resultsContainer');
     const emptyState = document.getElementById('emptyState');
+    const homeActions = document.getElementById('homeActions');
 
     const filteredRecipes = getFilteredRecipes();
 
     container.innerHTML = '';
 
-    if (filteredRecipes.length === 0) {
+    if (filteredRecipes.length === 0 && state.recipes.length === 0) {
         emptyState.classList.add('visible');
         container.style.display = 'none';
+        if (homeActions) homeActions.style.display = 'none';
     } else {
         emptyState.classList.remove('visible');
         container.style.display = 'grid';
+        if (homeActions && state.recipes.length > 0) homeActions.style.display = 'flex';
 
         filteredRecipes.forEach(recipe => {
             const card = createRecipeCard(recipe);
             container.appendChild(card);
         });
+
+        // If all recipes are filtered out, show a message
+        if (filteredRecipes.length === 0 && state.recipes.length > 0) {
+            container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">No recipes match your filters</div>';
+        }
     }
 }
 
@@ -424,12 +617,26 @@ function createRecipeCard(recipe) {
     card.className = 'recipe-card';
     card.onclick = () => openRecipeModal(recipe);
 
-    // Add image if exists
-    if (recipe.image) {
+    // Add image placeholder if recipe has an image
+    if (recipe.imageId || recipe.image) {
         const img = document.createElement('img');
         img.className = 'recipe-card-image';
-        img.src = recipe.image;
         img.alt = recipe.name;
+
+        // Load image asynchronously
+        if (recipe.imageId) {
+            getImageFromDB(recipe.imageId).then(imageData => {
+                if (imageData) {
+                    img.src = imageData.data;
+                }
+            }).catch(error => {
+                console.error('Error loading image for recipe:', recipe.name, error);
+            });
+        } else if (recipe.image) {
+            // Legacy support
+            img.src = recipe.image;
+        }
+
         card.appendChild(img);
     }
 
@@ -504,7 +711,7 @@ function createRecipeCard(recipe) {
 }
 
 // ===== Recipe Modal =====
-function openRecipeModal(recipe) {
+async function openRecipeModal(recipe) {
     state.currentRecipe = recipe;
 
     const modal = document.getElementById('recipeModal');
@@ -515,8 +722,18 @@ function openRecipeModal(recipe) {
 
     let bodyHTML = '';
 
-    // Image
-    if (recipe.image) {
+    // Image - load from IndexedDB if available
+    if (recipe.imageId) {
+        try {
+            const imageData = await getImageFromDB(recipe.imageId);
+            if (imageData) {
+                bodyHTML += `<img src="${imageData.data}" alt="${recipe.name}" class="modal-image">`;
+            }
+        } catch (error) {
+            console.error('Error loading image for modal:', error);
+        }
+    } else if (recipe.image) {
+        // Legacy support
         bodyHTML += `<img src="${recipe.image}" alt="${recipe.name}" class="modal-image">`;
     }
 
@@ -634,7 +851,7 @@ function resetRecipeForm() {
     removeRecipeImage();
 }
 
-function loadRecipeForEdit(recipe) {
+async function loadRecipeForEdit(recipe) {
     document.getElementById('recipeFormTitle').textContent = 'Edit Recipe';
     document.getElementById('recipeId').value = recipe.id;
     document.getElementById('recipeName').value = recipe.name;
@@ -652,12 +869,27 @@ function loadRecipeForEdit(recipe) {
         addSelectedTag(tagName);
     });
 
-    // Set image
-    if (recipe.image) {
+    // Set image from IndexedDB or fallback to base64 (for old recipes)
+    if (recipe.imageId) {
+        try {
+            const imageData = await getImageFromDB(recipe.imageId);
+            if (imageData) {
+                state.currentImageData = imageData.data;
+                state.currentImageId = recipe.imageId;
+                displayImagePreview(imageData.data);
+            } else {
+                await removeRecipeImage();
+            }
+        } catch (error) {
+            console.error('Error loading image:', error);
+            await removeRecipeImage();
+        }
+    } else if (recipe.image) {
+        // Legacy support for old base64 images
         state.currentImageData = recipe.image;
         displayImagePreview(recipe.image);
     } else {
-        removeRecipeImage();
+        await removeRecipeImage();
     }
 
     state.currentRecipe = recipe;
@@ -694,7 +926,7 @@ function handleRecipeSubmit(e) {
         cookTime,
         servings,
         notes,
-        image: state.currentImageData || null,
+        imageId: state.currentImageId || state.currentRecipe?.imageId || null,
         createdAt: state.currentRecipe?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
@@ -1024,19 +1256,229 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// ===== Export Function (for backup) =====
-function exportAllRecipes() {
-    const dataStr = JSON.stringify(state.recipes, null, 2);
+// ===== Export Functions =====
+
+// Render export page
+function renderExportPage() {
+    // Page is mostly static, just need to ensure it's visible
+    const container = document.getElementById('individualExportContainer');
+    if (container) {
+        container.style.display = 'none';
+    }
+}
+
+// Show individual export selection
+function showIndividualExport() {
+    const container = document.getElementById('individualExportContainer');
+    const list = document.getElementById('recipeSelectionList');
+
+    list.innerHTML = '';
+
+    state.recipes.forEach(recipe => {
+        const item = document.createElement('div');
+        item.className = 'recipe-selection-item';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `recipe-${recipe.id}`;
+        checkbox.value = recipe.id;
+
+        const label = document.createElement('label');
+        label.htmlFor = `recipe-${recipe.id}`;
+        label.innerHTML = `
+            <span>${recipe.name}</span>
+            <span class="recipe-tag-count">${recipe.tags.length} tags</span>
+        `;
+
+        item.appendChild(checkbox);
+        item.appendChild(label);
+        list.appendChild(item);
+    });
+
+    container.style.display = 'block';
+}
+
+// Hide individual export selection
+function hideIndividualExport() {
+    const container = document.getElementById('individualExportContainer');
+    container.style.display = 'none';
+}
+
+// Export selected recipes
+async function exportSelectedRecipes() {
+    const checkboxes = document.querySelectorAll('#recipeSelectionList input[type="checkbox"]:checked');
+
+    if (checkboxes.length === 0) {
+        showToast('Please select at least one recipe', 'error');
+        return;
+    }
+
+    const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+    const selectedRecipes = state.recipes.filter(r => selectedIds.includes(r.id));
+
+    if (selectedRecipes.length === 1) {
+        // Export single recipe with image
+        await exportSingleRecipe(selectedRecipes[0]);
+    } else {
+        // Export multiple recipes as ZIP
+        await exportRecipesAsZip(selectedRecipes);
+    }
+
+    hideIndividualExport();
+}
+
+// Export single recipe
+async function exportSingleRecipe(recipe) {
+    try {
+        const recipeData = { ...recipe };
+
+        // Include image data if available
+        if (recipe.imageId) {
+            const imageData = await getImageFromDB(recipe.imageId);
+            if (imageData) {
+                recipeData.image = imageData.data;
+                recipeData.imageName = imageData.filename;
+            }
+        }
+
+        // Remove imageId for export (use image field instead)
+        delete recipeData.imageId;
+
+        const dataStr = JSON.stringify(recipeData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${sanitizeFilename(recipe.name)}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+
+        showToast('Recipe exported successfully', 'success');
+    } catch (error) {
+        console.error('Error exporting recipe:', error);
+        showToast('Error exporting recipe', 'error');
+    }
+}
+
+// Export all recipes as JSON (no images)
+function exportAllRecipesJSON() {
+    const recipesData = state.recipes.map(recipe => {
+        const { imageId, ...recipeWithoutImageId } = recipe;
+        return recipeWithoutImageId;
+    });
+
+    const dataStr = JSON.stringify(recipesData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `recipes-backup-${Date.now()}.json`;
+    link.download = `all-recipes-${Date.now()}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    showToast('Recipes exported successfully', 'success');
+
+    showToast(`Exported ${recipesData.length} recipes`, 'success');
 }
 
-// Make navigateTo available globally for inline onclick handlers
+// Export all recipes as ZIP with images
+async function exportAllRecipesZip() {
+    if (!window.JSZip) {
+        showToast('ZIP library not loaded. Please refresh the page.', 'error');
+        return;
+    }
+
+    if (state.recipes.length === 0) {
+        showToast('No recipes to export', 'error');
+        return;
+    }
+
+    await exportRecipesAsZip(state.recipes);
+}
+
+// Export recipes as ZIP
+async function exportRecipesAsZip(recipes) {
+    try {
+        showToast('Creating ZIP file...', 'info');
+
+        const zip = new JSZip();
+        const recipesFolder = zip.folder('recipes');
+        const imagesFolder = zip.folder('images');
+
+        // Track which images we've added
+        const addedImages = new Set();
+
+        for (const recipe of recipes) {
+            const recipeData = { ...recipe };
+
+            // Handle image
+            if (recipe.imageId) {
+                try {
+                    const imageData = await getImageFromDB(recipe.imageId);
+                    if (imageData) {
+                        const imageName = `${recipe.id}.jpg`;
+
+                        // Add image to ZIP if not already added
+                        if (!addedImages.has(recipe.imageId)) {
+                            // Convert base64 to blob
+                            const base64Data = imageData.data.split(',')[1];
+                            imagesFolder.file(imageName, base64Data, { base64: true });
+                            addedImages.add(recipe.imageId);
+                        }
+
+                        // Update recipe to reference the image file
+                        recipeData.imagePath = `images/${imageName}`;
+                        delete recipeData.imageId;
+                    }
+                } catch (error) {
+                    console.error('Error adding image for recipe:', recipe.name, error);
+                }
+            }
+
+            // Remove imageId if no image was added
+            delete recipeData.imageId;
+
+            // Add recipe JSON to ZIP
+            const recipeJson = JSON.stringify(recipeData, null, 2);
+            recipesFolder.file(`${sanitizeFilename(recipe.name)}.json`, recipeJson);
+        }
+
+        // Generate ZIP file
+        const content = await zip.generateAsync({ type: 'blob' });
+
+        // Download ZIP
+        const url = URL.createObjectURL(content);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `recipe-hunter-export-${Date.now()}.zip`;
+        link.click();
+        URL.revokeObjectURL(url);
+
+        showToast(`Exported ${recipes.length} recipes with images`, 'success');
+    } catch (error) {
+        console.error('Error creating ZIP:', error);
+        showToast('Error creating ZIP file', 'error');
+    }
+}
+
+// Sanitize filename
+function sanitizeFilename(filename) {
+    return filename
+        .replace(/[^a-z0-9]/gi, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .toLowerCase()
+        .substring(0, 50);
+}
+
+// Legacy export function (for backup)
+function exportAllRecipes() {
+    exportAllRecipesJSON();
+}
+
+// Make functions available globally for inline onclick handlers
 window.navigateTo = navigateTo;
 window.exportAllRecipes = exportAllRecipes;
+window.exportAllRecipesJSON = exportAllRecipesJSON;
+window.exportAllRecipesZip = exportAllRecipesZip;
+window.showIndividualExport = showIndividualExport;
+window.hideIndividualExport = hideIndividualExport;
+window.exportSelectedRecipes = exportSelectedRecipes;
