@@ -9,7 +9,13 @@ const state = {
     currentFilter: '',
     selectedTags: new Set(),
     currentPage: 'home',
-    currentImageData: null
+    currentImageData: null,
+    contextMenu: {
+        visible: false,
+        x: 0,
+        y: 0,
+        targetRecipe: null
+    }
 };
 
 // ===== Initialization =====
@@ -32,6 +38,15 @@ function loadDataFromStorage() {
     if (storedRecipes) {
         try {
             state.recipes = JSON.parse(storedRecipes);
+            // Ensure all recipes have timestamps
+            state.recipes.forEach(recipe => {
+                if (!recipe.createdAt) {
+                    recipe.createdAt = new Date().toISOString();
+                }
+                if (!recipe.updatedAt) {
+                    recipe.updatedAt = recipe.createdAt;
+                }
+            });
         } catch (e) {
             console.error('Error loading recipes:', e);
             state.recipes = [];
@@ -138,6 +153,15 @@ function setupEventListeners() {
     });
     document.getElementById('editRecipeBtn').addEventListener('click', handleEditRecipe);
     document.getElementById('deleteRecipeBtn').addEventListener('click', handleDeleteRecipe);
+
+    // Context Menu
+    document.addEventListener('click', hideContextMenu);
+    document.addEventListener('contextmenu', (e) => {
+        // Only prevent default if not on a recipe card
+        if (!e.target.closest('.recipe-card')) {
+            return;
+        }
+    });
 }
 
 function setupImportListeners() {
@@ -424,6 +448,13 @@ function createRecipeCard(recipe) {
     card.className = 'recipe-card';
     card.onclick = () => openRecipeModal(recipe);
 
+    // Add right-click context menu
+    card.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        showContextMenu(e, recipe);
+    });
+
     // Add image if exists
     if (recipe.image) {
         const img = document.createElement('img');
@@ -503,6 +534,144 @@ function createRecipeCard(recipe) {
     return card;
 }
 
+// ===== Context Menu =====
+function showContextMenu(event, recipe) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    state.contextMenu.targetRecipe = recipe;
+    state.contextMenu.x = event.clientX;
+    state.contextMenu.y = event.clientY;
+    state.contextMenu.visible = true;
+
+    renderContextMenu();
+}
+
+function hideContextMenu() {
+    if (state.contextMenu.visible) {
+        const menu = document.getElementById('contextMenu');
+        if (menu) {
+            menu.remove();
+        }
+        state.contextMenu.visible = false;
+        state.contextMenu.targetRecipe = null;
+    }
+}
+
+function renderContextMenu() {
+    // Remove existing context menu if any
+    hideContextMenu();
+
+    const recipe = state.contextMenu.targetRecipe;
+    if (!recipe) return;
+
+    const menu = document.createElement('div');
+    menu.id = 'contextMenu';
+    menu.className = 'context-menu';
+    menu.style.left = state.contextMenu.x + 'px';
+    menu.style.top = state.contextMenu.y + 'px';
+
+    // Add Tags section
+    const addTagsSection = document.createElement('div');
+    addTagsSection.className = 'context-menu-section';
+    addTagsSection.innerHTML = '<div class="context-menu-header">Add Tags</div>';
+
+    // Get tags not already on this recipe
+    const availableTags = state.tags.filter(tag => !recipe.tags.includes(tag.name));
+
+    if (availableTags.length > 0) {
+        availableTags.forEach(tag => {
+            const item = document.createElement('div');
+            item.className = 'context-menu-item';
+            item.innerHTML = `
+                <div class="context-menu-tag-color" style="background-color: ${tag.color};"></div>
+                <span>${tag.name}</span>
+            `;
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                addTagToRecipe(recipe.id, tag.name);
+            });
+            addTagsSection.appendChild(item);
+        });
+    } else {
+        const noTags = document.createElement('div');
+        noTags.className = 'context-menu-item disabled';
+        noTags.textContent = 'All tags already added';
+        addTagsSection.appendChild(noTags);
+    }
+
+    menu.appendChild(addTagsSection);
+
+    // Remove Tags section
+    if (recipe.tags.length > 0) {
+        const removeTagsSection = document.createElement('div');
+        removeTagsSection.className = 'context-menu-section';
+        removeTagsSection.innerHTML = '<div class="context-menu-header">Remove Tags</div>';
+
+        recipe.tags.forEach(tagName => {
+            const tag = state.tags.find(t => t.name === tagName);
+            const item = document.createElement('div');
+            item.className = 'context-menu-item remove';
+            item.innerHTML = `
+                <div class="context-menu-tag-color" style="background-color: ${tag?.color || '#8B5CF6'};"></div>
+                <span>${tagName}</span>
+            `;
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeTagFromRecipe(recipe.id, tagName);
+            });
+            removeTagsSection.appendChild(item);
+        });
+
+        menu.appendChild(removeTagsSection);
+    }
+
+    // Adjust position if menu goes off screen
+    document.body.appendChild(menu);
+
+    const rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) {
+        menu.style.left = (state.contextMenu.x - rect.width) + 'px';
+    }
+    if (rect.bottom > window.innerHeight) {
+        menu.style.top = (state.contextMenu.y - rect.height) + 'px';
+    }
+
+    state.contextMenu.visible = true;
+}
+
+function addTagToRecipe(recipeId, tagName) {
+    const recipe = state.recipes.find(r => r.id === recipeId);
+    if (!recipe) return;
+
+    if (!recipe.tags.includes(tagName)) {
+        recipe.tags.push(tagName);
+        updateRecipeTimestamp(recipe);
+        saveRecipesToStorage();
+        renderRecipes();
+        showToast(`Added tag "${tagName}" to ${recipe.name}`, 'success');
+    }
+
+    hideContextMenu();
+}
+
+function removeTagFromRecipe(recipeId, tagName) {
+    const recipe = state.recipes.find(r => r.id === recipeId);
+    if (!recipe) return;
+
+    recipe.tags = recipe.tags.filter(t => t !== tagName);
+    updateRecipeTimestamp(recipe);
+    saveRecipesToStorage();
+    renderRecipes();
+    showToast(`Removed tag "${tagName}" from ${recipe.name}`, 'success');
+
+    hideContextMenu();
+}
+
+function updateRecipeTimestamp(recipe) {
+    recipe.updatedAt = new Date().toISOString();
+}
+
 // ===== Recipe Modal =====
 function openRecipeModal(recipe) {
     state.currentRecipe = recipe;
@@ -549,6 +718,30 @@ function openRecipeModal(recipe) {
         }
         bodyHTML += '</div>';
     }
+
+    // Timestamp information
+    bodyHTML += '<div class="modal-timestamps">';
+    if (recipe.createdAt) {
+        const createdDate = new Date(recipe.createdAt);
+        bodyHTML += `
+            <div class="modal-timestamp">
+                <span class="timestamp-icon">📅</span>
+                <span class="timestamp-label">Created:</span>
+                <span class="timestamp-value">${formatDate(createdDate)}</span>
+            </div>
+        `;
+    }
+    if (recipe.updatedAt) {
+        const updatedDate = new Date(recipe.updatedAt);
+        bodyHTML += `
+            <div class="modal-timestamp">
+                <span class="timestamp-icon">🔄</span>
+                <span class="timestamp-label">Updated:</span>
+                <span class="timestamp-value">${formatDate(updatedDate)}</span>
+            </div>
+        `;
+    }
+    bodyHTML += '</div>';
 
     // Tags
     if (recipe.tags && recipe.tags.length > 0) {
@@ -1022,6 +1215,40 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.classList.remove('visible');
     }, 3000);
+}
+
+function formatDate(date) {
+    const now = new Date();
+    const diff = now - date;
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    // If less than 1 minute ago
+    if (seconds < 60) {
+        return 'Just now';
+    }
+    // If less than 1 hour ago
+    if (minutes < 60) {
+        return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    }
+    // If less than 24 hours ago
+    if (hours < 24) {
+        return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    }
+    // If less than 7 days ago
+    if (days < 7) {
+        return `${days} day${days !== 1 ? 's' : ''} ago`;
+    }
+    // Otherwise show the full date
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
 // ===== Export Function (for backup) =====
