@@ -1,0 +1,27 @@
+{
+  "name": "Spaghetti Carbonara",
+  "ingredients": [
+    "1 lb spaghetti",
+    "4 oz pancetta or bacon, diced",
+    "4 large egg yolks",
+    "1 whole egg",
+    "1 cup Pecorino Romano cheese, grated",
+    "Black pepper to taste",
+    "Salt for pasta water"
+  ],
+  "instructions": [
+    "Bring a large pot of salted water to boil",
+    "Cook spaghetti according to package directions",
+    "While pasta cooks, fry pancetta in a large skillet until crispy",
+    "In a bowl, whisk together egg yolks, whole egg, and cheese",
+    "Reserve 1 cup pasta water, then drain pasta",
+    "Add hot pasta to pancetta skillet, remove from heat",
+    "Quickly stir in egg mixture, adding pasta water to create creamy sauce",
+    "Season with black pepper and serve immediately"
+  ],
+  "tags": ["Dinner", "Italian", "Quick"],
+  "prepTime": "10 min",
+  "cookTime": "15 min",
+  "servings": 4,
+  "notes": "The key is to work quickly and off heat to prevent eggs from scrambling. The residual heat will cook the eggs perfectly."
+}
