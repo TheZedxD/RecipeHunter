@@ -136,11 +136,37 @@
                 </div>
             </div>
 
-            <!-- Add/Edit Recipe Page -->
-            <div class="page" id="addRecipePage">
-                <div class="page-header">
-                    <h2 id="recipeFormTitle">Add New Recipe</h2>
-                </div>
+            <!-- Add/Edit Recipe Page (kept for backwards compatibility, hidden) -->
+            <div class="page" id="addRecipePage" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipe Detail Modal -->
+    <div class="modal" id="recipeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalRecipeName"></h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Recipe details will be inserted here -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="editRecipeBtn">Edit</button>
+                <button class="btn btn-danger" id="deleteRecipeBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipe Editor Modal -->
+    <div class="modal recipe-editor-modal" id="recipeEditorModal">
+        <div class="modal-content modal-content-large">
+            <div class="modal-header">
+                <h2 id="recipeFormTitle">Add New Recipe</h2>
+                <button class="modal-close" id="recipeEditorClose">&times;</button>
+            </div>
+            <div class="modal-body">
                 <form class="recipe-form" id="recipeForm">
                     <input type="hidden" id="recipeId">
 
@@ -183,13 +209,39 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="ingredients">Ingredients *</label>
-                        <textarea id="ingredients" required rows="6" placeholder="Enter each ingredient on a new line&#10;e.g.,&#10;2 cups flour&#10;1 cup sugar&#10;2 eggs"></textarea>
+                        <label for="ingredients">Ingredients * <span class="label-hint">(supports HTML formatting)</span></label>
+                        <div class="rich-text-toolbar" data-target="ingredients">
+                            <button type="button" class="toolbar-btn" data-command="bold" title="Bold"><b>B</b></button>
+                            <button type="button" class="toolbar-btn" data-command="italic" title="Italic"><i>I</i></button>
+                            <button type="button" class="toolbar-btn" data-command="underline" title="Underline"><u>U</u></button>
+                            <button type="button" class="toolbar-btn" data-command="foreColor" title="Text Color">🎨</button>
+                            <input type="color" class="color-picker" data-target="ingredients" style="display: none;">
+                        </div>
+                        <div id="ingredients" class="rich-text-editor" contenteditable="true" data-placeholder="Enter each ingredient on a new line
+e.g.,
+2 cups flour
+1 cup sugar
+2 eggs
+
+You can format text with colors and styles!"></div>
                     </div>
 
                     <div class="form-group">
-                        <label for="instructions">Instructions *</label>
-                        <textarea id="instructions" required rows="8" placeholder="Enter each step on a new line&#10;e.g.,&#10;1. Preheat oven to 350°F&#10;2. Mix dry ingredients&#10;3. Combine wet ingredients"></textarea>
+                        <label for="instructions">Instructions * <span class="label-hint">(supports HTML formatting)</span></label>
+                        <div class="rich-text-toolbar" data-target="instructions">
+                            <button type="button" class="toolbar-btn" data-command="bold" title="Bold"><b>B</b></button>
+                            <button type="button" class="toolbar-btn" data-command="italic" title="Italic"><i>I</i></button>
+                            <button type="button" class="toolbar-btn" data-command="underline" title="Underline"><u>U</u></button>
+                            <button type="button" class="toolbar-btn" data-command="foreColor" title="Text Color">🎨</button>
+                            <input type="color" class="color-picker" data-target="instructions" style="display: none;">
+                        </div>
+                        <div id="instructions" class="rich-text-editor" contenteditable="true" data-placeholder="Enter each step on a new line
+e.g.,
+1. Preheat oven to 350°F
+2. Mix dry ingredients
+3. Combine wet ingredients
+
+You can format text with colors and styles!"></div>
                     </div>
 
                     <div class="form-group">
@@ -202,8 +254,17 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="notes">Notes</label>
-                        <textarea id="notes" rows="4" placeholder="Any additional notes or tips..."></textarea>
+                        <label for="notes">Notes <span class="label-hint">(supports HTML formatting)</span></label>
+                        <div class="rich-text-toolbar" data-target="notes">
+                            <button type="button" class="toolbar-btn" data-command="bold" title="Bold"><b>B</b></button>
+                            <button type="button" class="toolbar-btn" data-command="italic" title="Italic"><i>I</i></button>
+                            <button type="button" class="toolbar-btn" data-command="underline" title="Underline"><u>U</u></button>
+                            <button type="button" class="toolbar-btn" data-command="foreColor" title="Text Color">🎨</button>
+                            <input type="color" class="color-picker" data-target="notes" style="display: none;">
+                        </div>
+                        <div id="notes" class="rich-text-editor" contenteditable="true" data-placeholder="Any additional notes or tips...
+
+You can format text with colors and styles!"></div>
                     </div>
 
                     <div class="form-actions">
@@ -211,23 +272,6 @@
                         <button type="submit" class="btn btn-primary">Save Recipe</button>
                     </div>
                 </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recipe Detail Modal -->
-    <div class="modal" id="recipeModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalRecipeName"></h2>
-                <button class="modal-close" id="modalClose">&times;</button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Recipe details will be inserted here -->
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" id="editRecipeBtn">Edit</button>
-                <button class="btn btn-danger" id="deleteRecipeBtn">Delete</button>
             </div>
         </div>
     </div>
