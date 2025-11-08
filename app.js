@@ -625,9 +625,22 @@ function setupEventListeners() {
     const preferencesBtn = document.getElementById('preferencesBtn');
     const preferencesModal = document.getElementById('preferencesModal');
     const preferencesClose = document.getElementById('preferencesClose');
+    const themeBadge = document.getElementById('themeBadge');
+
+    // Check if user has seen the preferences before
+    const hasSeenPreferences = localStorage.getItem('hasSeenPreferences');
+    if (hasSeenPreferences && themeBadge) {
+        themeBadge.classList.add('hidden');
+    }
 
     if (preferencesBtn && preferencesModal && preferencesClose) {
         preferencesBtn.addEventListener('click', () => {
+            // Hide the NEW badge on first click
+            if (themeBadge && !themeBadge.classList.contains('hidden')) {
+                themeBadge.classList.add('hidden');
+                localStorage.setItem('hasSeenPreferences', 'true');
+            }
+
             preferencesModal.classList.add('visible');
             document.body.classList.add('modal-open');
             updateActiveThemeCard();
