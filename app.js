@@ -1426,7 +1426,7 @@ function createRecipeCard(recipe) {
     const card = document.createElement('div');
     card.className = 'recipe-card';
     card.dataset.recipeId = recipe.id; // Add recipe ID for touch handlers
-    card.onclick = () => openSidePanel(recipe);
+    card.onclick = (e) => openSidePanel(recipe, e.currentTarget);
 
     // Add right-click context menu (only for non-touch devices)
     if (!state.isTouchDevice) {
@@ -3066,8 +3066,9 @@ function setEditorContent(editorId, content) {
 }
 
 // ===== Side Panel Functions =====
-function openSidePanel(recipe) {
+function openSidePanel(recipe, sourceCard = null) {
     state.currentRecipe = recipe;
+    state.sourceCard = sourceCard; // Store for closing animation
 
     const sidePanel = document.getElementById('sidePanel');
     const sidePanelOverlay = document.getElementById('sidePanelOverlay');
@@ -3263,9 +3264,46 @@ function openSidePanel(recipe) {
         };
     }
 
-    // Show the side panel
-    sidePanelOverlay.classList.add('active');
-    sidePanel.classList.add('active');
+    // Show the side panel with expansion animation
+    const isMobile = window.innerWidth <= 768;
+
+    if (!isMobile && sourceCard) {
+        // Desktop: Animate from card position
+        const cardRect = sourceCard.getBoundingClientRect();
+
+        // Set initial position and scale to match the card
+        sidePanel.style.top = `${cardRect.top}px`;
+        sidePanel.style.left = `${cardRect.left}px`;
+        sidePanel.style.width = `${cardRect.width}px`;
+        sidePanel.style.height = `${cardRect.height}px`;
+        sidePanel.style.transform = 'scale(1)';
+        sidePanel.style.borderRadius = '12px';
+
+        // Show overlay and panel
+        sidePanelOverlay.classList.add('active');
+        sidePanel.classList.add('expanding');
+
+        // Force reflow to ensure initial state is applied
+        sidePanel.offsetHeight;
+
+        // Use requestAnimationFrame to trigger expansion
+        requestAnimationFrame(() => {
+            sidePanel.classList.add('active');
+        });
+    } else {
+        // Mobile: Simple fade in from center
+        sidePanelOverlay.classList.add('active');
+        sidePanel.classList.add('expanding');
+
+        // Force reflow
+        sidePanel.offsetHeight;
+
+        // Trigger expansion
+        requestAnimationFrame(() => {
+            sidePanel.classList.add('active');
+        });
+    }
+
     document.body.classList.add('modal-open'); // Prevent body scroll
 }
 
@@ -3273,16 +3311,56 @@ function closeSidePanel() {
     const sidePanel = document.getElementById('sidePanel');
     const sidePanelOverlay = document.getElementById('sidePanelOverlay');
 
-    if (sidePanel) {
+    if (!sidePanel || !sidePanelOverlay) return;
+
+    const isMobile = window.innerWidth <= 768;
+    const sourceCard = state.sourceCard;
+
+    if (!isMobile && sourceCard) {
+        // Desktop: Animate back to card position
+        try {
+            const cardRect = sourceCard.getBoundingClientRect();
+
+            // Remove active class to start closing animation
+            sidePanel.classList.remove('active');
+
+            // Set the panel to animate back to card position
+            sidePanel.style.top = `${cardRect.top}px`;
+            sidePanel.style.left = `${cardRect.left}px`;
+            sidePanel.style.width = `${cardRect.width}px`;
+            sidePanel.style.height = `${cardRect.height}px`;
+            sidePanel.style.transform = 'scale(1)';
+
+            // Add collapsing class for fade out
+            setTimeout(() => {
+                sidePanel.classList.add('collapsing');
+            }, 100);
+        } catch (e) {
+            // If card is not available (e.g., filtered out), just fade out
+            sidePanel.classList.remove('active');
+            sidePanel.classList.add('collapsing');
+        }
+    } else {
+        // Mobile: Simple fade out
         sidePanel.classList.remove('active');
+        sidePanel.classList.add('collapsing');
     }
 
-    if (sidePanelOverlay) {
-        sidePanelOverlay.classList.remove('active');
-    }
+    // Fade out overlay
+    sidePanelOverlay.classList.remove('active');
 
-    document.body.classList.remove('modal-open');
-    state.currentRecipe = null;
+    // Clean up after animation completes
+    setTimeout(() => {
+        sidePanel.classList.remove('expanding', 'collapsing');
+        sidePanel.style.top = '';
+        sidePanel.style.left = '';
+        sidePanel.style.width = '';
+        sidePanel.style.height = '';
+        sidePanel.style.transform = '';
+        document.body.classList.remove('modal-open');
+        state.currentRecipe = null;
+        state.sourceCard = null;
+    }, 400); // Match transition duration
 }
 
 function handleDeleteRecipeFromSidePanel() {
