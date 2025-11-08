@@ -194,6 +194,14 @@ function setupFirstTimeGuideListeners() {
     const gotItBtn = document.getElementById('gotItBtn');
     const dontShowAgainCheckbox = document.getElementById('dontShowAgain');
 
+    if (!gotItBtn) {
+        console.warn('setupFirstTimeGuideListeners: gotItBtn element not found');
+    }
+
+    if (!dontShowAgainCheckbox) {
+        console.warn('setupFirstTimeGuideListeners: dontShowAgain checkbox not found');
+    }
+
     if (gotItBtn) {
         gotItBtn.addEventListener('click', () => {
             const dontShow = dontShowAgainCheckbox && dontShowAgainCheckbox.checked;
@@ -233,6 +241,8 @@ function setupFirstTimeGuideListeners() {
                 }
             }
         });
+    } else {
+        console.warn('setupFirstTimeGuideListeners: firstTimeOverlay element not found');
     }
 }
 
@@ -500,10 +510,22 @@ function saveSettingsToStorage() {
 // ===== Event Listeners Setup =====
 function setupEventListeners() {
     // Search (handled by setupRealTimeSearch)
-    document.getElementById('searchBtn').addEventListener('click', handleSearchClick);
-    document.getElementById('searchInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSearchClick();
-    });
+    const searchBtn = document.getElementById('searchBtn');
+    const searchInput = document.getElementById('searchInput');
+
+    if (searchBtn) {
+        searchBtn.addEventListener('click', handleSearchClick);
+    } else {
+        console.warn('setupEventListeners: searchBtn element not found');
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSearchClick();
+        });
+    } else {
+        console.warn('setupEventListeners: searchInput element not found');
+    }
 
     // Navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -551,23 +573,29 @@ function setupEventListeners() {
     const preferencesModal = document.getElementById('preferencesModal');
     const preferencesClose = document.getElementById('preferencesClose');
 
-    preferencesBtn.addEventListener('click', () => {
-        preferencesModal.classList.add('visible');
-        document.body.classList.add('modal-open');
-        updateActiveThemeCard();
-    });
+    if (preferencesBtn && preferencesModal && preferencesClose) {
+        preferencesBtn.addEventListener('click', () => {
+            preferencesModal.classList.add('visible');
+            document.body.classList.add('modal-open');
+            updateActiveThemeCard();
+        });
 
-    preferencesClose.addEventListener('click', () => {
-        preferencesModal.classList.remove('visible');
-        document.body.classList.remove('modal-open');
-    });
-
-    preferencesModal.addEventListener('click', (e) => {
-        if (e.target === preferencesModal) {
+        preferencesClose.addEventListener('click', () => {
             preferencesModal.classList.remove('visible');
             document.body.classList.remove('modal-open');
-        }
-    });
+        });
+
+        preferencesModal.addEventListener('click', (e) => {
+            if (e.target === preferencesModal) {
+                preferencesModal.classList.remove('visible');
+                document.body.classList.remove('modal-open');
+            }
+        });
+    } else {
+        if (!preferencesBtn) console.warn('setupEventListeners: preferencesBtn element not found');
+        if (!preferencesModal) console.warn('setupEventListeners: preferencesModal element not found');
+        if (!preferencesClose) console.warn('setupEventListeners: preferencesClose element not found');
+    }
 
     // Theme switching
     document.querySelectorAll('.theme-card').forEach(card => {
@@ -579,22 +607,51 @@ function setupEventListeners() {
     });
 
     // Recipe Form
-    document.getElementById('recipeForm').addEventListener('submit', handleRecipeSubmit);
-    document.getElementById('cancelBtn').addEventListener('click', closeRecipeEditorModal);
+    const recipeForm = document.getElementById('recipeForm');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    if (recipeForm) {
+        recipeForm.addEventListener('submit', handleRecipeSubmit);
+    } else {
+        console.warn('setupEventListeners: recipeForm element not found');
+    }
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeRecipeEditorModal);
+    } else {
+        console.warn('setupEventListeners: cancelBtn element not found');
+    }
 
     // Tag Management
-    document.getElementById('addTagBtn').addEventListener('click', handleAddTag);
-    document.getElementById('newTagInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleAddTag();
-    });
+    const addTagBtn = document.getElementById('addTagBtn');
+    const newTagInput = document.getElementById('newTagInput');
+
+    if (addTagBtn) {
+        addTagBtn.addEventListener('click', handleAddTag);
+    } else {
+        console.warn('setupEventListeners: addTagBtn element not found');
+    }
+
+    if (newTagInput) {
+        newTagInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleAddTag();
+        });
+    } else {
+        console.warn('setupEventListeners: newTagInput element not found');
+    }
 
     // Recipe Tags Input
     const tagsInput = document.getElementById('recipeTagsInput');
-    tagsInput.addEventListener('input', handleTagsInput);
-    tagsInput.addEventListener('focus', showTagsSuggestions);
-    tagsInput.addEventListener('blur', () => {
-        setTimeout(() => hideTagsSuggestions(), 200);
-    });
+
+    if (tagsInput) {
+        tagsInput.addEventListener('input', handleTagsInput);
+        tagsInput.addEventListener('focus', showTagsSuggestions);
+        tagsInput.addEventListener('blur', () => {
+            setTimeout(() => hideTagsSuggestions(), 200);
+        });
+    } else {
+        console.warn('setupEventListeners: recipeTagsInput element not found');
+    }
 
     // Import
     setupImportListeners();
@@ -603,35 +660,125 @@ function setupEventListeners() {
     setupImageUploadListeners();
 
     // Recipe Detail Modal
-    document.getElementById('modalClose').addEventListener('click', closeModal);
-    document.getElementById('recipeModal').addEventListener('click', (e) => {
-        if (e.target.id === 'recipeModal') closeModal();
-    });
-    document.getElementById('editRecipeBtn').addEventListener('click', handleEditRecipe);
-    document.getElementById('deleteRecipeBtn').addEventListener('click', handleDeleteRecipe);
+    const modalClose = document.getElementById('modalClose');
+    const recipeModal = document.getElementById('recipeModal');
+    const editRecipeBtn = document.getElementById('editRecipeBtn');
+    const deleteRecipeBtn = document.getElementById('deleteRecipeBtn');
+
+    if (modalClose) {
+        modalClose.addEventListener('click', closeModal);
+    } else {
+        console.warn('setupEventListeners: modalClose element not found');
+    }
+
+    if (recipeModal) {
+        recipeModal.addEventListener('click', (e) => {
+            if (e.target.id === 'recipeModal') closeModal();
+        });
+    } else {
+        console.warn('setupEventListeners: recipeModal element not found');
+    }
+
+    if (editRecipeBtn) {
+        editRecipeBtn.addEventListener('click', handleEditRecipe);
+    } else {
+        console.warn('setupEventListeners: editRecipeBtn element not found');
+    }
+
+    if (deleteRecipeBtn) {
+        deleteRecipeBtn.addEventListener('click', handleDeleteRecipe);
+    } else {
+        console.warn('setupEventListeners: deleteRecipeBtn element not found');
+    }
 
     // Recipe Editor Modal
-    document.getElementById('recipeEditorClose').addEventListener('click', closeRecipeEditorModal);
-    document.getElementById('recipeEditorModal').addEventListener('click', (e) => {
-        if (e.target.id === 'recipeEditorModal') closeRecipeEditorModal();
-    });
+    const recipeEditorClose = document.getElementById('recipeEditorClose');
+    const recipeEditorModal = document.getElementById('recipeEditorModal');
+
+    if (recipeEditorClose) {
+        recipeEditorClose.addEventListener('click', closeRecipeEditorModal);
+    } else {
+        console.warn('setupEventListeners: recipeEditorClose element not found');
+    }
+
+    if (recipeEditorModal) {
+        recipeEditorModal.addEventListener('click', (e) => {
+            if (e.target.id === 'recipeEditorModal') closeRecipeEditorModal();
+        });
+    } else {
+        console.warn('setupEventListeners: recipeEditorModal element not found');
+    }
 
     // Side Panel
-    document.getElementById('sidePanelClose').addEventListener('click', closeSidePanel);
-    document.getElementById('sidePanelOverlay').addEventListener('click', closeSidePanel);
+    const sidePanelClose = document.getElementById('sidePanelClose');
+    const sidePanelOverlay = document.getElementById('sidePanelOverlay');
+
+    if (sidePanelClose) {
+        sidePanelClose.addEventListener('click', closeSidePanel);
+    } else {
+        console.warn('setupEventListeners: sidePanelClose element not found');
+    }
+
+    if (sidePanelOverlay) {
+        sidePanelOverlay.addEventListener('click', closeSidePanel);
+    } else {
+        console.warn('setupEventListeners: sidePanelOverlay element not found');
+    }
 
     // Shopping List
-    document.getElementById('addToShoppingListBtn').addEventListener('click', openRecipeSelectionModal);
-    document.getElementById('addCustomItemBtn').addEventListener('click', addCustomItemToShoppingList);
-    document.getElementById('clearShoppingListBtn').addEventListener('click', clearShoppingList);
+    const addToShoppingListBtn = document.getElementById('addToShoppingListBtn');
+    const addCustomItemBtn = document.getElementById('addCustomItemBtn');
+    const clearShoppingListBtn = document.getElementById('clearShoppingListBtn');
+
+    if (addToShoppingListBtn) {
+        addToShoppingListBtn.addEventListener('click', openRecipeSelectionModal);
+    } else {
+        console.warn('setupEventListeners: addToShoppingListBtn element not found');
+    }
+
+    if (addCustomItemBtn) {
+        addCustomItemBtn.addEventListener('click', addCustomItemToShoppingList);
+    } else {
+        console.warn('setupEventListeners: addCustomItemBtn element not found');
+    }
+
+    if (clearShoppingListBtn) {
+        clearShoppingListBtn.addEventListener('click', clearShoppingList);
+    } else {
+        console.warn('setupEventListeners: clearShoppingListBtn element not found');
+    }
 
     // Recipe Selection Modal
-    document.getElementById('recipeSelectionClose').addEventListener('click', closeRecipeSelectionModal);
-    document.getElementById('cancelRecipeSelectionBtn').addEventListener('click', closeRecipeSelectionModal);
-    document.getElementById('confirmRecipeSelectionBtn').addEventListener('click', confirmRecipeSelection);
-    document.getElementById('recipeSelectionModal').addEventListener('click', (e) => {
-        if (e.target.id === 'recipeSelectionModal') closeRecipeSelectionModal();
-    });
+    const recipeSelectionClose = document.getElementById('recipeSelectionClose');
+    const cancelRecipeSelectionBtn = document.getElementById('cancelRecipeSelectionBtn');
+    const confirmRecipeSelectionBtn = document.getElementById('confirmRecipeSelectionBtn');
+    const recipeSelectionModal = document.getElementById('recipeSelectionModal');
+
+    if (recipeSelectionClose) {
+        recipeSelectionClose.addEventListener('click', closeRecipeSelectionModal);
+    } else {
+        console.warn('setupEventListeners: recipeSelectionClose element not found');
+    }
+
+    if (cancelRecipeSelectionBtn) {
+        cancelRecipeSelectionBtn.addEventListener('click', closeRecipeSelectionModal);
+    } else {
+        console.warn('setupEventListeners: cancelRecipeSelectionBtn element not found');
+    }
+
+    if (confirmRecipeSelectionBtn) {
+        confirmRecipeSelectionBtn.addEventListener('click', confirmRecipeSelection);
+    } else {
+        console.warn('setupEventListeners: confirmRecipeSelectionBtn element not found');
+    }
+
+    if (recipeSelectionModal) {
+        recipeSelectionModal.addEventListener('click', (e) => {
+            if (e.target.id === 'recipeSelectionModal') closeRecipeSelectionModal();
+        });
+    } else {
+        console.warn('setupEventListeners: recipeSelectionModal element not found');
+    }
 
     // Context Menu
     document.addEventListener('click', hideContextMenu);
@@ -652,6 +799,16 @@ function setupEventListeners() {
 function setupImportListeners() {
     const uploadArea = document.getElementById('uploadArea');
     const singleFileInput = document.getElementById('singleFileInput');
+
+    if (!uploadArea) {
+        console.warn('setupImportListeners: uploadArea element not found');
+        return;
+    }
+
+    if (!singleFileInput) {
+        console.warn('setupImportListeners: singleFileInput element not found');
+        return;
+    }
 
     uploadArea.addEventListener('click', () => {
         singleFileInput.click();
@@ -683,6 +840,21 @@ function setupImageUploadListeners() {
     const uploadBtn = document.getElementById('uploadImageBtn');
     const removeBtn = document.getElementById('removeImageBtn');
     const imageInput = document.getElementById('recipeImage');
+
+    if (!uploadBtn) {
+        console.warn('setupImageUploadListeners: uploadImageBtn element not found');
+        return;
+    }
+
+    if (!removeBtn) {
+        console.warn('setupImageUploadListeners: removeImageBtn element not found');
+        return;
+    }
+
+    if (!imageInput) {
+        console.warn('setupImageUploadListeners: recipeImage element not found');
+        return;
+    }
 
     uploadBtn.addEventListener('click', () => {
         imageInput.click();
@@ -1575,7 +1747,12 @@ function openRecipeModal(recipe) {
 }
 
 function closeModal() {
-    document.getElementById('recipeModal').classList.remove('visible');
+    const modal = document.getElementById('recipeModal');
+    if (modal) {
+        modal.classList.remove('visible');
+    } else {
+        console.warn('closeModal: recipeModal element not found');
+    }
     document.body.classList.remove('modal-open'); // Re-enable body scroll
     state.currentRecipe = null;
 }
@@ -2631,6 +2808,12 @@ function highlightMatch(text, query) {
 function getEditorContent(editorId) {
     console.log('getEditorContent called for:', editorId);
     const editor = document.getElementById(editorId);
+
+    if (!editor) {
+        console.warn('getEditorContent: Editor element not found:', editorId);
+        return [];
+    }
+
     const html = editor.innerHTML.trim();
 
     if (!html || html === '<br>') {
@@ -2652,6 +2835,11 @@ function setEditorContent(editorId, content) {
     console.log('setEditorContent called for:', editorId, 'with content:', Array.isArray(content) ? content.length + ' items' : typeof content);
     const editor = document.getElementById(editorId);
 
+    if (!editor) {
+        console.warn('setEditorContent: Editor element not found:', editorId);
+        return;
+    }
+
     if (Array.isArray(content)) {
         editor.innerHTML = content
             .map(line => line.includes('<') ? line : `<div>${line}</div>`)
@@ -2671,6 +2859,11 @@ function openSidePanel(recipe) {
     const sidePanelOverlay = document.getElementById('sidePanelOverlay');
     const sidePanelName = document.getElementById('sidePanelRecipeName');
     const sidePanelContent = document.getElementById('sidePanelContent');
+
+    if (!sidePanel || !sidePanelOverlay || !sidePanelName || !sidePanelContent) {
+        console.warn('openSidePanel: Required side panel elements not found');
+        return;
+    }
 
     sidePanelName.textContent = recipe.name;
 
@@ -2866,8 +3059,14 @@ function closeSidePanel() {
     const sidePanel = document.getElementById('sidePanel');
     const sidePanelOverlay = document.getElementById('sidePanelOverlay');
 
-    sidePanelOverlay.classList.remove('active');
-    sidePanel.classList.remove('active');
+    if (sidePanel) {
+        sidePanel.classList.remove('active');
+    }
+
+    if (sidePanelOverlay) {
+        sidePanelOverlay.classList.remove('active');
+    }
+
     document.body.classList.remove('modal-open');
     state.currentRecipe = null;
 }
@@ -3242,3 +3441,4 @@ window.toggleRecipeSelection = toggleRecipeSelection;
 window.confirmRecipeSelection = confirmRecipeSelection;
 window.setRecipeRating = setRecipeRating;
 window.importSampleRecipes = importSampleRecipes;
+window.toggleFavoritesView = toggleFavoritesView;
