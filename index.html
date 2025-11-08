@@ -145,7 +145,20 @@
                     <div class="empty-icon">📚</div>
                     <h2>No recipes yet</h2>
                     <p>Start by importing recipes or adding a new one</p>
-                    <button class="btn btn-primary" onclick="navigateTo('add-recipe')">Add Your First Recipe</button>
+                    <div class="empty-state-actions">
+                        <button class="btn btn-primary empty-state-btn" onclick="openRecipeEditorModal()">
+                            <span class="btn-icon">➕</span>
+                            <span>Add Your First Recipe</span>
+                        </button>
+                        <button class="btn btn-secondary empty-state-btn" onclick="navigateTo('import')">
+                            <span class="btn-icon">📥</span>
+                            <span>Import Recipes</span>
+                        </button>
+                        <button class="btn btn-accent empty-state-btn" onclick="importSampleRecipes()">
+                            <span class="btn-icon">✨</span>
+                            <span>Browse Sample Recipes</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
