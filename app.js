@@ -46,6 +46,23 @@ const state = {
     touchStartY: 0
 };
 
+// ===== Modal Animation Helper =====
+function closeModalWithAnimation(modal, callback) {
+    if (!modal || !modal.classList.contains('visible')) return;
+
+    // Add closing class to trigger exit animation
+    modal.classList.add('closing');
+
+    // Wait for animation to complete (250ms + small buffer)
+    setTimeout(() => {
+        modal.classList.remove('visible', 'closing');
+        document.body.classList.remove('modal-open');
+
+        // Execute callback if provided
+        if (callback) callback();
+    }, 250);
+}
+
 // ===== Initialization =====
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
@@ -573,11 +590,10 @@ function setupEventListeners() {
         if (e.key === 'Escape') {
             closeMobileMenu();
 
-            // Close any open modals
+            // Close any open modals with animation
             const modals = document.querySelectorAll('.modal.visible');
             modals.forEach(modal => {
-                modal.classList.remove('visible');
-                document.body.classList.remove('modal-open');
+                closeModalWithAnimation(modal);
             });
 
             // Close side panel
@@ -647,14 +663,12 @@ function setupEventListeners() {
         });
 
         preferencesClose.addEventListener('click', () => {
-            preferencesModal.classList.remove('visible');
-            document.body.classList.remove('modal-open');
+            closeModalWithAnimation(preferencesModal);
         });
 
         preferencesModal.addEventListener('click', (e) => {
             if (e.target === preferencesModal) {
-                preferencesModal.classList.remove('visible');
-                document.body.classList.remove('modal-open');
+                closeModalWithAnimation(preferencesModal);
             }
         });
     } else {
@@ -675,14 +689,12 @@ function setupEventListeners() {
         });
 
         helpModalClose.addEventListener('click', () => {
-            helpModal.classList.remove('visible');
-            document.body.classList.remove('modal-open');
+            closeModalWithAnimation(helpModal);
         });
 
         helpModal.addEventListener('click', (e) => {
             if (e.target === helpModal) {
-                helpModal.classList.remove('visible');
-                document.body.classList.remove('modal-open');
+                closeModalWithAnimation(helpModal);
             }
         });
     } else {
@@ -1868,12 +1880,12 @@ function openRecipeModal(recipe) {
 function closeModal() {
     const modal = document.getElementById('recipeModal');
     if (modal) {
-        modal.classList.remove('visible');
+        closeModalWithAnimation(modal, () => {
+            state.currentRecipe = null;
+        });
     } else {
         console.warn('closeModal: recipeModal element not found');
     }
-    document.body.classList.remove('modal-open'); // Re-enable body scroll
-    state.currentRecipe = null;
 }
 
 function handleEditRecipe() {
@@ -2861,11 +2873,11 @@ function closeRecipeEditorModal() {
         console.error('Recipe editor modal element not found!');
         return;
     }
-    modal.classList.remove('visible');
-    document.body.classList.remove('modal-open'); // Re-enable body scroll
-    console.log('Resetting recipe form...');
-    resetRecipeForm();
-    console.log('Modal closed successfully');
+    closeModalWithAnimation(modal, () => {
+        console.log('Resetting recipe form...');
+        resetRecipeForm();
+        console.log('Modal closed successfully');
+    });
 }
 
 // ===== Rich Text Editor Setup =====
@@ -3676,8 +3688,7 @@ function openRecipeSelectionModal() {
 
 function closeRecipeSelectionModal() {
     const modal = document.getElementById('recipeSelectionModal');
-    modal.classList.remove('visible');
-    document.body.classList.remove('modal-open');
+    closeModalWithAnimation(modal);
 }
 
 function toggleRecipeSelection(recipeId, element) {
