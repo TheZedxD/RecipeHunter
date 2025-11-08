@@ -27,6 +27,13 @@ const state = {
     isMobile: isMobile(),
     isIOS: isIOS(),
     isTouchDevice: isTouchDevice(),
+    showFavoritesOnly: false,
+    settings: {
+        defaultView: 'all', // 'all' or 'favorites'
+        sortOrder: 'newest', // 'newest', 'oldest', 'alphabetical'
+        showImages: true,
+        compactView: false
+    },
     contextMenu: {
         visible: false,
         x: 0,
@@ -228,6 +235,7 @@ function loadDataFromStorage() {
     try {
         const storedRecipes = localStorage.getItem('recipes');
         const storedTags = localStorage.getItem('tags');
+        const storedSettings = localStorage.getItem('settings');
 
         if (storedRecipes) {
             try {
@@ -258,6 +266,10 @@ function loadDataFromStorage() {
                         if (!recipe.updatedAt) {
                             recipe.updatedAt = recipe.createdAt;
                         }
+                        // Add isFavorite property if it doesn't exist
+                        if (recipe.isFavorite === undefined) {
+                            recipe.isFavorite = false;
+                        }
                     });
                 } else {
                     console.warn('Invalid recipes data format, resetting to empty array');
@@ -284,6 +296,16 @@ function loadDataFromStorage() {
                 state.tags = [];
             }
         }
+
+        // Load settings
+        if (storedSettings) {
+            try {
+                const parsedSettings = JSON.parse(storedSettings);
+                state.settings = { ...state.settings, ...parsedSettings };
+            } catch (e) {
+                console.error('Error parsing settings:', e);
+            }
+        }
     } catch (e) {
         console.error('Error accessing localStorage:', e);
         showToast('Error accessing local storage', 'error');
@@ -301,6 +323,16 @@ function loadDataFromStorage() {
             tag.defaultVisible = true;
         }
     });
+
+    // Apply default view setting
+    if (state.settings.defaultView === 'favorites') {
+        state.showFavoritesOnly = true;
+    }
+
+    // Apply compact view setting
+    if (state.settings.compactView) {
+        document.body.classList.add('compact-view');
+    }
 }
 
 function getDefaultTags() {
@@ -357,6 +389,21 @@ function saveTagsToStorage() {
         } else {
             showToast('Error saving tags', 'error');
         }
+    }
+}
+
+function saveSettingsToStorage() {
+    if (!isLocalStorageAvailable()) {
+        console.warn('localStorage not available, skipping save');
+        return;
+    }
+
+    try {
+        const settingsJson = JSON.stringify(state.settings);
+        localStorage.setItem('settings', settingsJson);
+    } catch (e) {
+        console.error('Error saving settings to storage:', e);
+        showToast('Error saving settings', 'error');
     }
 }
 
@@ -636,6 +683,9 @@ function navigateTo(page) {
         case 'import':
             // Import page is static
             break;
+        case 'settings':
+            renderSettingsPage();
+            break;
     }
 }
 
@@ -783,6 +833,48 @@ function updateFilterStatus() {
     }
 }
 
+// ===== Favorites Management =====
+function toggleFavorite(recipeId) {
+    const recipe = state.recipes.find(r => r.id === recipeId);
+    if (!recipe) return;
+
+    recipe.isFavorite = !recipe.isFavorite;
+    updateRecipeTimestamp(recipe);
+    saveRecipesToStorage();
+    renderRecipes();
+
+    const message = recipe.isFavorite ?
+        `Added "${recipe.name}" to favorites` :
+        `Removed "${recipe.name}" from favorites`;
+    showToast(message, 'success');
+}
+
+function toggleFavoritesView() {
+    state.showFavoritesOnly = !state.showFavoritesOnly;
+    renderRecipes();
+    updateFavoritesButton();
+
+    const message = state.showFavoritesOnly ?
+        'Showing favorites only' :
+        'Showing all recipes';
+    showToast(message, 'success');
+}
+
+function updateFavoritesButton() {
+    const btn = document.getElementById('toggleFavoritesBtn');
+    if (!btn) return;
+
+    const favCount = state.recipes.filter(r => r.isFavorite).length;
+
+    if (state.showFavoritesOnly) {
+        btn.classList.add('active');
+        btn.innerHTML = `<span class="fav-icon">⭐</span> Favorites (${favCount})`;
+    } else {
+        btn.classList.remove('active');
+        btn.innerHTML = `<span class="fav-icon">☆</span> Show Favorites (${favCount})`;
+    }
+}
+
 // ===== Recipe Rendering =====
 function renderInitialView() {
     if (state.recipes.length === 0) {
@@ -790,6 +882,7 @@ function renderInitialView() {
     } else {
         renderQuickTags();
     }
+    updateFavoritesButton();
 }
 
 function renderRecipes() {
@@ -812,10 +905,18 @@ function renderRecipes() {
             container.appendChild(card);
         });
     }
+
+    // Update favorites button if it exists
+    updateFavoritesButton();
 }
 
 function getFilteredRecipes() {
     let filtered = [...state.recipes];
+
+    // Apply favorites filter
+    if (state.showFavoritesOnly) {
+        filtered = filtered.filter(recipe => recipe.isFavorite === true);
+    }
 
     // Apply search filter
     if (state.currentFilter && state.currentFilter.trim()) {
@@ -845,6 +946,19 @@ function getFilteredRecipes() {
         });
     }
 
+    // Apply sorting
+    switch (state.settings.sortOrder) {
+        case 'newest':
+            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            break;
+        case 'oldest':
+            filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+            break;
+        case 'alphabetical':
+            filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            break;
+    }
+
     return filtered;
 }
 
@@ -863,8 +977,19 @@ function createRecipeCard(recipe) {
         });
     }
 
+    // Add favorites toggle button
+    const favBtn = document.createElement('button');
+    favBtn.className = 'favorite-btn';
+    favBtn.innerHTML = recipe.isFavorite ? '⭐' : '☆';
+    favBtn.title = recipe.isFavorite ? 'Remove from favorites' : 'Add to favorites';
+    favBtn.onclick = (e) => {
+        e.stopPropagation();
+        toggleFavorite(recipe.id);
+    };
+    card.appendChild(favBtn);
+
     // Add image if exists
-    if (recipe.image) {
+    if (recipe.image && state.settings.showImages) {
         const img = document.createElement('img');
         img.className = 'recipe-card-image';
         img.src = recipe.image;
@@ -1244,6 +1369,19 @@ function openRecipeModal(recipe) {
         });
     });
 
+    // Update favorites button in modal
+    const favoriteBtn = document.getElementById('modalFavoriteBtn');
+    if (favoriteBtn) {
+        favoriteBtn.innerHTML = recipe.isFavorite ? '⭐ Remove from Favorites' : '☆ Add to Favorites';
+        favoriteBtn.className = recipe.isFavorite ? 'btn btn-secondary' : 'btn btn-primary';
+        favoriteBtn.onclick = () => {
+            toggleFavorite(recipe.id);
+            // Update the button immediately
+            favoriteBtn.innerHTML = recipe.isFavorite ? '☆ Add to Favorites' : '⭐ Remove from Favorites';
+            favoriteBtn.className = recipe.isFavorite ? 'btn btn-primary' : 'btn btn-secondary';
+        };
+    }
+
     modal.classList.add('visible');
     document.body.classList.add('modal-open'); // Prevent body scroll on mobile
 }
@@ -1400,6 +1538,7 @@ function handleRecipeSubmit(e) {
         servings,
         notes,
         image: state.currentImageData || null,
+        isFavorite: state.currentRecipe?.isFavorite || false,
         createdAt: state.currentRecipe?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
@@ -1609,6 +1748,185 @@ function deleteTag(tagName) {
     }
 }
 
+// ===== Settings Page =====
+function renderSettingsPage() {
+    const container = document.getElementById('settingsContent');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="settings-section">
+            <h3>Display Preferences</h3>
+            <div class="setting-item">
+                <label>
+                    <span class="setting-label">Default View</span>
+                    <select id="defaultViewSelect" class="setting-select">
+                        <option value="all" ${state.settings.defaultView === 'all' ? 'selected' : ''}>All Recipes</option>
+                        <option value="favorites" ${state.settings.defaultView === 'favorites' ? 'selected' : ''}>Favorites Only</option>
+                    </select>
+                </label>
+                <p class="setting-description">Choose which recipes to show when you open the app</p>
+            </div>
+
+            <div class="setting-item">
+                <label>
+                    <span class="setting-label">Sort Order</span>
+                    <select id="sortOrderSelect" class="setting-select">
+                        <option value="newest" ${state.settings.sortOrder === 'newest' ? 'selected' : ''}>Newest First</option>
+                        <option value="oldest" ${state.settings.sortOrder === 'oldest' ? 'selected' : ''}>Oldest First</option>
+                        <option value="alphabetical" ${state.settings.sortOrder === 'alphabetical' ? 'selected' : ''}>Alphabetical</option>
+                    </select>
+                </label>
+                <p class="setting-description">Choose how to sort your recipes</p>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-checkbox">
+                    <input type="checkbox" id="showImagesCheck" ${state.settings.showImages ? 'checked' : ''}>
+                    <span class="setting-label">Show Recipe Images</span>
+                </label>
+                <p class="setting-description">Display images on recipe cards</p>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-checkbox">
+                    <input type="checkbox" id="compactViewCheck" ${state.settings.compactView ? 'checked' : ''}>
+                    <span class="setting-label">Compact View</span>
+                </label>
+                <p class="setting-description">Use a more compact layout for recipe cards</p>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3>Theme</h3>
+            <p class="setting-description">Choose your preferred color theme</p>
+            <div class="theme-grid-settings" id="themeGridSettings">
+                <button class="theme-card-small" data-theme="claude">
+                    <div class="theme-preview-small theme-preview-claude"></div>
+                    <span>Claude</span>
+                </button>
+                <button class="theme-card-small" data-theme="dark">
+                    <div class="theme-preview-small theme-preview-dark"></div>
+                    <span>Dark</span>
+                </button>
+                <button class="theme-card-small" data-theme="light">
+                    <div class="theme-preview-small theme-preview-light"></div>
+                    <span>Light</span>
+                </button>
+                <button class="theme-card-small" data-theme="forest">
+                    <div class="theme-preview-small theme-preview-forest"></div>
+                    <span>Forest</span>
+                </button>
+                <button class="theme-card-small" data-theme="ocean">
+                    <div class="theme-preview-small theme-preview-ocean"></div>
+                    <span>Ocean</span>
+                </button>
+                <button class="theme-card-small" data-theme="sunset">
+                    <div class="theme-preview-small theme-preview-sunset"></div>
+                    <span>Sunset</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3>Data Management</h3>
+            <div class="setting-item">
+                <button class="btn btn-primary" onclick="exportAllRecipes()">
+                    📤 Export All Recipes
+                </button>
+                <p class="setting-description">Download a backup of all your recipes</p>
+            </div>
+
+            <div class="setting-item">
+                <button class="btn btn-danger" id="clearAllDataBtn">
+                    🗑️ Clear All Data
+                </button>
+                <p class="setting-description">Delete all recipes, tags, and settings (cannot be undone)</p>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3>Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">${state.recipes.length}</div>
+                    <div class="stat-label">Total Recipes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${state.recipes.filter(r => r.isFavorite).length}</div>
+                    <div class="stat-label">Favorites</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${state.tags.length}</div>
+                    <div class="stat-label">Tags</div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Setup event listeners
+    const defaultViewSelect = document.getElementById('defaultViewSelect');
+    const sortOrderSelect = document.getElementById('sortOrderSelect');
+    const showImagesCheck = document.getElementById('showImagesCheck');
+    const compactViewCheck = document.getElementById('compactViewCheck');
+    const clearAllDataBtn = document.getElementById('clearAllDataBtn');
+
+    defaultViewSelect.addEventListener('change', (e) => {
+        state.settings.defaultView = e.target.value;
+        state.showFavoritesOnly = e.target.value === 'favorites';
+        saveSettingsToStorage();
+        showToast('Default view updated', 'success');
+    });
+
+    sortOrderSelect.addEventListener('change', (e) => {
+        state.settings.sortOrder = e.target.value;
+        saveSettingsToStorage();
+        renderRecipes();
+        showToast('Sort order updated', 'success');
+    });
+
+    showImagesCheck.addEventListener('change', (e) => {
+        state.settings.showImages = e.target.checked;
+        saveSettingsToStorage();
+        renderRecipes();
+        showToast('Image display updated', 'success');
+    });
+
+    compactViewCheck.addEventListener('change', (e) => {
+        state.settings.compactView = e.target.checked;
+        document.body.classList.toggle('compact-view', e.target.checked);
+        saveSettingsToStorage();
+        renderRecipes();
+        showToast('View mode updated', 'success');
+    });
+
+    clearAllDataBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete ALL data? This includes all recipes, tags, and settings. This action cannot be undone.')) {
+            if (confirm('This is your last chance. Are you ABSOLUTELY sure you want to delete everything?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+    });
+
+    // Setup theme switchers
+    document.querySelectorAll('.theme-card-small').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const theme = e.currentTarget.dataset.theme;
+            setTheme(theme);
+            updateActiveThemeCardSettings();
+        });
+    });
+
+    updateActiveThemeCardSettings();
+}
+
+function updateActiveThemeCardSettings() {
+    const currentTheme = document.body.getAttribute('data-theme');
+    document.querySelectorAll('.theme-card-small').forEach(card => {
+        card.classList.toggle('active', card.dataset.theme === currentTheme);
+    });
+}
+
 // ===== Import Functionality =====
 function handleFilesDrop(files) {
     const importResults = document.getElementById('importResults');
@@ -1716,7 +2034,8 @@ function normalizeRecipe(data) {
         cookTime: data.cookTime || data.cook_time || '',
         servings: data.servings || null,
         notes: data.notes || data.description || '',
-        image: data.image || null
+        image: data.image || null,
+        isFavorite: data.isFavorite || false
     };
 }
 

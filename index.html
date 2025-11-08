@@ -36,6 +36,10 @@
                         <span class="nav-icon">🏷️</span>
                         <span>Tags</span>
                     </button>
+                    <button class="nav-btn" data-page="settings">
+                        <span class="nav-icon">⚙️</span>
+                        <span>Settings</span>
+                    </button>
                     <button class="nav-btn" data-page="import">
                         <span class="nav-icon">💾</span>
                         <span>Data</span>
@@ -65,9 +69,14 @@
                     <div class="quick-tags" id="quickTags">
                         <!-- Tags will be dynamically inserted here -->
                     </div>
-                    <button class="clear-filters-btn" id="clearFiltersBtn" style="display: none;">
-                        <span>✕</span> Clear filters
-                    </button>
+                    <div class="filter-actions">
+                        <button class="favorites-toggle-btn" id="toggleFavoritesBtn" onclick="toggleFavoritesView()">
+                            <span class="fav-icon">☆</span> Show Favorites
+                        </button>
+                        <button class="clear-filters-btn" id="clearFiltersBtn" style="display: none;">
+                            <span>✕</span> Clear filters
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -102,6 +111,17 @@
                     <div class="tags-list" id="tagsList">
                         <!-- Tags will be listed here -->
                     </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div class="page" id="settingsPage">
+                <div class="page-header">
+                    <h2>Settings</h2>
+                    <p>Customize your Recipe Hunter experience</p>
+                </div>
+                <div id="settingsContent">
+                    <!-- Settings will be dynamically rendered here -->
                 </div>
             </div>
 
@@ -162,6 +182,7 @@
                 <!-- Recipe details will be inserted here -->
             </div>
             <div class="modal-actions">
+                <button class="btn btn-primary" id="modalFavoriteBtn">☆ Add to Favorites</button>
                 <button class="btn btn-secondary" id="editRecipeBtn">Edit</button>
                 <button class="btn btn-danger" id="deleteRecipeBtn">Delete</button>
             </div>
