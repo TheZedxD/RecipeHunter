@@ -11,10 +11,13 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body data-theme="claude">
-    <!-- Preferences Button -->
-    <div class="preferences-button">
-        <button class="theme-btn" id="preferencesBtn" title="Preferences">
-            <span class="theme-icon">⚙️</span>
+    <!-- Top Action Buttons -->
+    <div class="top-action-buttons">
+        <button class="action-btn help-btn" id="helpBtn" title="Help & Shortcuts">
+            <span class="action-icon">❓</span>
+        </button>
+        <button class="action-btn theme-btn" id="preferencesBtn" title="Preferences & Themes">
+            <span class="action-icon">⚙️</span>
         </button>
     </div>
 
@@ -111,6 +114,10 @@
                 <div class="welcome-text">
                     <h1>Welcome to Recipe Hunter</h1>
                     <p>Search your recipes, discover new favorites</p>
+                    <button class="try-demo-btn" id="tryDemoBtn" onclick="importSampleRecipes()">
+                        <span class="demo-icon">✨</span>
+                        <span>Try Sample Recipes</span>
+                    </button>
                 </div>
                 <div class="search-box">
                     <input type="text" id="searchInput" placeholder="Search recipes by name, ingredients, or tags..." autocomplete="off">
@@ -176,6 +183,22 @@
                     </div>
                     <div class="tags-list" id="tagsList">
                         <!-- Tags will be listed here -->
+                    </div>
+                    <div class="tags-empty-state" id="tagsEmptyState" style="display: none;">
+                        <div class="empty-icon">🏷️</div>
+                        <h3>No custom tags yet</h3>
+                        <p>Tags help you organize and filter your recipes. Create your first tag using the form above!</p>
+                        <div class="tags-suggestions-list">
+                            <p><strong>Popular tag ideas:</strong></p>
+                            <div class="tag-chips">
+                                <span class="tag-chip">Breakfast</span>
+                                <span class="tag-chip">Lunch</span>
+                                <span class="tag-chip">Dinner</span>
+                                <span class="tag-chip">Vegetarian</span>
+                                <span class="tag-chip">Quick</span>
+                                <span class="tag-chip">Dessert</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -545,6 +568,79 @@ You can format text with colors and styles!"></div>
     <button class="fab" id="fabBtn" onclick="openRecipeEditorModal()" aria-label="Add new recipe" title="Add new recipe">
         <span class="fab-icon">+</span>
     </button>
+
+    <!-- Help Modal -->
+    <div class="modal help-modal" id="helpModal">
+        <div class="modal-content modal-content-large">
+            <div class="modal-header">
+                <h2>Help & Tips</h2>
+                <button class="modal-close" id="helpModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="help-section">
+                    <h3>⌨️ Keyboard Shortcuts</h3>
+                    <div class="shortcuts-grid">
+                        <div class="shortcut-item">
+                            <kbd>Ctrl/Cmd</kbd> + <kbd>F</kbd>
+                            <span>Focus search</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl/Cmd</kbd> + <kbd>N</kbd>
+                            <span>Add new recipe</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Esc</kbd>
+                            <span>Close modal/panel</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>?</kbd>
+                            <span>Show this help</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h3>💡 Quick Tips</h3>
+                    <ul class="tips-list">
+                        <li><strong>Search:</strong> Type in the search bar to find recipes by name, ingredients, or tags</li>
+                        <li><strong>Tags:</strong> Click on tags to filter recipes, or create custom tags in the Tags page</li>
+                        <li><strong>Favorites:</strong> Click the star icon to mark recipes as favorites</li>
+                        <li><strong>Shopping List:</strong> Add ingredients from recipes to your shopping list for easy meal planning</li>
+                        <li><strong>Rich Text:</strong> Use the formatting toolbar when editing recipes to add colors and styles</li>
+                        <li><strong>Import/Export:</strong> Back up your recipes by exporting them as JSON files</li>
+                        <li><strong>Themes:</strong> Customize the app's appearance with different color themes</li>
+                        <li><strong>Mobile:</strong> On touch devices, long-press recipe cards for quick actions</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>🎯 Getting Started</h3>
+                    <ol class="getting-started-list">
+                        <li>Click the <strong>+ button</strong> to add your first recipe</li>
+                        <li>Or use the <strong>"Try Sample Recipes"</strong> button to load examples</li>
+                        <li>Organize recipes with <strong>tags</strong> for easy filtering</li>
+                        <li>Build a <strong>shopping list</strong> from your favorite recipes</li>
+                        <li>Export your collection to <strong>back up</strong> your recipes</li>
+                    </ol>
+                </div>
+
+                <div class="help-section">
+                    <h3>📝 Recipe Format</h3>
+                    <p>When importing recipes, use this JSON structure:</p>
+                    <pre class="help-code">{
+  "name": "Recipe Name",
+  "ingredients": ["2 cups flour", "1 cup sugar"],
+  "instructions": ["Step 1", "Step 2"],
+  "tags": ["Dessert", "Quick"],
+  "prepTime": "15 min",
+  "cookTime": "30 min",
+  "servings": 4,
+  "notes": "Optional notes"
+}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- First-Time User Guide Overlay -->
     <div class="first-time-overlay" id="firstTimeOverlay">

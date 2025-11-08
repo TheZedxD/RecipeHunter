@@ -51,14 +51,19 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
 });
 
-function initializeApp() {
+async function initializeApp() {
     loadDataFromStorage();
+
+    // Pre-populate with sample recipes on first load
+    await loadInitialSampleRecipes();
+
     setupEventListeners();
     setupRealTimeSearch();
     applyTheme();
     renderInitialView();
     setupMobileFeatures();
     setupFirstTimeGuide();
+    initializeTooltips();
 
     // Log device info for debugging
     console.log('Device Info:', {
@@ -562,9 +567,51 @@ function setupEventListeners() {
     }
 
     // Close mobile menu on escape key
+    // Global keyboard shortcuts
     document.addEventListener('keydown', (e) => {
+        // Close modals and menus on Escape
         if (e.key === 'Escape') {
             closeMobileMenu();
+
+            // Close any open modals
+            const modals = document.querySelectorAll('.modal.visible');
+            modals.forEach(modal => {
+                modal.classList.remove('visible');
+                document.body.classList.remove('modal-open');
+            });
+
+            // Close side panel
+            closeSidePanel();
+        }
+
+        // Show help modal with ? key
+        if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            const target = e.target;
+            // Only trigger if not in an input field
+            if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+                e.preventDefault();
+                const helpModal = document.getElementById('helpModal');
+                if (helpModal) {
+                    helpModal.classList.add('visible');
+                    document.body.classList.add('modal-open');
+                }
+            }
+        }
+
+        // Focus search with Ctrl/Cmd + F
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            e.preventDefault();
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+
+        // Add new recipe with Ctrl/Cmd + N
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            e.preventDefault();
+            openRecipeEditorModal();
         }
     });
 
@@ -595,6 +642,34 @@ function setupEventListeners() {
         if (!preferencesBtn) console.warn('setupEventListeners: preferencesBtn element not found');
         if (!preferencesModal) console.warn('setupEventListeners: preferencesModal element not found');
         if (!preferencesClose) console.warn('setupEventListeners: preferencesClose element not found');
+    }
+
+    // Help Modal
+    const helpBtn = document.getElementById('helpBtn');
+    const helpModal = document.getElementById('helpModal');
+    const helpModalClose = document.getElementById('helpModalClose');
+
+    if (helpBtn && helpModal && helpModalClose) {
+        helpBtn.addEventListener('click', () => {
+            helpModal.classList.add('visible');
+            document.body.classList.add('modal-open');
+        });
+
+        helpModalClose.addEventListener('click', () => {
+            helpModal.classList.remove('visible');
+            document.body.classList.remove('modal-open');
+        });
+
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.classList.remove('visible');
+                document.body.classList.remove('modal-open');
+            }
+        });
+    } else {
+        if (!helpBtn) console.warn('setupEventListeners: helpBtn element not found');
+        if (!helpModal) console.warn('setupEventListeners: helpModal element not found');
+        if (!helpModalClose) console.warn('setupEventListeners: helpModalClose element not found');
     }
 
     // Theme switching
@@ -2045,7 +2120,27 @@ function addSelectedTag(tagName) {
 // ===== Tags Page =====
 function renderTagsPage() {
     const container = document.getElementById('tagsList');
+    const emptyState = document.getElementById('tagsEmptyState');
     container.innerHTML = '';
+
+    if (state.tags.length === 0) {
+        // Show empty state
+        if (emptyState) {
+            emptyState.style.display = 'block';
+        }
+        if (container) {
+            container.style.display = 'none';
+        }
+        return;
+    }
+
+    // Hide empty state and show tags list
+    if (emptyState) {
+        emptyState.style.display = 'none';
+    }
+    if (container) {
+        container.style.display = 'block';
+    }
 
     state.tags.forEach(tag => {
         const count = state.recipes.filter(r => r.tags.includes(tag.name)).length;
@@ -2468,6 +2563,100 @@ function generateRandomColor() {
 let toastTimeout = null;
 let toastQueue = [];
 
+// ===== Loading State Management =====
+function showLoadingState(message = 'Loading...') {
+    let loadingOverlay = document.getElementById('loadingOverlay');
+
+    if (!loadingOverlay) {
+        // Create loading overlay if it doesn't exist
+        loadingOverlay = document.createElement('div');
+        loadingOverlay.id = 'loadingOverlay';
+        loadingOverlay.className = 'loading-overlay';
+        loadingOverlay.innerHTML = `
+            <div class="loading-spinner"></div>
+            <div class="loading-message">${message}</div>
+        `;
+        document.body.appendChild(loadingOverlay);
+    } else {
+        const messageEl = loadingOverlay.querySelector('.loading-message');
+        if (messageEl) {
+            messageEl.textContent = message;
+        }
+        loadingOverlay.classList.add('visible');
+    }
+}
+
+function hideLoadingState() {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.classList.remove('visible');
+    }
+}
+
+// ===== Tooltip System for First-Time Users =====
+function showTooltip(element, message, duration = 5000) {
+    // Don't show if user has dismissed tooltips
+    if (isLocalStorageAvailable() && localStorage.getItem('tooltipsDisabled')) {
+        return;
+    }
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip';
+    tooltip.textContent = message;
+    document.body.appendChild(tooltip);
+
+    // Position tooltip
+    const rect = element.getBoundingClientRect();
+    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    tooltip.style.top = `${rect.top - 10}px`;
+    tooltip.style.transform = 'translate(-50%, -100%)';
+
+    // Show tooltip
+    setTimeout(() => {
+        tooltip.classList.add('visible');
+    }, 100);
+
+    // Hide and remove tooltip
+    setTimeout(() => {
+        tooltip.classList.remove('visible');
+        setTimeout(() => {
+            tooltip.remove();
+        }, 300);
+    }, duration);
+}
+
+function initializeTooltips() {
+    // Check if tooltips have been shown before
+    if (isLocalStorageAvailable() && localStorage.getItem('tooltipsShown')) {
+        return;
+    }
+
+    // Show tooltips for key features after a delay
+    setTimeout(() => {
+        const fabBtn = document.getElementById('fabBtn');
+        if (fabBtn && state.recipes.length <= 3) {
+            showTooltip(fabBtn, 'Click here to add a new recipe!', 4000);
+        }
+    }, 3000);
+
+    setTimeout(() => {
+        const helpBtn = document.getElementById('helpBtn');
+        if (helpBtn) {
+            showTooltip(helpBtn, 'Press ? for keyboard shortcuts', 3000);
+        }
+    }, 8000);
+
+    // Mark tooltips as shown
+    if (isLocalStorageAvailable()) {
+        try {
+            localStorage.setItem('tooltipsShown', 'true');
+        } catch (e) {
+            console.warn('Unable to save tooltips state:', e);
+        }
+    }
+}
+
+// ===== Toast Notifications =====
 function showToast(message, type = 'success', duration = 3000) {
     if (!message || typeof message !== 'string') {
         console.warn('Invalid toast message:', message);
@@ -3350,18 +3539,25 @@ function confirmRecipeSelection() {
 }
 
 // ===== Sample Recipes Import =====
-async function importSampleRecipes() {
-    const sampleRecipeFiles = [
+// Load 2-3 sample recipes on first visit only
+async function loadInitialSampleRecipes() {
+    // Check if this is the first visit and user has no recipes
+    const isFirstVisit = isLocalStorageAvailable() ?
+        !localStorage.getItem('recipesLoaded') : false;
+
+    if (!isFirstVisit || state.recipes.length > 0) {
+        return; // Skip if not first visit or already has recipes
+    }
+
+    const initialSampleFiles = [
         'sample-recipes/chocolate-chip-cookies.json',
-        'sample-recipes/spaghetti-carbonara.json',
         'sample-recipes/avocado-toast.json'
     ];
 
-    let successCount = 0;
-    let errorCount = 0;
-
     try {
-        const importPromises = sampleRecipeFiles.map(async (filePath) => {
+        showLoadingState('Loading sample recipes...');
+
+        const importPromises = initialSampleFiles.map(async (filePath) => {
             try {
                 const response = await fetch(filePath);
                 if (!response.ok) {
@@ -3375,7 +3571,84 @@ async function importSampleRecipes() {
                     recipe.createdAt = new Date().toISOString();
                     recipe.updatedAt = new Date().toISOString();
                     state.recipes.unshift(recipe);
-                    successCount++;
+                }
+            } catch (error) {
+                console.error(`Error loading ${filePath}:`, error);
+            }
+        });
+
+        await Promise.all(importPromises);
+
+        if (state.recipes.length > 0) {
+            saveRecipesToStorage();
+
+            // Extract new tags
+            const allTags = new Set(state.tags.map(t => t.name));
+            state.recipes.forEach(recipe => {
+                recipe.tags.forEach(tag => {
+                    if (!allTags.has(tag)) {
+                        state.tags.push({
+                            name: tag,
+                            color: generateRandomColor()
+                        });
+                        allTags.add(tag);
+                    }
+                });
+            });
+            saveTagsToStorage();
+
+            // Mark that we've loaded initial recipes
+            if (isLocalStorageAvailable()) {
+                try {
+                    localStorage.setItem('recipesLoaded', 'true');
+                } catch (e) {
+                    console.warn('Unable to save recipes loaded flag:', e);
+                }
+            }
+        }
+
+        hideLoadingState();
+    } catch (error) {
+        console.error('Error loading initial sample recipes:', error);
+        hideLoadingState();
+    }
+}
+
+async function importSampleRecipes() {
+    const sampleRecipeFiles = [
+        'sample-recipes/chocolate-chip-cookies.json',
+        'sample-recipes/spaghetti-carbonara.json',
+        'sample-recipes/avocado-toast.json'
+    ];
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+        showLoadingState('Importing sample recipes...');
+
+        const importPromises = sampleRecipeFiles.map(async (filePath) => {
+            try {
+                const response = await fetch(filePath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${filePath}`);
+                }
+                const data = await response.json();
+                const recipe = normalizeRecipe(data);
+
+                if (validateRecipe(recipe)) {
+                    // Check if recipe already exists by name
+                    const existingRecipe = state.recipes.find(r =>
+                        r.name.toLowerCase() === recipe.name.toLowerCase()
+                    );
+
+                    if (!existingRecipe) {
+                        recipe.id = generateId();
+                        recipe.createdAt = new Date().toISOString();
+                        recipe.updatedAt = new Date().toISOString();
+                        state.recipes.unshift(recipe);
+                        successCount++;
+                    }
                 } else {
                     throw new Error('Invalid recipe format');
                 }
@@ -3415,12 +3688,17 @@ async function importSampleRecipes() {
                 `Successfully imported ${successCount} sample recipe${successCount > 1 ? 's' : ''}!`,
                 'success'
             );
+        } else if (successCount === 0 && errorCount === 0) {
+            showToast('Sample recipes already imported!', 'info');
         } else {
             showToast('Failed to import sample recipes', 'error');
         }
+
+        hideLoadingState();
     } catch (error) {
         console.error('Error importing sample recipes:', error);
         showToast('Error importing sample recipes', 'error');
+        hideLoadingState();
     }
 }
 
