@@ -427,6 +427,39 @@ function setupEventListeners() {
         });
     });
 
+    // Mobile Menu Navigation
+    document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const page = e.currentTarget.dataset.page;
+            navigateTo(page);
+            closeMobileMenu(); // Close menu after navigation
+        });
+    });
+
+    // Hamburger Menu Toggle
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const mobileMenuClose = document.getElementById('mobileMenuClose');
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', toggleMobileMenu);
+    }
+
+    if (mobileMenuClose) {
+        mobileMenuClose.addEventListener('click', closeMobileMenu);
+    }
+
+    if (mobileMenuOverlay) {
+        mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+    }
+
+    // Close mobile menu on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeMobileMenu();
+        }
+    });
+
     // Preferences Modal
     const preferencesBtn = document.getElementById('preferencesBtn');
     const preferencesModal = document.getElementById('preferencesModal');
@@ -678,8 +711,13 @@ function navigateTo(page) {
 
     state.currentPage = page;
 
-    // Update nav buttons
+    // Update nav buttons (desktop)
     document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.page === page);
+    });
+
+    // Update mobile nav buttons
+    document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.page === page);
     });
 
@@ -706,6 +744,43 @@ function navigateTo(page) {
             renderShoppingList();
             break;
     }
+}
+
+// ===== Mobile Menu Functions =====
+function toggleMobileMenu() {
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+
+    const isOpen = mobileMenu.classList.contains('active');
+
+    if (isOpen) {
+        closeMobileMenu();
+    } else {
+        openMobileMenu();
+    }
+}
+
+function openMobileMenu() {
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+
+    mobileMenu.classList.add('active');
+    mobileMenuOverlay.classList.add('active');
+    hamburgerBtn.classList.add('active');
+    document.body.classList.add('mobile-menu-open');
+}
+
+function closeMobileMenu() {
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+
+    if (mobileMenu) mobileMenu.classList.remove('active');
+    if (mobileMenuOverlay) mobileMenuOverlay.classList.remove('active');
+    if (hamburgerBtn) hamburgerBtn.classList.remove('active');
+    document.body.classList.remove('mobile-menu-open');
 }
 
 // ===== Search Functionality =====

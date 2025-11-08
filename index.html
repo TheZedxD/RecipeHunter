@@ -27,7 +27,14 @@
                     <span class="logo-icon">🍳</span>
                     <span class="logo-text">Recipe Hunter</span>
                 </div>
-                <nav class="nav">
+                <!-- Hamburger Menu Button (Mobile Only) -->
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                <!-- Desktop Navigation -->
+                <nav class="nav" id="desktopNav">
                     <button class="nav-btn active" data-page="home">
                         <span class="nav-icon">🏠</span>
                         <span>Home</span>
@@ -55,6 +62,48 @@
                 </nav>
             </div>
         </header>
+
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+        <!-- Mobile Slide-In Menu -->
+        <div class="mobile-menu" id="mobileMenu">
+            <div class="mobile-menu-header">
+                <div class="mobile-menu-logo">
+                    <span class="logo-icon">🍳</span>
+                    <span class="logo-text">Recipe Hunter</span>
+                </div>
+                <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">
+                    <span>✕</span>
+                </button>
+            </div>
+            <nav class="mobile-menu-nav">
+                <button class="mobile-nav-btn active" data-page="home">
+                    <span class="nav-icon">🏠</span>
+                    <span>Home</span>
+                </button>
+                <button class="mobile-nav-btn" data-page="tags">
+                    <span class="nav-icon">🏷️</span>
+                    <span>Tags</span>
+                </button>
+                <button class="mobile-nav-btn" data-page="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </button>
+                <button class="mobile-nav-btn" data-page="shopping-list">
+                    <span class="nav-icon">🛒</span>
+                    <span>Shopping List</span>
+                </button>
+                <button class="mobile-nav-btn" data-page="import">
+                    <span class="nav-icon">💾</span>
+                    <span>Import & Export</span>
+                </button>
+                <button class="mobile-nav-btn" data-page="add-recipe">
+                    <span class="nav-icon">➕</span>
+                    <span>Add Recipe</span>
+                </button>
+            </nav>
+        </div>
 
         <!-- Search Section -->
         <div class="search-section" id="searchSection">
