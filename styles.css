@@ -1020,6 +1020,11 @@ html {
     padding-bottom: 20px;
 }
 
+/* Hide results container on non-home pages */
+.results-hidden {
+    display: none !important;
+}
+
 /* Recipe Card */
 .recipe-card {
     background: var(--bg-secondary);
