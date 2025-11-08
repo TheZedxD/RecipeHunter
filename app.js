@@ -58,6 +58,7 @@ function initializeApp() {
     applyTheme();
     renderInitialView();
     setupMobileFeatures();
+    setupFirstTimeGuide();
 
     // Log device info for debugging
     console.log('Device Info:', {
@@ -147,6 +148,91 @@ function showMobileHelperIfNeeded() {
                 }, 10000);
             }
         }, 2000); // Show after 2 seconds
+    }
+}
+
+// ===== First-Time User Guide =====
+function setupFirstTimeGuide() {
+    // Check if user has seen the guide before
+    const guideShown = isLocalStorageAvailable() ?
+        localStorage.getItem('firstTimeGuideShown') : null;
+
+    // Show guide if this is the first visit
+    if (!guideShown) {
+        showFirstTimeGuide();
+    } else {
+        // Hide the overlay if it was already shown
+        const overlay = document.getElementById('firstTimeOverlay');
+        if (overlay) {
+            overlay.classList.add('hidden');
+        }
+    }
+
+    // Setup event listeners for the guide
+    setupFirstTimeGuideListeners();
+}
+
+function showFirstTimeGuide() {
+    const overlay = document.getElementById('firstTimeOverlay');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+    }
+}
+
+function hideFirstTimeGuide() {
+    const overlay = document.getElementById('firstTimeOverlay');
+    if (overlay) {
+        overlay.style.animation = 'fadeOut 0.3s ease-out';
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            overlay.style.animation = '';
+        }, 300);
+    }
+}
+
+function setupFirstTimeGuideListeners() {
+    const gotItBtn = document.getElementById('gotItBtn');
+    const dontShowAgainCheckbox = document.getElementById('dontShowAgain');
+
+    if (gotItBtn) {
+        gotItBtn.addEventListener('click', () => {
+            const dontShow = dontShowAgainCheckbox && dontShowAgainCheckbox.checked;
+
+            // Save preference to localStorage
+            if (isLocalStorageAvailable()) {
+                try {
+                    localStorage.setItem('firstTimeGuideShown', 'true');
+                    if (dontShow) {
+                        localStorage.setItem('firstTimeGuideDontShow', 'true');
+                    }
+                } catch (e) {
+                    console.warn('Unable to save first-time guide state:', e);
+                }
+            }
+
+            // Hide the overlay
+            hideFirstTimeGuide();
+        });
+    }
+
+    // Close overlay when clicking outside the content
+    const overlay = document.getElementById('firstTimeOverlay');
+    if (overlay) {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                // Just hide without saving preference when clicking outside
+                hideFirstTimeGuide();
+
+                // Still mark as shown so it doesn't appear again this session
+                if (isLocalStorageAvailable()) {
+                    try {
+                        localStorage.setItem('firstTimeGuideShown', 'true');
+                    } catch (e) {
+                        console.warn('Unable to save first-time guide state:', e);
+                    }
+                }
+            }
+        });
     }
 }
 
