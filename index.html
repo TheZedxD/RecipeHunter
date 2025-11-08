@@ -40,6 +40,10 @@
                         <span class="nav-icon">⚙️</span>
                         <span>Settings</span>
                     </button>
+                    <button class="nav-btn" data-page="shopping-list">
+                        <span class="nav-icon">🛒</span>
+                        <span>Shopping</span>
+                    </button>
                     <button class="nav-btn" data-page="import">
                         <span class="nav-icon">💾</span>
                         <span>Data</span>
@@ -122,6 +126,35 @@
                 </div>
                 <div id="settingsContent">
                     <!-- Settings will be dynamically rendered here -->
+                </div>
+            </div>
+
+            <!-- Shopping List Page -->
+            <div class="page" id="shopping-listPage">
+                <div class="page-header">
+                    <h2>Shopping List</h2>
+                    <p>Manage your shopping list from recipes</p>
+                </div>
+                <div class="shopping-list-container">
+                    <div class="shopping-list-actions">
+                        <button class="btn btn-primary" id="addToShoppingListBtn">
+                            ➕ Add from Recipes
+                        </button>
+                        <button class="btn btn-secondary" id="addCustomItemBtn">
+                            📝 Add Custom Item
+                        </button>
+                        <button class="btn btn-danger" id="clearShoppingListBtn">
+                            🗑️ Clear All
+                        </button>
+                    </div>
+                    <div class="shopping-list-content" id="shoppingListContent">
+                        <!-- Shopping list items will be rendered here -->
+                    </div>
+                    <div class="shopping-list-empty" id="shoppingListEmpty">
+                        <div class="empty-icon">🛒</div>
+                        <h3>Your shopping list is empty</h3>
+                        <p>Add ingredients from your recipes or create custom items</p>
+                    </div>
                 </div>
             </div>
 
@@ -390,6 +423,45 @@ You can format text with colors and styles!"></div>
         </div>
     </div>
 
+    <!-- Side Panel for Recipe Information -->
+    <div class="side-panel-overlay" id="sidePanelOverlay"></div>
+    <div class="side-panel" id="sidePanel">
+        <div class="side-panel-header">
+            <h2 id="sidePanelRecipeName"></h2>
+            <button class="side-panel-close" id="sidePanelClose">&times;</button>
+        </div>
+        <div class="side-panel-content" id="sidePanelContent">
+            <!-- Recipe details will be inserted here -->
+        </div>
+        <div class="side-panel-actions">
+            <button class="btn btn-primary" id="sidePanelFavoriteBtn">☆ Add to Favorites</button>
+            <button class="btn btn-secondary" id="sidePanelShoppingBtn">🛒 Add to Shopping List</button>
+            <button class="btn btn-secondary" id="sidePanelPrintBtn">🖨️ Print</button>
+            <button class="btn btn-secondary" id="sidePanelEditBtn">Edit</button>
+            <button class="btn btn-danger" id="sidePanelDeleteBtn">Delete</button>
+        </div>
+    </div>
+
+    <!-- Recipe Selection Modal for Shopping List -->
+    <div class="modal" id="recipeSelectionModal">
+        <div class="modal-content modal-content-large">
+            <div class="modal-header">
+                <h2>Select Recipes</h2>
+                <button class="modal-close" id="recipeSelectionClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Choose one or more recipes to add their ingredients to your shopping list</p>
+                <div class="recipe-selection-list" id="recipeSelectionList">
+                    <!-- Recipe checkboxes will be inserted here -->
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelRecipeSelectionBtn">Cancel</button>
+                <button class="btn btn-primary" id="confirmRecipeSelectionBtn">Add to Shopping List</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Notification Toast -->
     <div class="toast" id="toast"></div>
 
@@ -401,6 +473,7 @@ You can format text with colors and styles!"></div>
             <ul>
                 <li>Long-press on recipe cards to add/remove tags quickly</li>
                 <li>Tap on tags to filter recipes</li>
+                <li>Click recipe cards to view details in the side panel</li>
                 <li>All your data is saved locally on your device</li>
             </ul>
         </div>
