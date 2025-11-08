@@ -2977,6 +2977,81 @@ function confirmRecipeSelection() {
     navigateTo('shopping-list');
 }
 
+// ===== Sample Recipes Import =====
+async function importSampleRecipes() {
+    const sampleRecipeFiles = [
+        'sample-recipes/chocolate-chip-cookies.json',
+        'sample-recipes/spaghetti-carbonara.json',
+        'sample-recipes/avocado-toast.json'
+    ];
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+        const importPromises = sampleRecipeFiles.map(async (filePath) => {
+            try {
+                const response = await fetch(filePath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${filePath}`);
+                }
+                const data = await response.json();
+                const recipe = normalizeRecipe(data);
+
+                if (validateRecipe(recipe)) {
+                    recipe.id = generateId();
+                    recipe.createdAt = new Date().toISOString();
+                    recipe.updatedAt = new Date().toISOString();
+                    state.recipes.unshift(recipe);
+                    successCount++;
+                } else {
+                    throw new Error('Invalid recipe format');
+                }
+            } catch (error) {
+                console.error(`Error importing ${filePath}:`, error);
+                errorCount++;
+            }
+        });
+
+        await Promise.all(importPromises);
+
+        if (successCount > 0) {
+            saveRecipesToStorage();
+
+            // Extract new tags
+            const allTags = new Set(state.tags.map(t => t.name));
+            state.recipes.forEach(recipe => {
+                recipe.tags.forEach(tag => {
+                    if (!allTags.has(tag)) {
+                        state.tags.push({
+                            name: tag,
+                            color: generateRandomColor()
+                        });
+                        allTags.add(tag);
+                    }
+                });
+            });
+            saveTagsToStorage();
+
+            // Activate search and render recipes
+            if (!state.searchActive) {
+                activateSearch();
+            }
+            renderRecipes();
+
+            showToast(
+                `Successfully imported ${successCount} sample recipe${successCount > 1 ? 's' : ''}!`,
+                'success'
+            );
+        } else {
+            showToast('Failed to import sample recipes', 'error');
+        }
+    } catch (error) {
+        console.error('Error importing sample recipes:', error);
+        showToast('Error importing sample recipes', 'error');
+    }
+}
+
 // Make functions available globally
 window.navigateTo = navigateTo;
 window.exportAllRecipes = exportAllRecipes;
@@ -2993,3 +3068,4 @@ window.closeRecipeSelectionModal = closeRecipeSelectionModal;
 window.toggleRecipeSelection = toggleRecipeSelection;
 window.confirmRecipeSelection = confirmRecipeSelection;
 window.setRecipeRating = setRecipeRating;
+window.importSampleRecipes = importSampleRecipes;

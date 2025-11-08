@@ -1123,7 +1123,39 @@ html {
 .empty-state p {
     font-size: 16px;
     color: var(--text-secondary);
-    margin-bottom: 24px;
+    margin-bottom: 32px;
+}
+
+.empty-state-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.empty-state-btn {
+    font-size: 16px;
+    padding: 16px 32px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state-btn .btn-icon {
+    font-size: 20px;
+}
+
+@media (min-width: 768px) {
+    .empty-state-actions {
+        flex-direction: row;
+        max-width: none;
+        justify-content: center;
+    }
+
+    .empty-state-btn {
+        flex: 1;
+        max-width: 250px;
+    }
 }
 
 /* Buttons */
@@ -1171,6 +1203,19 @@ html {
 .btn-danger:hover {
     background: #DC2626;
     transform: translateY(-2px);
+}
+
+.btn-accent {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.btn-accent:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #63408a 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--box-shadow);
+    color: white;
 }
 
 /* Tags Management */
