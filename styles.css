@@ -132,6 +132,38 @@
     --shadow-color: rgba(234, 88, 12, 0.1);
 }
 
+/* iOS and Mobile Fixes */
+* {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+}
+
+input, textarea, button, select, a {
+    -webkit-tap-highlight-color: rgba(139, 92, 246, 0.2);
+}
+
+/* iOS Safe Area Support */
+@supports (padding: max(0px)) {
+    body {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+}
+
+/* Prevent iOS zoom on input focus */
+@media screen and (max-width: 768px) {
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="search"],
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+}
+
 /* Body and Container */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -139,6 +171,9 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     transition: background-color var(--transition-speed), color var(--transition-speed);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
 }
 
 html {
@@ -1887,11 +1922,19 @@ html {
     .header-content {
         flex-direction: column;
         gap: 16px;
+        padding: 12px 16px;
     }
 
     .nav {
         width: 100%;
         justify-content: space-around;
+    }
+
+    .nav-btn {
+        padding: 12px 16px;
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
     }
 
     .nav-btn span:not(.nav-icon) {
@@ -1901,6 +1944,15 @@ html {
     .results-container {
         grid-template-columns: 1fr;
         max-height: calc(100vh - 400px);
+        gap: 16px;
+    }
+
+    .recipe-card {
+        padding: 20px;
+    }
+
+    .recipe-card:active {
+        transform: scale(0.98);
     }
 
     .form-row {
@@ -1927,17 +1979,105 @@ html {
     }
 
     .quick-tags {
-        gap: 6px;
+        gap: 8px;
     }
 
     .tag {
-        padding: 6px 12px;
-        font-size: 13px;
+        padding: 10px 16px;
+        font-size: 14px;
+        min-height: 44px;
     }
 
     .clear-filters-btn {
-        padding: 6px 16px;
-        font-size: 12px;
+        padding: 10px 20px;
+        font-size: 13px;
+        min-height: 44px;
+    }
+
+    /* Mobile-friendly buttons */
+    .btn {
+        min-height: 44px;
+        padding: 14px 24px;
+        font-size: 16px;
+    }
+
+    .theme-btn {
+        width: 56px;
+        height: 56px;
+    }
+
+    .preferences-button {
+        top: 16px;
+        right: 16px;
+    }
+
+    /* Mobile modals */
+    .modal {
+        padding: 0;
+    }
+
+    .modal-content {
+        max-height: 100vh;
+        border-radius: 0;
+        width: 100%;
+    }
+
+    .modal-header {
+        padding: 20px;
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        z-index: 10;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .modal-close {
+        width: 44px;
+        height: 44px;
+        font-size: 28px;
+    }
+
+    /* Touch-friendly search */
+    #searchInput {
+        padding: 18px 24px;
+        font-size: 16px;
+    }
+
+    .search-btn {
+        width: 52px;
+        height: 52px;
+    }
+
+    /* Mobile context menu */
+    .context-menu {
+        max-width: 90vw;
+        max-height: 60vh;
+    }
+
+    .context-menu-item {
+        padding: 14px 18px;
+        min-height: 44px;
+    }
+
+    /* Mobile-friendly tag items */
+    .tag-item {
+        padding: 14px 18px;
+    }
+
+    .tag-item-delete {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 24px;
+    }
+
+    /* Mobile search preview */
+    .search-results-preview {
+        max-height: 60vh;
+    }
+
+    .search-result-item {
+        padding: 16px 20px;
+        min-height: 60px;
     }
 }
 
@@ -1952,11 +2092,11 @@ html {
     }
 
     .welcome-text h1 {
-        font-size: 24px;
+        font-size: 28px;
     }
 
     .welcome-text p {
-        font-size: 14px;
+        font-size: 16px;
     }
 
     .page-header h2 {
@@ -1971,6 +2111,118 @@ html {
         margin: 0;
         max-height: 100vh;
         border-radius: 0;
+    }
+
+    .content-area {
+        padding: 16px;
+    }
+
+    .search-section {
+        padding: 30px 16px;
+    }
+
+    .search-section.compact {
+        padding: 30px 16px 16px;
+    }
+
+    .recipe-card {
+        padding: 16px;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .modal-header h2 {
+        font-size: 20px;
+    }
+
+    .rich-text-editor {
+        font-size: 16px;
+    }
+
+    .toolbar-btn {
+        padding: 8px 10px;
+        font-size: 16px;
+    }
+}
+
+/* Landscape orientation mobile */
+@media (max-width: 896px) and (max-height: 428px) and (orientation: landscape) {
+    .welcome-text h1 {
+        font-size: 24px;
+        margin-bottom: 8px;
+    }
+
+    .search-section {
+        min-height: 60vh;
+        padding: 20px;
+    }
+
+    .modal-content {
+        max-height: 95vh;
+    }
+
+    .results-container {
+        max-height: calc(100vh - 280px);
+    }
+}
+
+/* Prevent body scroll when modal is open on mobile */
+body.modal-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+/* Mobile-specific styles */
+body.is-mobile .recipe-card {
+    cursor: default;
+    user-select: none;
+}
+
+body.is-mobile .recipe-card:active {
+    opacity: 0.9;
+}
+
+body.is-mobile .tag:active,
+body.is-mobile .btn:active {
+    opacity: 0.8;
+}
+
+/* iOS-specific fixes */
+body.is-ios input,
+body.is-ios textarea,
+body.is-ios select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border-radius: var(--border-radius);
+}
+
+body.is-ios .modal-content {
+    -webkit-overflow-scrolling: touch;
+}
+
+body.is-ios .results-container {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Better touch feedback for mobile */
+@media (hover: none) and (pointer: coarse) {
+    .nav-btn:active {
+        background: var(--accent-primary);
+        color: white !important;
+        transform: scale(0.95);
+    }
+
+    .theme-btn:active {
+        transform: scale(0.95);
+    }
+
+    .search-btn:active {
+        transform: scale(0.95);
     }
 }
 
@@ -2083,4 +2335,100 @@ html {
 ::selection {
     background: var(--accent-primary);
     color: white;
+}
+
+/* Mobile Helper Tooltip */
+.mobile-helper {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    color: white;
+    padding: 20px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+    z-index: 4000;
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+.mobile-helper-content {
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.mobile-helper-content h3 {
+    font-size: 18px;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.mobile-helper-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mobile-helper-content li {
+    padding: 8px 0;
+    padding-left: 24px;
+    position: relative;
+    line-height: 1.4;
+}
+
+.mobile-helper-content li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.mobile-helper-close {
+    position: absolute;
+    top: -10px;
+    right: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.mobile-helper-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.mobile-helper-close:active {
+    transform: scale(0.95);
 }
