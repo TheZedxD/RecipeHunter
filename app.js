@@ -582,6 +582,12 @@ function setupEventListeners() {
 
             // Close side panel
             closeSidePanel();
+
+            // Dismiss visible toast
+            const toast = document.getElementById('toast');
+            if (toast && toast.classList.contains('visible')) {
+                dismissToast();
+            }
         }
 
         // Show help modal with ? key
@@ -2682,6 +2688,34 @@ function initializeTooltips() {
 }
 
 // ===== Toast Notifications =====
+function dismissToast() {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+
+    // Clear any existing timeout
+    if (toastTimeout) {
+        clearTimeout(toastTimeout);
+        toastTimeout = null;
+    }
+
+    // Add dismissing animation class
+    toast.classList.add('toast-dismissing');
+
+    // Remove visible class after a brief delay to trigger animation
+    setTimeout(() => {
+        toast.classList.remove('visible');
+        toast.classList.remove('toast-dismissing');
+
+        // Show next toast in queue if any
+        setTimeout(() => {
+            if (toastQueue.length > 0) {
+                const next = toastQueue.shift();
+                showToast(next.message, next.type, next.duration);
+            }
+        }, 300); // Wait for fade out animation
+    }, 50);
+}
+
 function showToast(message, type = 'success', duration = 3000) {
     if (!message || typeof message !== 'string') {
         console.warn('Invalid toast message:', message);
@@ -2699,21 +2733,34 @@ function showToast(message, type = 'success', duration = 3000) {
         clearTimeout(toastTimeout);
     }
 
-    // Set message and type
-    toast.textContent = message;
+    // Clear toast content and rebuild structure
+    toast.innerHTML = '';
     toast.className = `toast ${type} visible`;
+
+    // Create message span
+    const messageSpan = document.createElement('span');
+    messageSpan.className = 'toast-message';
+    messageSpan.textContent = message;
+
+    // Create close button
+    const closeButton = document.createElement('button');
+    closeButton.className = 'toast-close';
+    closeButton.setAttribute('aria-label', 'Close notification');
+    closeButton.innerHTML = '×';
+
+    // Add click handler for close button
+    closeButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismissToast();
+    });
+
+    // Append elements to toast
+    toast.appendChild(messageSpan);
+    toast.appendChild(closeButton);
 
     // Auto-dismiss after duration
     toastTimeout = setTimeout(() => {
-        toast.classList.remove('visible');
-
-        // Show next toast in queue if any
-        setTimeout(() => {
-            if (toastQueue.length > 0) {
-                const next = toastQueue.shift();
-                showToast(next.message, next.type, next.duration);
-            }
-        }, 300); // Wait for fade out animation
+        dismissToast();
     }, duration);
 }
 
