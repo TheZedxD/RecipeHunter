@@ -390,15 +390,10 @@ html {
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
     padding: 0;
-    opacity: 0;
-    transform: translateY(-100%);
-    transition: all var(--transition-speed);
-    box-shadow: var(--box-shadow);
-}
-
-.header.visible {
     opacity: 1;
     transform: translateY(0);
+    transition: all var(--transition-speed);
+    box-shadow: var(--box-shadow);
 }
 
 .header-content {
@@ -781,12 +776,8 @@ html {
     width: 100%;
     margin: 0 auto;
     padding: 20px;
-    opacity: 0;
-    transition: opacity var(--transition-speed);
-}
-
-.content-area.visible {
     opacity: 1;
+    transition: opacity var(--transition-speed);
 }
 
 .page {

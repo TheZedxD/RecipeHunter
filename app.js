@@ -688,11 +688,6 @@ function navigateTo(page) {
         p.classList.toggle('active', p.id === page + 'Page');
     });
 
-    // Show header and content if not visible
-    if (!state.searchActive && page !== 'home') {
-        activateSearch();
-    }
-
     // Render page content
     switch(page) {
         case 'home':
@@ -717,10 +712,7 @@ function navigateTo(page) {
 function handleSearch(e) {
     const query = e.target.value.toLowerCase();
     state.currentFilter = query;
-
-    if (state.searchActive) {
-        renderRecipes();
-    }
+    renderRecipes();
 }
 
 function handleSearchClick() {
@@ -734,14 +726,8 @@ function activateSearch() {
     state.searchActive = true;
 
     const searchSection = document.getElementById('searchSection');
-    const header = document.getElementById('header');
-    const contentArea = document.getElementById('contentArea');
-
     searchSection.classList.add('compact');
-    header.classList.add('visible');
-    contentArea.classList.add('visible');
 
-    renderQuickTags();
     renderRecipes();
 }
 
@@ -901,10 +887,13 @@ function updateFavoritesButton() {
 
 // ===== Recipe Rendering =====
 function renderInitialView() {
+    // Always render quick tags so they're available immediately
+    renderQuickTags();
+
     if (state.recipes.length === 0) {
         document.getElementById('emptyState').classList.add('visible');
     } else {
-        renderQuickTags();
+        renderRecipes();
     }
     updateFavoritesButton();
 }
