@@ -2570,6 +2570,18 @@ body.compact-view .recipe-card-preview {
         right: 16px;
     }
 
+    /* Reposition action buttons to bottom-right on mobile */
+    .top-action-buttons {
+        top: auto;
+        bottom: 80px;
+        right: 16px;
+    }
+
+    .action-btn {
+        width: 52px;
+        height: 52px;
+    }
+
     /* Mobile modals */
     .modal {
         padding: 0;
@@ -2644,6 +2656,11 @@ body.compact-view .recipe-card-preview {
     .preferences-button {
         top: 10px;
         right: 10px;
+    }
+
+    .top-action-buttons {
+        bottom: 70px;
+        right: 12px;
     }
 
     .theme-grid {
@@ -4045,6 +4062,7 @@ body.is-ios .results-container {
     display: flex;
     gap: 10px;
     z-index: 1000;
+    transition: all 0.3s ease;
 }
 
 .action-btn {
@@ -4054,18 +4072,19 @@ body.is-ios .results-container {
     border: none;
     background: var(--card-bg);
     color: var(--text);
-    font-size: 20px;
+    font-size: 24px;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
 .action-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
     background: var(--accent);
     color: white;
 }
@@ -4075,7 +4094,69 @@ body.is-ios .results-container {
 }
 
 .action-icon {
-    font-size: 20px;
+    font-size: 24px;
+}
+
+/* Theme button pulse animation */
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    50% {
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4), 0 0 0 4px rgba(139, 92, 246, 0.1);
+    }
+}
+
+.theme-btn {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* NEW badge styles */
+.new-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: linear-gradient(135deg, #ff6b6b, #ff4757);
+    color: white;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.new-badge.hidden {
+    display: none;
+}
+
+/* Tablet positioning */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .top-action-buttons {
+        top: 16px;
+        right: 16px;
+    }
+}
+
+/* Mobile landscape positioning */
+@media (max-width: 896px) and (max-height: 428px) and (orientation: landscape) {
+    .top-action-buttons {
+        top: 12px;
+        bottom: auto;
+        right: 12px;
+    }
+
+    .action-btn {
+        width: 44px;
+        height: 44px;
+    }
+
+    .action-icon {
+        font-size: 20px;
+    }
 }
 
 /* ===== Try Demo Button ===== */
