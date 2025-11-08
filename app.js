@@ -612,28 +612,39 @@ function setupImageUploadListeners() {
 }
 
 function handleImageUpload(file) {
-    if (!file) return;
+    console.log('handleImageUpload called with file:', file?.name);
+    if (!file) {
+        console.warn('No file provided to handleImageUpload');
+        return;
+    }
 
     // Check file size (max 5MB)
+    console.log('Checking file size:', file.size, 'bytes');
     if (file.size > 5 * 1024 * 1024) {
+        console.error('Image file too large:', file.size);
         showToast('Image size must be less than 5MB', 'error');
         return;
     }
 
     // Check file type
+    console.log('Checking file type:', file.type);
     if (!file.type.startsWith('image/')) {
+        console.error('Invalid file type:', file.type);
         showToast('Please select a valid image file', 'error');
         return;
     }
 
+    console.log('Reading image file...');
     const reader = new FileReader();
     reader.onload = (e) => {
+        console.log('Image file loaded successfully');
         state.currentImageData = e.target.result;
         displayImagePreview(state.currentImageData);
         showToast('Image uploaded successfully', 'success');
     };
 
     reader.onerror = () => {
+        console.error('Error reading image file');
         showToast('Error reading image file', 'error');
     };
 
@@ -641,14 +652,17 @@ function handleImageUpload(file) {
 }
 
 function displayImagePreview(imageData) {
+    console.log('displayImagePreview called');
     const preview = document.getElementById('imagePreview');
     const removeBtn = document.getElementById('removeImageBtn');
 
     preview.innerHTML = `<img src="${imageData}" alt="Recipe preview">`;
     removeBtn.style.display = 'inline-flex';
+    console.log('Image preview displayed');
 }
 
 function removeRecipeImage() {
+    console.log('removeRecipeImage called');
     state.currentImageData = null;
     const preview = document.getElementById('imagePreview');
     const removeBtn = document.getElementById('removeImageBtn');
@@ -1510,6 +1524,7 @@ function handleDeleteRecipe() {
 
 // ===== Recipe Form =====
 function resetRecipeForm() {
+    console.log('resetRecipeForm called');
     document.getElementById('recipeFormTitle').textContent = 'Add New Recipe';
     document.getElementById('recipeId').value = '';
     document.getElementById('recipeName').value = '';
@@ -1519,6 +1534,7 @@ function resetRecipeForm() {
     document.getElementById('selectedTags').innerHTML = '';
 
     // Clear rich text editors
+    console.log('Clearing rich text editors...');
     setEditorContent('ingredients', []);
     setEditorContent('instructions', []);
     setEditorContent('notes', '');
@@ -1526,9 +1542,11 @@ function resetRecipeForm() {
     state.currentRecipe = null;
     state.currentImageData = null;
     removeRecipeImage();
+    console.log('Recipe form reset complete');
 }
 
 function loadRecipeForEdit(recipe) {
+    console.log('loadRecipeForEdit called for recipe:', recipe.name, '(ID:', recipe.id + ')');
     document.getElementById('recipeFormTitle').textContent = 'Edit Recipe';
     document.getElementById('recipeId').value = recipe.id;
     document.getElementById('recipeName').value = recipe.name;
@@ -1537,6 +1555,9 @@ function loadRecipeForEdit(recipe) {
     document.getElementById('servings').value = recipe.servings || '';
 
     // Set rich text editor content
+    console.log('Loading rich text editors with recipe data...');
+    console.log('- Ingredients count:', recipe.ingredients?.length || 0);
+    console.log('- Instructions count:', recipe.instructions?.length || 0);
     setEditorContent('ingredients', recipe.ingredients || []);
     setEditorContent('instructions', recipe.instructions || []);
     setEditorContent('notes', recipe.notes || '');
@@ -1544,6 +1565,7 @@ function loadRecipeForEdit(recipe) {
     // Set tags
     const selectedTagsContainer = document.getElementById('selectedTags');
     selectedTagsContainer.innerHTML = '';
+    console.log('Loading tags:', recipe.tags);
     if (recipe.tags) {
         recipe.tags.forEach(tagName => {
             addSelectedTag(tagName);
@@ -1552,16 +1574,20 @@ function loadRecipeForEdit(recipe) {
 
     // Set image
     if (recipe.image) {
+        console.log('Recipe has image, displaying preview');
         state.currentImageData = recipe.image;
         displayImagePreview(recipe.image);
     } else {
+        console.log('Recipe has no image');
         removeRecipeImage();
     }
 
     state.currentRecipe = recipe;
+    console.log('Recipe loaded for edit successfully');
 }
 
 function handleRecipeSubmit(e) {
+    console.log('handleRecipeSubmit called');
     e.preventDefault();
 
     const id = document.getElementById('recipeId').value || generateId();
@@ -1571,7 +1597,10 @@ function handleRecipeSubmit(e) {
     const servingsInput = document.getElementById('servings').value;
     const servings = servingsInput ? parseInt(servingsInput) : null;
 
+    console.log('Form data collected:', { id, name, prepTime, cookTime, servings });
+
     // Get content from rich text editors
+    console.log('Getting editor content...');
     const ingredients = getEditorContent('ingredients');
     const instructions = getEditorContent('instructions');
     const notesEditor = document.getElementById('notes');
@@ -1579,30 +1608,43 @@ function handleRecipeSubmit(e) {
         ? ''
         : notesEditor.innerHTML;
 
+    console.log('Editor content retrieved:', {
+        ingredientsCount: ingredients.length,
+        instructionsCount: instructions.length,
+        hasNotes: notes.length > 0
+    });
+
     const tags = Array.from(document.getElementById('selectedTags').children)
         .map(el => el.textContent.replace('×', '').trim())
         .filter(tag => tag.length > 0); // Filter out empty tags
 
+    console.log('Tags:', tags);
+
     // Validate required fields
+    console.log('Validating form data...');
     if (!name || name.length === 0) {
+        console.error('Validation failed: Recipe name is required');
         showToast('Recipe name is required', 'error');
         document.getElementById('recipeName').focus();
         return;
     }
 
     if (name.length > 200) {
+        console.error('Validation failed: Recipe name too long');
         showToast('Recipe name is too long (max 200 characters)', 'error');
         document.getElementById('recipeName').focus();
         return;
     }
 
     if (ingredients.length === 0) {
+        console.error('Validation failed: No ingredients');
         showToast('At least one ingredient is required', 'error');
         document.getElementById('ingredients').focus();
         return;
     }
 
     if (instructions.length === 0) {
+        console.error('Validation failed: No instructions');
         showToast('At least one instruction is required', 'error');
         document.getElementById('instructions').focus();
         return;
@@ -1610,11 +1652,13 @@ function handleRecipeSubmit(e) {
 
     // Validate servings if provided
     if (servings !== null && (servings < 1 || servings > 1000 || isNaN(servings))) {
+        console.error('Validation failed: Invalid servings value');
         showToast('Servings must be a number between 1 and 1000', 'error');
         document.getElementById('servings').focus();
         return;
     }
 
+    console.log('Validation passed, creating recipe object...');
     const recipe = {
         id,
         name,
@@ -1633,9 +1677,11 @@ function handleRecipeSubmit(e) {
 
     const existingIndex = state.recipes.findIndex(r => r.id === id);
     if (existingIndex !== -1) {
+        console.log('Updating existing recipe at index:', existingIndex);
         state.recipes[existingIndex] = recipe;
         showToast('Recipe updated successfully', 'success');
     } else {
+        console.log('Adding new recipe');
         state.recipes.unshift(recipe);
         showToast('Recipe added successfully', 'success');
     }
@@ -1702,15 +1748,20 @@ function hideTagsSuggestions() {
 }
 
 function addSelectedTag(tagName) {
+    console.log('addSelectedTag called with tag:', tagName);
     const container = document.getElementById('selectedTags');
 
     // Check if already added
     const existing = Array.from(container.children).find(
         el => el.textContent.replace('×', '').trim() === tagName
     );
-    if (existing) return;
+    if (existing) {
+        console.log('Tag already selected:', tagName);
+        return;
+    }
 
     const tag = state.tags.find(t => t.name === tagName);
+    console.log('Tag object found:', tag);
     const tagEl = document.createElement('div');
     tagEl.className = 'selected-tag';
     tagEl.style.backgroundColor = tag?.color || '#8B5CF6';
@@ -1720,10 +1771,12 @@ function addSelectedTag(tagName) {
     `;
 
     tagEl.querySelector('.selected-tag-remove').addEventListener('click', () => {
+        console.log('Removing tag:', tagName);
         tagEl.remove();
     });
 
     container.appendChild(tagEl);
+    console.log('Tag added to selected tags');
 }
 
 // ===== Tags Page =====
@@ -2232,46 +2285,70 @@ function exportAllRecipes() {
 
 // ===== Recipe Editor Modal Management =====
 function openRecipeEditorModal(recipeId = null) {
+    console.log('openRecipeEditorModal called with recipeId:', recipeId);
     const modal = document.getElementById('recipeEditorModal');
     const title = document.getElementById('recipeFormTitle');
 
+    if (!modal) {
+        console.error('Recipe editor modal element not found!');
+        return;
+    }
+
     if (recipeId) {
+        console.log('Opening modal in edit mode for recipe:', recipeId);
         const recipe = state.recipes.find(r => r.id === recipeId);
         if (recipe) {
+            console.log('Recipe found:', recipe.name);
             title.textContent = 'Edit Recipe';
             loadRecipeForEdit(recipe);
+        } else {
+            console.error('Recipe not found with ID:', recipeId);
         }
     } else {
+        console.log('Opening modal in add mode');
         title.textContent = 'Add New Recipe';
         resetRecipeForm();
     }
 
     modal.classList.add('visible');
     document.body.classList.add('modal-open'); // Prevent body scroll on mobile
+    console.log('Modal opened, setting up rich text editors...');
     setupRichTextEditors();
+    console.log('Modal setup complete');
 }
 
 function closeRecipeEditorModal() {
+    console.log('closeRecipeEditorModal called');
     const modal = document.getElementById('recipeEditorModal');
+    if (!modal) {
+        console.error('Recipe editor modal element not found!');
+        return;
+    }
     modal.classList.remove('visible');
     document.body.classList.remove('modal-open'); // Re-enable body scroll
+    console.log('Resetting recipe form...');
     resetRecipeForm();
+    console.log('Modal closed successfully');
 }
 
 // ===== Rich Text Editor Setup =====
 function setupRichTextEditors() {
+    console.log('setupRichTextEditors called');
     // Setup toolbar buttons
     const toolbars = document.querySelectorAll('.rich-text-toolbar');
+    console.log('Found', toolbars.length, 'rich text toolbars');
 
-    toolbars.forEach(toolbar => {
+    toolbars.forEach((toolbar, index) => {
         const buttons = toolbar.querySelectorAll('.toolbar-btn');
         const colorPicker = toolbar.querySelector('.color-picker');
         const targetId = toolbar.dataset.target;
+        console.log(`Setting up toolbar ${index + 1} for target:`, targetId);
 
         buttons.forEach(btn => {
             btn.onclick = (e) => {
                 e.preventDefault();
                 const command = btn.dataset.command;
+                console.log('Toolbar button clicked, command:', command, 'target:', targetId);
 
                 if (command === 'foreColor') {
                     colorPicker.click();
@@ -2284,11 +2361,13 @@ function setupRichTextEditors() {
 
         if (colorPicker) {
             colorPicker.onchange = () => {
+                console.log('Color picker changed for', targetId, '- color:', colorPicker.value);
                 document.execCommand('foreColor', false, colorPicker.value);
                 document.getElementById(targetId).focus();
             };
         }
     });
+    console.log('Rich text editors setup complete');
 }
 
 // ===== Real-Time Search with Preview =====
@@ -2464,29 +2543,37 @@ function highlightMatch(text, query) {
 
 // ===== Enhanced Recipe Form Handling =====
 function getEditorContent(editorId) {
+    console.log('getEditorContent called for:', editorId);
     const editor = document.getElementById(editorId);
     const html = editor.innerHTML.trim();
 
     if (!html || html === '<br>') {
+        console.log('Editor is empty:', editorId);
         return [];
     }
 
     // Split by <div> or <br> tags and clean up
-    return html
+    const lines = html
         .split(/<div>|<br>/gi)
         .map(line => line.replace(/<\/div>/gi, '').trim())
         .filter(line => line && line !== '<br>');
+
+    console.log('Editor content extracted:', editorId, '- lines:', lines.length);
+    return lines;
 }
 
 function setEditorContent(editorId, content) {
+    console.log('setEditorContent called for:', editorId, 'with content:', Array.isArray(content) ? content.length + ' items' : typeof content);
     const editor = document.getElementById(editorId);
 
     if (Array.isArray(content)) {
         editor.innerHTML = content
             .map(line => line.includes('<') ? line : `<div>${line}</div>`)
             .join('');
+        console.log('Set array content for', editorId);
     } else {
         editor.innerHTML = content || '';
+        console.log('Set string content for', editorId);
     }
 }
 
