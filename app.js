@@ -1116,6 +1116,8 @@ function navigateTo(page) {
         // Hide results on other pages
         resultsContainer.classList.add('results-hidden');
         emptyState.classList.add('results-hidden');
+        // Clear any inline styles that might override the class
+        resultsContainer.style.display = '';
     }
 
     // Render page content
@@ -1386,10 +1388,10 @@ function renderRecipes() {
 
     if (filteredRecipes.length === 0) {
         emptyState.classList.add('visible');
-        container.style.display = 'none';
+        container.classList.add('results-hidden');
     } else {
         emptyState.classList.remove('visible');
-        container.style.display = 'grid';
+        container.classList.remove('results-hidden');
 
         filteredRecipes.forEach(recipe => {
             const card = createRecipeCard(recipe);
