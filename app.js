@@ -1,5 +1,19 @@
 // Recipe Hunter - Main Application JavaScript
 
+// ===== Mobile Detection =====
+const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (window.innerWidth <= 768);
+};
+
+const isIOS = () => {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+};
+
+const isTouchDevice = () => {
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+};
+
 // ===== State Management =====
 const state = {
     recipes: [],
@@ -10,12 +24,18 @@ const state = {
     selectedTags: new Set(),
     currentPage: 'home',
     currentImageData: null,
+    isMobile: isMobile(),
+    isIOS: isIOS(),
+    isTouchDevice: isTouchDevice(),
     contextMenu: {
         visible: false,
         x: 0,
         y: 0,
         targetRecipe: null
-    }
+    },
+    touchTimer: null,
+    touchStartX: 0,
+    touchStartY: 0
 };
 
 // ===== Initialization =====
@@ -29,10 +49,182 @@ function initializeApp() {
     setupRealTimeSearch();
     applyTheme();
     renderInitialView();
+    setupMobileFeatures();
+
+    // Log device info for debugging
+    console.log('Device Info:', {
+        isMobile: state.isMobile,
+        isIOS: state.isIOS,
+        isTouchDevice: state.isTouchDevice,
+        userAgent: navigator.userAgent
+    });
+}
+
+// ===== Mobile-Specific Features =====
+function setupMobileFeatures() {
+    if (!state.isTouchDevice) return;
+
+    // Add mobile class to body for CSS targeting
+    document.body.classList.add('is-mobile');
+    if (state.isIOS) {
+        document.body.classList.add('is-ios');
+    }
+
+    // Setup touch event handlers for recipe cards (long press for context menu)
+    setupTouchHandlers();
+
+    // Prevent default context menu on touch devices
+    document.addEventListener('contextmenu', (e) => {
+        if (state.isTouchDevice) {
+            e.preventDefault();
+        }
+    });
+
+    // Handle window resize for orientation changes
+    window.addEventListener('resize', () => {
+        state.isMobile = isMobile();
+        hideContextMenu();
+        hideSearchPreview();
+    });
+
+    // Show mobile helper on first visit
+    showMobileHelperIfNeeded();
+}
+
+function showMobileHelperIfNeeded() {
+    const helperShown = isLocalStorageAvailable() ?
+        localStorage.getItem('mobileHelperShown') : null;
+
+    if (!helperShown && state.isMobile) {
+        setTimeout(() => {
+            const helper = document.getElementById('mobileHelper');
+            if (helper) {
+                helper.style.display = 'block';
+
+                // Setup close button
+                const closeBtn = document.getElementById('mobileHelperClose');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
+                        helper.style.animation = 'slideDown 0.3s ease-out';
+                        setTimeout(() => {
+                            helper.style.display = 'none';
+                        }, 300);
+
+                        if (isLocalStorageAvailable()) {
+                            try {
+                                localStorage.setItem('mobileHelperShown', 'true');
+                            } catch (e) {
+                                console.warn('Unable to save mobile helper state:', e);
+                            }
+                        }
+                    });
+                }
+
+                // Auto-hide after 10 seconds
+                setTimeout(() => {
+                    if (helper.style.display !== 'none') {
+                        helper.style.animation = 'slideDown 0.3s ease-out';
+                        setTimeout(() => {
+                            helper.style.display = 'none';
+                        }, 300);
+
+                        if (isLocalStorageAvailable()) {
+                            try {
+                                localStorage.setItem('mobileHelperShown', 'true');
+                            } catch (e) {
+                                console.warn('Unable to save mobile helper state:', e);
+                            }
+                        }
+                    }
+                }, 10000);
+            }
+        }, 2000); // Show after 2 seconds
+    }
+}
+
+function setupTouchHandlers() {
+    // This will be called when recipe cards are rendered
+    // We'll add touch handlers dynamically to recipe cards
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd, { passive: false });
+}
+
+function handleTouchStart(e) {
+    const recipeCard = e.target.closest('.recipe-card');
+    if (!recipeCard || !state.isTouchDevice) return;
+
+    state.touchStartX = e.touches[0].clientX;
+    state.touchStartY = e.touches[0].clientY;
+
+    // Start long-press timer
+    state.touchTimer = setTimeout(() => {
+        // Get recipe from card
+        const recipeId = recipeCard.dataset.recipeId;
+        const recipe = state.recipes.find(r => r.id === recipeId);
+
+        if (recipe) {
+            // Vibrate if supported
+            if ('vibrate' in navigator) {
+                navigator.vibrate(50);
+            }
+
+            // Show context menu at touch position
+            showContextMenu({
+                clientX: state.touchStartX,
+                clientY: state.touchStartY,
+                preventDefault: () => {},
+                stopPropagation: () => {}
+            }, recipe);
+        }
+    }, 500); // 500ms long press
+}
+
+function handleTouchMove(e) {
+    if (!state.touchTimer) return;
+
+    const touch = e.touches[0];
+    const moveX = Math.abs(touch.clientX - state.touchStartX);
+    const moveY = Math.abs(touch.clientY - state.touchStartY);
+
+    // Cancel long press if finger moved too much
+    if (moveX > 10 || moveY > 10) {
+        clearTimeout(state.touchTimer);
+        state.touchTimer = null;
+    }
+}
+
+function handleTouchEnd(e) {
+    if (state.touchTimer) {
+        clearTimeout(state.touchTimer);
+        state.touchTimer = null;
+    }
 }
 
 // ===== Local Storage Management =====
+function isLocalStorageAvailable() {
+    try {
+        const test = '__localStorage_test__';
+        localStorage.setItem(test, test);
+        localStorage.removeItem(test);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
 function loadDataFromStorage() {
+    // Check if localStorage is available (can be disabled in iOS private browsing)
+    if (!isLocalStorageAvailable()) {
+        console.warn('localStorage is not available. Data will not persist across sessions.');
+        showToast('Running in private mode - recipes won\'t be saved', 'warning');
+        // Initialize with default tags
+        if (state.tags.length === 0) {
+            state.tags = getDefaultTags();
+        }
+        return;
+    }
+
     try {
         const storedRecipes = localStorage.getItem('recipes');
         const storedTags = localStorage.getItem('tags');
@@ -99,20 +291,7 @@ function loadDataFromStorage() {
 
     // Add default tags if none exist
     if (state.tags.length === 0) {
-        state.tags = [
-            { name: 'Breakfast', color: '#F59E0B', defaultVisible: true },
-            { name: 'Lunch', color: '#10B981', defaultVisible: true },
-            { name: 'Dinner', color: '#3B82F6', defaultVisible: true },
-            { name: 'Dessert', color: '#EC4899', defaultVisible: true },
-            { name: 'Snack', color: '#F97316', defaultVisible: false },
-            { name: 'Appetizer', color: '#06B6D4', defaultVisible: false },
-            { name: 'Side Dish', color: '#84CC16', defaultVisible: false },
-            { name: 'Vegetarian', color: '#059669', defaultVisible: true },
-            { name: 'Vegan', color: '#14B8A6', defaultVisible: false },
-            { name: 'Quick', color: '#8B5CF6', defaultVisible: true },
-            { name: 'Slow Cooker', color: '#A855F7', defaultVisible: false },
-            { name: 'Healthy', color: '#22C55E', defaultVisible: false }
-        ];
+        state.tags = getDefaultTags();
         saveTagsToStorage();
     }
 
@@ -124,7 +303,29 @@ function loadDataFromStorage() {
     });
 }
 
+function getDefaultTags() {
+    return [
+        { name: 'Breakfast', color: '#F59E0B', defaultVisible: true },
+        { name: 'Lunch', color: '#10B981', defaultVisible: true },
+        { name: 'Dinner', color: '#3B82F6', defaultVisible: true },
+        { name: 'Dessert', color: '#EC4899', defaultVisible: true },
+        { name: 'Snack', color: '#F97316', defaultVisible: false },
+        { name: 'Appetizer', color: '#06B6D4', defaultVisible: false },
+        { name: 'Side Dish', color: '#84CC16', defaultVisible: false },
+        { name: 'Vegetarian', color: '#059669', defaultVisible: true },
+        { name: 'Vegan', color: '#14B8A6', defaultVisible: false },
+        { name: 'Quick', color: '#8B5CF6', defaultVisible: true },
+        { name: 'Slow Cooker', color: '#A855F7', defaultVisible: false },
+        { name: 'Healthy', color: '#22C55E', defaultVisible: false }
+    ];
+}
+
 function saveRecipesToStorage() {
+    if (!isLocalStorageAvailable()) {
+        console.warn('localStorage not available, skipping save');
+        return;
+    }
+
     try {
         const recipesJson = JSON.stringify(state.recipes);
         localStorage.setItem('recipes', recipesJson);
@@ -132,6 +333,8 @@ function saveRecipesToStorage() {
         console.error('Error saving recipes to storage:', e);
         if (e.name === 'QuotaExceededError') {
             showToast('Storage quota exceeded. Please delete some recipes or clear browser data.', 'error');
+        } else if (state.isIOS) {
+            showToast('Unable to save - check if private browsing is enabled', 'error');
         } else {
             showToast('Error saving recipes', 'error');
         }
@@ -139,12 +342,21 @@ function saveRecipesToStorage() {
 }
 
 function saveTagsToStorage() {
+    if (!isLocalStorageAvailable()) {
+        console.warn('localStorage not available, skipping save');
+        return;
+    }
+
     try {
         const tagsJson = JSON.stringify(state.tags);
         localStorage.setItem('tags', tagsJson);
     } catch (e) {
         console.error('Error saving tags to storage:', e);
-        showToast('Error saving tags', 'error');
+        if (state.isIOS) {
+            showToast('Unable to save - check if private browsing is enabled', 'error');
+        } else {
+            showToast('Error saving tags', 'error');
+        }
     }
 }
 
@@ -171,16 +383,19 @@ function setupEventListeners() {
 
     preferencesBtn.addEventListener('click', () => {
         preferencesModal.classList.add('visible');
+        document.body.classList.add('modal-open');
         updateActiveThemeCard();
     });
 
     preferencesClose.addEventListener('click', () => {
         preferencesModal.classList.remove('visible');
+        document.body.classList.remove('modal-open');
     });
 
     preferencesModal.addEventListener('click', (e) => {
         if (e.target === preferencesModal) {
             preferencesModal.classList.remove('visible');
+            document.body.classList.remove('modal-open');
         }
     });
 
@@ -249,7 +464,6 @@ function setupEventListeners() {
 
 function setupImportListeners() {
     const uploadArea = document.getElementById('uploadArea');
-    const fileInput = document.getElementById('fileInput');
     const singleFileInput = document.getElementById('singleFileInput');
 
     uploadArea.addEventListener('click', () => {
@@ -273,10 +487,8 @@ function setupImportListeners() {
 
     singleFileInput.addEventListener('change', (e) => {
         handleFilesDrop(e.target.files);
-    });
-
-    fileInput.addEventListener('change', (e) => {
-        handleFilesDrop(e.target.files);
+        // Reset input value to allow re-uploading the same file
+        e.target.value = '';
     });
 }
 
@@ -355,12 +567,29 @@ function removeRecipeImage() {
 // ===== Theme Management =====
 function setTheme(themeName) {
     document.body.setAttribute('data-theme', themeName);
-    localStorage.setItem('theme', themeName);
+
+    if (isLocalStorageAvailable()) {
+        try {
+            localStorage.setItem('theme', themeName);
+        } catch (e) {
+            console.warn('Unable to save theme preference:', e);
+        }
+    }
+
     showToast(`Theme changed to ${themeName}`, 'success');
 }
 
 function applyTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'claude';
+    let savedTheme = 'claude'; // Default theme
+
+    if (isLocalStorageAvailable()) {
+        try {
+            savedTheme = localStorage.getItem('theme') || 'claude';
+        } catch (e) {
+            console.warn('Unable to load theme preference:', e);
+        }
+    }
+
     document.body.setAttribute('data-theme', savedTheme);
 }
 
@@ -622,14 +851,17 @@ function getFilteredRecipes() {
 function createRecipeCard(recipe) {
     const card = document.createElement('div');
     card.className = 'recipe-card';
+    card.dataset.recipeId = recipe.id; // Add recipe ID for touch handlers
     card.onclick = () => openRecipeModal(recipe);
 
-    // Add right-click context menu
-    card.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        showContextMenu(e, recipe);
-    });
+    // Add right-click context menu (only for non-touch devices)
+    if (!state.isTouchDevice) {
+        card.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showContextMenu(e, recipe);
+        });
+    }
 
     // Add image if exists
     if (recipe.image) {
@@ -1013,10 +1245,12 @@ function openRecipeModal(recipe) {
     });
 
     modal.classList.add('visible');
+    document.body.classList.add('modal-open'); // Prevent body scroll on mobile
 }
 
 function closeModal() {
     document.getElementById('recipeModal').classList.remove('visible');
+    document.body.classList.remove('modal-open'); // Re-enable body scroll
     state.currentRecipe = null;
 }
 
@@ -1606,12 +1840,14 @@ function openRecipeEditorModal(recipeId = null) {
     }
 
     modal.classList.add('visible');
+    document.body.classList.add('modal-open'); // Prevent body scroll on mobile
     setupRichTextEditors();
 }
 
 function closeRecipeEditorModal() {
     const modal = document.getElementById('recipeEditorModal');
     modal.classList.remove('visible');
+    document.body.classList.remove('modal-open'); // Re-enable body scroll
     resetRecipeForm();
 }
 
