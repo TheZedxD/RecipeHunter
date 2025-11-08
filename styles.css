@@ -3521,3 +3521,128 @@ body.is-ios .results-container {
         border-bottom: none;
     }
 }
+
+/* ===== Floating Action Button (FAB) ===== */
+.fab {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
+                0 8px 24px rgba(139, 92, 246, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2500;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.fab:hover {
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2),
+                0 12px 32px rgba(139, 92, 246, 0.4);
+    background: var(--accent-secondary);
+}
+
+.fab:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
+                0 4px 16px rgba(139, 92, 246, 0.25);
+}
+
+.fab-icon {
+    font-size: 32px;
+    font-weight: 300;
+    color: white;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+
+/* FAB Animation on Hover */
+@keyframes fabBounce {
+    0%, 100% {
+        transform: scale(1.1) translateY(-2px);
+    }
+    50% {
+        transform: scale(1.15) translateY(-4px);
+    }
+}
+
+.fab:hover {
+    animation: fabBounce 0.6s ease-in-out;
+}
+
+/* Mobile FAB Positioning */
+@media (max-width: 768px) {
+    .fab {
+        bottom: 24px;
+        right: 50%;
+        transform: translateX(50%);
+        width: 56px;
+        height: 56px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
+                    0 8px 20px rgba(139, 92, 246, 0.35);
+    }
+
+    .fab:hover {
+        transform: translateX(50%) scale(1.05);
+    }
+
+    .fab:active {
+        transform: translateX(50%) scale(0.95);
+    }
+
+    .fab-icon {
+        font-size: 28px;
+    }
+}
+
+/* Smaller mobile devices */
+@media (max-width: 480px) {
+    .fab {
+        bottom: 20px;
+        width: 56px;
+        height: 56px;
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 896px) and (max-height: 428px) and (orientation: landscape) {
+    .fab {
+        bottom: 16px;
+        right: 16px;
+        transform: none;
+        width: 48px;
+        height: 48px;
+    }
+
+    .fab:hover {
+        transform: scale(1.05);
+    }
+
+    .fab:active {
+        transform: scale(0.95);
+    }
+
+    .fab-icon {
+        font-size: 24px;
+    }
+}
+
+/* Hide FAB in print mode */
+@media print {
+    .fab {
+        display: none !important;
+        visibility: hidden !important;
+    }
+}
