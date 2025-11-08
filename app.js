@@ -18,6 +18,7 @@ const isTouchDevice = () => {
 const state = {
     recipes: [],
     tags: [],
+    shoppingList: [],
     currentRecipe: null,
     searchActive: false,
     currentFilter: '',
@@ -306,6 +307,9 @@ function loadDataFromStorage() {
                 console.error('Error parsing settings:', e);
             }
         }
+
+        // Load shopping list
+        loadShoppingListFromStorage();
     } catch (e) {
         console.error('Error accessing localStorage:', e);
         showToast('Error accessing local storage', 'error');
@@ -491,6 +495,23 @@ function setupEventListeners() {
     document.getElementById('recipeEditorClose').addEventListener('click', closeRecipeEditorModal);
     document.getElementById('recipeEditorModal').addEventListener('click', (e) => {
         if (e.target.id === 'recipeEditorModal') closeRecipeEditorModal();
+    });
+
+    // Side Panel
+    document.getElementById('sidePanelClose').addEventListener('click', closeSidePanel);
+    document.getElementById('sidePanelOverlay').addEventListener('click', closeSidePanel);
+
+    // Shopping List
+    document.getElementById('addToShoppingListBtn').addEventListener('click', openRecipeSelectionModal);
+    document.getElementById('addCustomItemBtn').addEventListener('click', addCustomItemToShoppingList);
+    document.getElementById('clearShoppingListBtn').addEventListener('click', clearShoppingList);
+
+    // Recipe Selection Modal
+    document.getElementById('recipeSelectionClose').addEventListener('click', closeRecipeSelectionModal);
+    document.getElementById('cancelRecipeSelectionBtn').addEventListener('click', closeRecipeSelectionModal);
+    document.getElementById('confirmRecipeSelectionBtn').addEventListener('click', confirmRecipeSelection);
+    document.getElementById('recipeSelectionModal').addEventListener('click', (e) => {
+        if (e.target.id === 'recipeSelectionModal') closeRecipeSelectionModal();
     });
 
     // Context Menu
@@ -685,6 +706,9 @@ function navigateTo(page) {
             break;
         case 'settings':
             renderSettingsPage();
+            break;
+        case 'shopping-list':
+            renderShoppingList();
             break;
     }
 }
@@ -966,7 +990,7 @@ function createRecipeCard(recipe) {
     const card = document.createElement('div');
     card.className = 'recipe-card';
     card.dataset.recipeId = recipe.id; // Add recipe ID for touch handlers
-    card.onclick = () => openRecipeModal(recipe);
+    card.onclick = () => openSidePanel(recipe);
 
     // Add right-click context menu (only for non-touch devices)
     if (!state.isTouchDevice) {
@@ -2304,7 +2328,7 @@ function showSearchPreview(query) {
             const recipe = state.recipes.find(r => r.id === recipeId);
             hideSearchPreview();
             if (recipe) {
-                openRecipeModal(recipe);
+                openSidePanel(recipe);
             }
         };
     });
@@ -2402,8 +2426,506 @@ function setEditorContent(editorId, content) {
     }
 }
 
+// ===== Side Panel Functions =====
+function openSidePanel(recipe) {
+    state.currentRecipe = recipe;
+
+    const sidePanel = document.getElementById('sidePanel');
+    const sidePanelOverlay = document.getElementById('sidePanelOverlay');
+    const sidePanelName = document.getElementById('sidePanelRecipeName');
+    const sidePanelContent = document.getElementById('sidePanelContent');
+
+    sidePanelName.textContent = recipe.name;
+
+    let contentHTML = '';
+
+    // Image
+    if (recipe.image && state.settings.showImages) {
+        contentHTML += `<img src="${recipe.image}" alt="${recipe.name}" class="side-panel-recipe-image">`;
+    }
+
+    // Rating
+    const rating = recipe.rating || 0;
+    contentHTML += '<div class="side-panel-rating">';
+    contentHTML += '<div class="rating-stars" data-recipe-id="' + recipe.id + '">';
+    for (let i = 1; i <= 5; i++) {
+        const filled = i <= rating;
+        contentHTML += `<span class="rating-star ${filled ? 'filled' : ''}" data-rating="${i}" onclick="setRecipeRating('${recipe.id}', ${i})">★</span>`;
+    }
+    contentHTML += '</div>';
+    if (rating > 0) {
+        contentHTML += `<div class="rating-text">${rating} out of 5 stars</div>`;
+    } else {
+        contentHTML += '<div class="rating-text">Not rated yet</div>';
+    }
+    contentHTML += '</div>';
+
+    // Meta information
+    if (recipe.prepTime || recipe.cookTime || recipe.servings) {
+        contentHTML += '<div class="side-panel-meta">';
+        if (recipe.prepTime) {
+            contentHTML += `
+                <div class="side-panel-meta-item">
+                    <div class="side-panel-meta-label">Prep Time</div>
+                    <div class="side-panel-meta-value">${recipe.prepTime}</div>
+                </div>
+            `;
+        }
+        if (recipe.cookTime) {
+            contentHTML += `
+                <div class="side-panel-meta-item">
+                    <div class="side-panel-meta-label">Cook Time</div>
+                    <div class="side-panel-meta-value">${recipe.cookTime}</div>
+                </div>
+            `;
+        }
+        if (recipe.servings) {
+            contentHTML += `
+                <div class="side-panel-meta-item">
+                    <div class="side-panel-meta-label">Servings</div>
+                    <div class="side-panel-meta-value">${recipe.servings}</div>
+                </div>
+            `;
+        }
+        contentHTML += '</div>';
+    }
+
+    // Tags
+    if (recipe.tags && recipe.tags.length > 0) {
+        contentHTML += '<div class="side-panel-tags">';
+        recipe.tags.forEach(tagName => {
+            const tag = state.tags.find(t => t.name === tagName);
+            const style = tag ? `style="background-color: ${tag.color}30; color: ${tag.color}; cursor: pointer;"` : 'style="cursor: pointer;"';
+            contentHTML += `<span class="recipe-card-tag clickable-tag" ${style} data-tag-name="${tagName}">${tagName}</span>`;
+        });
+        contentHTML += '</div>';
+    }
+
+    // Ingredients
+    if (recipe.ingredients && recipe.ingredients.length > 0) {
+        contentHTML += '<div class="side-panel-section">';
+        contentHTML += '<h3>🥘 Ingredients</h3>';
+        contentHTML += '<div class="side-panel-section-content">';
+        recipe.ingredients.forEach(ingredient => {
+            contentHTML += `<div class="side-panel-ingredient">${ingredient}</div>`;
+        });
+        contentHTML += '</div></div>';
+    }
+
+    // Instructions
+    if (recipe.instructions && recipe.instructions.length > 0) {
+        contentHTML += '<div class="side-panel-section">';
+        contentHTML += '<h3>📝 Instructions</h3>';
+        contentHTML += '<div class="side-panel-section-content">';
+        recipe.instructions.forEach((instruction, index) => {
+            contentHTML += `<div class="side-panel-instruction" data-step="${index + 1}">${instruction}</div>`;
+        });
+        contentHTML += '</div></div>';
+    }
+
+    // Notes
+    if (recipe.notes) {
+        contentHTML += '<div class="side-panel-section">';
+        contentHTML += '<h3>📌 Notes</h3>';
+        contentHTML += `<div class="side-panel-section-content">${recipe.notes}</div>`;
+        contentHTML += '</div>';
+    }
+
+    // Timestamps
+    contentHTML += '<div class="side-panel-timestamps">';
+    if (recipe.createdAt) {
+        const createdDate = new Date(recipe.createdAt);
+        contentHTML += `📅 Created: ${formatDate(createdDate)}`;
+    }
+    if (recipe.updatedAt) {
+        const updatedDate = new Date(recipe.updatedAt);
+        if (recipe.createdAt) contentHTML += ' | ';
+        contentHTML += `🔄 Updated: ${formatDate(updatedDate)}`;
+    }
+    contentHTML += '</div>';
+
+    sidePanelContent.innerHTML = contentHTML;
+
+    // Add click handlers to tags in side panel
+    sidePanelContent.querySelectorAll('.clickable-tag').forEach(tagEl => {
+        tagEl.addEventListener('click', () => {
+            const tagName = tagEl.dataset.tagName;
+
+            // Close side panel
+            closeSidePanel();
+
+            // Ensure search is active
+            if (!state.searchActive) {
+                activateSearch();
+            }
+
+            // Navigate to home page
+            navigateTo('home');
+
+            // Clear any existing filters
+            state.selectedTags.clear();
+
+            // Toggle the tag filter
+            toggleTagFilter(tagName);
+
+            showToast(`Filtering by ${tagName}`, 'success');
+        });
+    });
+
+    // Update favorites button
+    const favoriteBtn = document.getElementById('sidePanelFavoriteBtn');
+    if (favoriteBtn) {
+        favoriteBtn.innerHTML = recipe.isFavorite ? '⭐ Remove from Favorites' : '☆ Add to Favorites';
+        favoriteBtn.className = recipe.isFavorite ? 'btn btn-secondary' : 'btn btn-primary';
+        favoriteBtn.onclick = () => {
+            toggleFavorite(recipe.id);
+            // Update the button immediately
+            const updatedRecipe = state.recipes.find(r => r.id === recipe.id);
+            favoriteBtn.innerHTML = updatedRecipe.isFavorite ? '⭐ Remove from Favorites' : '☆ Add to Favorites';
+            favoriteBtn.className = updatedRecipe.isFavorite ? 'btn btn-secondary' : 'btn btn-primary';
+        };
+    }
+
+    // Setup shopping list button
+    const shoppingBtn = document.getElementById('sidePanelShoppingBtn');
+    if (shoppingBtn) {
+        shoppingBtn.onclick = () => {
+            addRecipesToShoppingList([recipe.id]);
+        };
+    }
+
+    // Setup print button
+    const printBtn = document.getElementById('sidePanelPrintBtn');
+    if (printBtn) {
+        printBtn.onclick = () => {
+            printRecipe();
+        };
+    }
+
+    // Setup edit button
+    const editBtn = document.getElementById('sidePanelEditBtn');
+    if (editBtn) {
+        editBtn.onclick = () => {
+            closeSidePanel();
+            openRecipeEditorModal(recipe.id);
+        };
+    }
+
+    // Setup delete button
+    const deleteBtn = document.getElementById('sidePanelDeleteBtn');
+    if (deleteBtn) {
+        deleteBtn.onclick = () => {
+            handleDeleteRecipeFromSidePanel();
+        };
+    }
+
+    // Show the side panel
+    sidePanelOverlay.classList.add('active');
+    sidePanel.classList.add('active');
+    document.body.classList.add('modal-open'); // Prevent body scroll
+}
+
+function closeSidePanel() {
+    const sidePanel = document.getElementById('sidePanel');
+    const sidePanelOverlay = document.getElementById('sidePanelOverlay');
+
+    sidePanelOverlay.classList.remove('active');
+    sidePanel.classList.remove('active');
+    document.body.classList.remove('modal-open');
+    state.currentRecipe = null;
+}
+
+function handleDeleteRecipeFromSidePanel() {
+    if (!state.currentRecipe) return;
+
+    const recipeName = state.currentRecipe.name || 'this recipe';
+    const confirmMessage = `Are you sure you want to delete "${recipeName}"?\n\nThis action cannot be undone.`;
+
+    if (confirm(confirmMessage)) {
+        const index = state.recipes.findIndex(r => r.id === state.currentRecipe.id);
+        if (index !== -1) {
+            state.recipes.splice(index, 1);
+            saveRecipesToStorage();
+            closeSidePanel();
+            renderRecipes();
+            showToast(`"${recipeName}" deleted successfully`, 'success');
+        } else {
+            showToast('Error: Recipe not found', 'error');
+        }
+    }
+}
+
+function printRecipe() {
+    if (!state.currentRecipe) return;
+
+    // Trigger the browser's print dialog
+    window.print();
+}
+
+function setRecipeRating(recipeId, rating) {
+    const recipe = state.recipes.find(r => r.id === recipeId);
+    if (!recipe) return;
+
+    recipe.rating = rating;
+    updateRecipeTimestamp(recipe);
+    saveRecipesToStorage();
+
+    // Update the stars in the side panel
+    const starsContainer = document.querySelector(`.rating-stars[data-recipe-id="${recipeId}"]`);
+    if (starsContainer) {
+        const stars = starsContainer.querySelectorAll('.rating-star');
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.classList.add('filled');
+            } else {
+                star.classList.remove('filled');
+            }
+        });
+
+        // Update the rating text
+        const ratingText = starsContainer.nextElementSibling;
+        if (ratingText) {
+            ratingText.textContent = `${rating} out of 5 stars`;
+        }
+    }
+
+    showToast(`Rated ${rating} stars`, 'success');
+}
+
+// ===== Shopping List Functions =====
+function saveShoppingListToStorage() {
+    if (!isLocalStorageAvailable()) return;
+    try {
+        localStorage.setItem('shoppingList', JSON.stringify(state.shoppingList));
+    } catch (e) {
+        console.error('Failed to save shopping list:', e);
+    }
+}
+
+function loadShoppingListFromStorage() {
+    if (!isLocalStorageAvailable()) return;
+    try {
+        const saved = localStorage.getItem('shoppingList');
+        if (saved) {
+            state.shoppingList = JSON.parse(saved);
+        }
+    } catch (e) {
+        console.error('Failed to load shopping list:', e);
+        state.shoppingList = [];
+    }
+}
+
+function addRecipesToShoppingList(recipeIds) {
+    recipeIds.forEach(recipeId => {
+        const recipe = state.recipes.find(r => r.id === recipeId);
+        if (!recipe || !recipe.ingredients) return;
+
+        recipe.ingredients.forEach(ingredient => {
+            // Parse ingredient to remove HTML tags
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = ingredient;
+            const cleanIngredient = tempDiv.textContent || tempDiv.innerText || '';
+
+            if (!cleanIngredient.trim()) return;
+
+            // Check if ingredient already exists
+            const existingItem = state.shoppingList.find(
+                item => item.text.toLowerCase() === cleanIngredient.toLowerCase()
+            );
+
+            if (!existingItem) {
+                state.shoppingList.push({
+                    id: generateId(),
+                    text: cleanIngredient,
+                    checked: false,
+                    source: recipe.name
+                });
+            }
+        });
+    });
+
+    saveShoppingListToStorage();
+    renderShoppingList();
+    showToast('Ingredients added to shopping list', 'success');
+}
+
+function addCustomItemToShoppingList() {
+    const itemText = prompt('Enter item name:');
+    if (!itemText || !itemText.trim()) return;
+
+    state.shoppingList.push({
+        id: generateId(),
+        text: itemText.trim(),
+        checked: false,
+        source: 'Custom'
+    });
+
+    saveShoppingListToStorage();
+    renderShoppingList();
+    showToast('Item added to shopping list', 'success');
+}
+
+function toggleShoppingListItem(itemId) {
+    const item = state.shoppingList.find(i => i.id === itemId);
+    if (item) {
+        item.checked = !item.checked;
+        saveShoppingListToStorage();
+        renderShoppingList();
+    }
+}
+
+function deleteShoppingListItem(itemId) {
+    const index = state.shoppingList.findIndex(i => i.id === itemId);
+    if (index !== -1) {
+        state.shoppingList.splice(index, 1);
+        saveShoppingListToStorage();
+        renderShoppingList();
+        showToast('Item removed', 'success');
+    }
+}
+
+function clearShoppingList() {
+    if (state.shoppingList.length === 0) {
+        showToast('Shopping list is already empty', 'info');
+        return;
+    }
+
+    if (confirm('Are you sure you want to clear the entire shopping list?')) {
+        state.shoppingList = [];
+        saveShoppingListToStorage();
+        renderShoppingList();
+        showToast('Shopping list cleared', 'success');
+    }
+}
+
+function renderShoppingList() {
+    const content = document.getElementById('shoppingListContent');
+    const empty = document.getElementById('shoppingListEmpty');
+
+    if (state.shoppingList.length === 0) {
+        content.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+    }
+
+    content.style.display = 'block';
+    empty.style.display = 'none';
+
+    // Group items by source
+    const grouped = {};
+    state.shoppingList.forEach(item => {
+        const source = item.source || 'Other';
+        if (!grouped[source]) {
+            grouped[source] = [];
+        }
+        grouped[source].push(item);
+    });
+
+    let html = '';
+    Object.keys(grouped).sort().forEach(source => {
+        const items = grouped[source];
+        const uncheckedCount = items.filter(i => !i.checked).length;
+
+        html += `
+            <div class="shopping-list-category">
+                <div class="shopping-list-category-header">
+                    <div class="shopping-list-category-title">${source}</div>
+                    <div class="shopping-list-category-count">${uncheckedCount}/${items.length} remaining</div>
+                </div>
+        `;
+
+        items.forEach(item => {
+            html += `
+                <div class="shopping-list-item ${item.checked ? 'checked' : ''}">
+                    <input type="checkbox"
+                           class="shopping-list-checkbox"
+                           ${item.checked ? 'checked' : ''}
+                           onchange="toggleShoppingListItem('${item.id}')">
+                    <div class="shopping-list-item-text">${item.text}</div>
+                    <button class="shopping-list-item-delete"
+                            onclick="deleteShoppingListItem('${item.id}')"
+                            title="Remove item">✕</button>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+    });
+
+    content.innerHTML = html;
+}
+
+function openRecipeSelectionModal() {
+    if (state.recipes.length === 0) {
+        showToast('No recipes available. Add some recipes first!', 'error');
+        return;
+    }
+
+    const modal = document.getElementById('recipeSelectionModal');
+    const list = document.getElementById('recipeSelectionList');
+
+    let html = '';
+    state.recipes.forEach(recipe => {
+        const ingredientCount = recipe.ingredients ? recipe.ingredients.length : 0;
+        html += `
+            <div class="recipe-selection-item" onclick="toggleRecipeSelection('${recipe.id}', this)">
+                <input type="checkbox"
+                       class="recipe-selection-checkbox"
+                       data-recipe-id="${recipe.id}"
+                       onclick="event.stopPropagation(); toggleRecipeSelection('${recipe.id}', this.parentElement)">
+                <div class="recipe-selection-info">
+                    <div class="recipe-selection-name">${recipe.name}</div>
+                    <div class="recipe-selection-meta">${ingredientCount} ingredients</div>
+                </div>
+            </div>
+        `;
+    });
+
+    list.innerHTML = html;
+    modal.classList.add('visible');
+    document.body.classList.add('modal-open');
+}
+
+function closeRecipeSelectionModal() {
+    const modal = document.getElementById('recipeSelectionModal');
+    modal.classList.remove('visible');
+    document.body.classList.remove('modal-open');
+}
+
+function toggleRecipeSelection(recipeId, element) {
+    const checkbox = element.querySelector('.recipe-selection-checkbox');
+    checkbox.checked = !checkbox.checked;
+}
+
+function confirmRecipeSelection() {
+    const checkboxes = document.querySelectorAll('.recipe-selection-checkbox:checked');
+    const selectedRecipeIds = Array.from(checkboxes).map(cb => cb.dataset.recipeId);
+
+    if (selectedRecipeIds.length === 0) {
+        showToast('Please select at least one recipe', 'error');
+        return;
+    }
+
+    closeRecipeSelectionModal();
+    addRecipesToShoppingList(selectedRecipeIds);
+
+    // Navigate to shopping list page
+    navigateTo('shopping-list');
+}
+
 // Make functions available globally
 window.navigateTo = navigateTo;
 window.exportAllRecipes = exportAllRecipes;
 window.openRecipeEditorModal = openRecipeEditorModal;
 window.closeRecipeEditorModal = closeRecipeEditorModal;
+window.openSidePanel = openSidePanel;
+window.closeSidePanel = closeSidePanel;
+window.toggleShoppingListItem = toggleShoppingListItem;
+window.deleteShoppingListItem = deleteShoppingListItem;
+window.clearShoppingList = clearShoppingList;
+window.addCustomItemToShoppingList = addCustomItemToShoppingList;
+window.openRecipeSelectionModal = openRecipeSelectionModal;
+window.closeRecipeSelectionModal = closeRecipeSelectionModal;
+window.toggleRecipeSelection = toggleRecipeSelection;
+window.confirmRecipeSelection = confirmRecipeSelection;
+window.setRecipeRating = setRecipeRating;
