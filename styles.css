@@ -3921,3 +3921,364 @@ body.is-ios .results-container {
         padding: 10px;
     }
 }
+
+/* ===== Top Action Buttons ===== */
+.top-action-buttons {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.action-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: var(--card-bg);
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--accent);
+    color: white;
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+.action-icon {
+    font-size: 20px;
+}
+
+/* ===== Try Demo Button ===== */
+.try-demo-btn {
+    margin-top: 20px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.try-demo-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+.try-demo-btn:active {
+    transform: translateY(0);
+}
+
+.demo-icon {
+    font-size: 18px;
+}
+
+/* ===== Help Modal Styles ===== */
+.help-section {
+    margin-bottom: 32px;
+}
+
+.help-section h3 {
+    color: var(--accent);
+    margin-bottom: 16px;
+    font-size: 20px;
+}
+
+.shortcuts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.shortcut-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.shortcut-item kbd {
+    padding: 4px 8px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 2px 0 var(--border);
+}
+
+.shortcut-item span {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.tips-list {
+    list-style: none;
+    padding: 0;
+}
+
+.tips-list li {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.6;
+}
+
+.tips-list li:last-child {
+    border-bottom: none;
+}
+
+.tips-list strong {
+    color: var(--accent);
+}
+
+.getting-started-list {
+    list-style: none;
+    counter-reset: steps;
+    padding: 0;
+}
+
+.getting-started-list li {
+    counter-increment: steps;
+    padding: 12px 0 12px 40px;
+    position: relative;
+    line-height: 1.6;
+}
+
+.getting-started-list li::before {
+    content: counter(steps);
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.help-code {
+    background: var(--bg);
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* ===== Tags Empty State ===== */
+.tags-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.tags-empty-state .empty-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.tags-empty-state h3 {
+    color: var(--text);
+    margin-bottom: 12px;
+    font-size: 24px;
+}
+
+.tags-empty-state p {
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    font-size: 16px;
+}
+
+.tags-suggestions-list {
+    background: var(--bg);
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 24px;
+}
+
+.tags-suggestions-list p {
+    margin-bottom: 12px;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.tag-chip {
+    padding: 8px 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* ===== Loading Overlay ===== */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+}
+
+.loading-overlay.visible {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-message {
+    position: absolute;
+    margin-top: 80px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* ===== Tooltip System ===== */
+.tooltip {
+    position: absolute;
+    background: var(--card-bg);
+    color: var(--text);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    max-width: 250px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tooltip.visible {
+    opacity: 1;
+}
+
+.tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-top-color: var(--card-bg);
+}
+
+/* ===== Mobile Responsive Updates ===== */
+@media (max-width: 768px) {
+    .top-action-buttons {
+        top: 10px;
+        right: 10px;
+        gap: 8px;
+    }
+
+    .action-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+
+    .try-demo-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    .shortcuts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .help-section h3 {
+        font-size: 18px;
+    }
+
+    .tags-empty-state {
+        padding: 40px 20px;
+    }
+
+    .tags-empty-state .empty-icon {
+        font-size: 48px;
+    }
+
+    .tags-empty-state h3 {
+        font-size: 20px;
+    }
+}
+
+/* ===== Enhanced Toast for Different Types ===== */
+.toast.info {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.toast.warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+/* ===== Pulse Animation for New Features ===== */
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+    }
+}
+
+.pulse-hint {
+    animation: pulse 2s infinite;
+}
