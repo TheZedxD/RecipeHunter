@@ -100,8 +100,7 @@ function saveTagsToStorage() {
 
 // ===== Event Listeners Setup =====
 function setupEventListeners() {
-    // Search
-    document.getElementById('searchInput').addEventListener('input', handleSearch);
+    // Search (handled by setupRealTimeSearch)
     document.getElementById('searchBtn').addEventListener('click', handleSearchClick);
     document.getElementById('searchInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleSearchClick();
@@ -1247,10 +1246,8 @@ function normalizeRecipe(data) {
     return {
         name: data.name || data.title || 'Untitled Recipe',
         ingredients: Array.isArray(data.ingredients) ? data.ingredients : [],
-        instructions: Array.isArray(data.instructions) ? data.instructions :
-                     Array.isArray(data.steps) ? data.steps : [],
-        tags: Array.isArray(data.tags) ? data.tags :
-              Array.isArray(data.categories) ? data.categories : [],
+        instructions: Array.isArray(data.instructions || data.steps) ? (data.instructions || data.steps) : [],
+        tags: Array.isArray(data.tags || data.categories) ? (data.tags || data.categories) : [],
         prepTime: data.prepTime || data.prep_time || '',
         cookTime: data.cookTime || data.cook_time || '',
         servings: data.servings || null,
@@ -1291,30 +1288,17 @@ function showToast(message, type = 'success') {
 }
 
 function formatDate(date) {
-    const now = new Date();
-    const diff = now - date;
+    const diff = Date.now() - date;
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
 
-    // If less than 1 minute ago
-    if (seconds < 60) {
-        return 'Just now';
-    }
-    // If less than 1 hour ago
-    if (minutes < 60) {
-        return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-    }
-    // If less than 24 hours ago
-    if (hours < 24) {
-        return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-    }
-    // If less than 7 days ago
-    if (days < 7) {
-        return `${days} day${days !== 1 ? 's' : ''} ago`;
-    }
-    // Otherwise show the full date
+    if (seconds < 60) return 'Just now';
+    if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
+
     return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -1404,15 +1388,13 @@ function setupRealTimeSearch() {
     const searchBox = searchInput.closest('.search-box');
 
     // Create preview container if it doesn't exist
-    let preview = searchBox.querySelector('.search-results-preview');
-    if (!preview) {
-        preview = document.createElement('div');
+    if (!searchBox.querySelector('.search-results-preview')) {
+        const preview = document.createElement('div');
         preview.className = 'search-results-preview';
         searchBox.appendChild(preview);
     }
 
     // Update search handler
-    searchInput.removeEventListener('input', handleSearch);
     searchInput.addEventListener('input', handleSearchWithPreview);
 
     // Close preview when clicking outside
@@ -1515,34 +1497,26 @@ function getEditorContent(editorId) {
     const editor = document.getElementById(editorId);
     const html = editor.innerHTML.trim();
 
-    // Convert HTML to array of lines, preserving formatting
-    if (html === '' || html === '<br>') {
+    if (!html || html === '<br>') {
         return [];
     }
 
-    // Split by <div> or <br> tags, keeping HTML formatting
-    const lines = html
+    // Split by <div> or <br> tags and clean up
+    return html
         .split(/<div>|<br>/gi)
         .map(line => line.replace(/<\/div>/gi, '').trim())
-        .filter(line => line.length > 0 && line !== '<br>');
-
-    return lines;
+        .filter(line => line && line !== '<br>');
 }
 
 function setEditorContent(editorId, content) {
     const editor = document.getElementById(editorId);
 
     if (Array.isArray(content)) {
-        // If content is an array, join with line breaks
-        editor.innerHTML = content.map(line => {
-            // If line already has HTML tags, use it as is
-            // Otherwise, wrap in a div
-            return line.includes('<') ? line : `<div>${line}</div>`;
-        }).join('');
-    } else if (typeof content === 'string') {
-        editor.innerHTML = content;
+        editor.innerHTML = content
+            .map(line => line.includes('<') ? line : `<div>${line}</div>`)
+            .join('');
     } else {
-        editor.innerHTML = '';
+        editor.innerHTML = content || '';
     }
 }
 
