@@ -552,6 +552,28 @@ function createRecipeCard(recipe) {
                 tagEl.style.backgroundColor = tag.color + '30';
                 tagEl.style.color = tag.color;
             }
+
+            // Make tags clickable to filter
+            tagEl.style.cursor = 'pointer';
+            tagEl.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent opening recipe modal
+
+                // Ensure search is active
+                if (!state.searchActive) {
+                    activateSearch();
+                }
+
+                // Navigate to home page if not already there
+                if (state.currentPage !== 'home') {
+                    navigateTo('home');
+                }
+
+                // Toggle the tag filter
+                toggleTagFilter(tagName);
+
+                showToast(`Filtering by ${tagName}`, 'success');
+            });
+
             tagsContainer.appendChild(tagEl);
         });
 
@@ -787,8 +809,8 @@ function openRecipeModal(recipe) {
         bodyHTML += '<div class="recipe-card-tags">';
         recipe.tags.forEach(tagName => {
             const tag = state.tags.find(t => t.name === tagName);
-            const style = tag ? `style="background-color: ${tag.color}30; color: ${tag.color};"` : '';
-            bodyHTML += `<span class="recipe-card-tag" ${style}>${tagName}</span>`;
+            const style = tag ? `style="background-color: ${tag.color}30; color: ${tag.color}; cursor: pointer;"` : 'style="cursor: pointer;"';
+            bodyHTML += `<span class="recipe-card-tag clickable-tag" ${style} data-tag-name="${tagName}">${tagName}</span>`;
         });
         bodyHTML += '</div></div>';
     }
@@ -824,6 +846,33 @@ function openRecipeModal(recipe) {
     }
 
     modalBody.innerHTML = bodyHTML;
+
+    // Add click handlers to tags in modal
+    modalBody.querySelectorAll('.clickable-tag').forEach(tagEl => {
+        tagEl.addEventListener('click', () => {
+            const tagName = tagEl.dataset.tagName;
+
+            // Close modal
+            closeModal();
+
+            // Ensure search is active
+            if (!state.searchActive) {
+                activateSearch();
+            }
+
+            // Navigate to home page
+            navigateTo('home');
+
+            // Clear any existing filters
+            state.selectedTags.clear();
+
+            // Toggle the tag filter
+            toggleTagFilter(tagName);
+
+            showToast(`Filtering by ${tagName}`, 'success');
+        });
+    });
+
     modal.classList.add('visible');
 }
 
@@ -1447,7 +1496,7 @@ function showSearchPreview(query) {
             ? `<div class="search-result-tags">${recipe.tags.map(tagName => {
                 const tag = state.tags.find(t => t.name === tagName);
                 const color = tag ? tag.color : '#8B5CF6';
-                return `<span class="search-result-tag" style="background: ${color}">${tagName}</span>`;
+                return `<span class="search-result-tag clickable-preview-tag" style="background: ${color}" data-tag-name="${tagName}">${tagName}</span>`;
             }).join('')}</div>`
             : '';
 
@@ -1463,15 +1512,49 @@ function showSearchPreview(query) {
         `;
     }).join('');
 
-    // Add click handlers
+    // Add click handlers for items
     preview.querySelectorAll('.search-result-item').forEach(item => {
-        item.onclick = () => {
+        item.onclick = (e) => {
+            // Check if we clicked on a tag
+            if (e.target.classList.contains('clickable-preview-tag')) {
+                return; // Let tag handler take care of it
+            }
+
             const recipeId = item.dataset.recipeId;
             const recipe = state.recipes.find(r => r.id === recipeId);
             hideSearchPreview();
             if (recipe) {
                 openRecipeModal(recipe);
             }
+        };
+    });
+
+    // Add click handlers for tags in preview
+    preview.querySelectorAll('.clickable-preview-tag').forEach(tagEl => {
+        tagEl.onclick = (e) => {
+            e.stopPropagation(); // Prevent opening recipe modal
+            const tagName = tagEl.dataset.tagName;
+
+            hideSearchPreview();
+
+            // Ensure search is active
+            if (!state.searchActive) {
+                activateSearch();
+            }
+
+            // Navigate to home page if not already there
+            if (state.currentPage !== 'home') {
+                navigateTo('home');
+            }
+
+            // Clear search input
+            document.getElementById('searchInput').value = '';
+            state.currentFilter = '';
+
+            // Toggle the tag filter
+            toggleTagFilter(tagName);
+
+            showToast(`Filtering by ${tagName}`, 'success');
         };
     });
 

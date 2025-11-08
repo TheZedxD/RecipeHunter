@@ -33,8 +33,8 @@
                         <span>Tags</span>
                     </button>
                     <button class="nav-btn" data-page="import">
-                        <span class="nav-icon">📥</span>
-                        <span>Import</span>
+                        <span class="nav-icon">💾</span>
+                        <span>Data</span>
                     </button>
                     <button class="nav-btn" data-page="add-recipe">
                         <span class="nav-icon">➕</span>
@@ -99,10 +99,19 @@
             <!-- Import Page -->
             <div class="page" id="importPage">
                 <div class="page-header">
-                    <h2>Import Recipes</h2>
-                    <p>Upload recipe files or folders in JSON format</p>
+                    <h2>Import & Export Recipes</h2>
+                    <p>Upload recipe files or folders in JSON format, or export your collection</p>
                 </div>
                 <div class="import-section">
+                    <div class="export-section">
+                        <h3>📤 Export Your Recipes</h3>
+                        <p>Download all your recipes as a JSON backup file</p>
+                        <button class="btn btn-primary" onclick="exportAllRecipes()">Export All Recipes</button>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <h3>📥 Import Recipes</h3>
                     <div class="upload-area" id="uploadArea">
                         <div class="upload-icon">📁</div>
                         <h3>Drop files or folders here</h3>
