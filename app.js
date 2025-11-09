@@ -530,23 +530,7 @@ function saveSettingsToStorage() {
 
 // ===== Event Listeners Setup =====
 function setupEventListeners() {
-    // Search (handled by setupRealTimeSearch)
-    const searchBtn = document.getElementById('searchBtn');
-    const searchInput = document.getElementById('searchInput');
-
-    if (searchBtn) {
-        searchBtn.addEventListener('click', handleSearchClick);
-    } else {
-        console.warn('setupEventListeners: searchBtn element not found');
-    }
-
-    if (searchInput) {
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleSearchClick();
-        });
-    } else {
-        console.warn('setupEventListeners: searchInput element not found');
-    }
+    // Search is handled by setupRealTimeSearch
 
     // Navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -1166,11 +1150,6 @@ function handleSearch(e) {
         renderRecipes();
     }
 }
-
-function handleSearchClick() {
-    navigateTo('home');
-}
-
 
 function renderQuickTags() {
     const container = document.getElementById('quickTags');
