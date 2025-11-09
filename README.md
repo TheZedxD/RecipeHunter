@@ -17,30 +17,77 @@ A modern, feature-rich recipe management web application with a beautiful UI ins
 - Tag-based filtering with visual indicators
 - Search interface that elegantly transitions from center to top-left
 - Quick tag buttons for instant filtering
+- Favorites view for quick access to favorite recipes
 
 ### 📝 Recipe Management
-- Add, edit, and delete recipes
+- Add, edit, and delete recipes with rich text editor
 - Store prep time, cook time, and servings
 - Organize ingredients and step-by-step instructions
-- Add custom notes and tips
+- Add custom notes and tips with HTML formatting support
 - Tag recipes with custom categories
+- Upload recipe images (base64 support)
+- Favorite recipes for quick access
 
 ### 🏷️ Tag System
 - Create custom tags with personalized colors
 - View recipe count per tag
 - Edit and delete tags
 - Tags automatically suggested when adding recipes
+- Auto-color generation for new tags
 
-### 📥 Import/Export
+### 📥 Import/Export - **NEW & Enhanced!**
+- **Export as Documents (ZIP)** - Download all recipes as beautifully formatted text files
+  - Perfect for printing or sharing
+  - Clean formatting with no HTML tags
+  - Numbered files (001-recipe-name.txt)
+  - Includes metadata and timestamps
+  - README file included in archive
+- **Archive as JSON** - Machine-readable backup format
+  - Full data preservation
+  - Re-importable format
+  - Perfect for backup and transfer
 - Import recipes from JSON files
 - Batch import multiple recipes at once
 - Drag-and-drop or folder upload support
-- Export all recipes for backup
+- Smart duplicate detection (won't re-import existing recipes)
+
+### ✨ Sample Recipes - **NEW!**
+- **4 recipes loaded automatically on first visit**
+  - Chocolate Chip Cookies
+  - Avocado Toast
+  - Banana Bread
+  - Greek Salad
+- **"Try Sample Recipes" button loads 3 additional recipes**
+  - Spaghetti Carbonara
+  - Chicken Stir Fry
+  - Beef Tacos
+- No duplicates created - smart detection prevents re-importing
+- All tags automatically extracted and colored
+
+### 🛒 Shopping List
+- Add ingredients from recipes to shopping list
+- Create custom shopping list items
+- Check off items as you shop
+- Clear completed items or entire list
 
 ### 💾 Local Storage
 - All data stored in browser's local storage
 - No server required - works completely offline
 - Instant loading and saving
+- Warning shown if localStorage unavailable (private mode)
+
+### ⌨️ Keyboard Shortcuts
+- `Ctrl/Cmd + F` - Focus search
+- `Ctrl/Cmd + N` - Add new recipe
+- `Escape` - Close modals/panels
+- `?` - Show help modal
+
+### ❓ Help & Tips - **Enhanced!**
+- **Non-blocking help modal** - See content behind while reading help
+- Keyboard shortcuts reference
+- Quick tips for getting started
+- Recipe format documentation
+- Semi-transparent overlay with backdrop blur
 
 ## Getting Started
 
@@ -85,10 +132,16 @@ Recipes should be in JSON format:
 3. **Folder Upload**: Select multiple files or entire folders
 
 ### Sample Recipes
-The `sample-recipes` folder contains example recipes to get you started:
+The `sample-recipes` folder contains 7 example recipes to get you started:
 - Classic Chocolate Chip Cookies
 - Spaghetti Carbonara
 - Perfect Avocado Toast
+- Moist Banana Bread
+- Greek Salad
+- Chicken Stir Fry
+- Beef Tacos
+
+**Note:** 4 recipes load automatically on your first visit. Click "Try Sample Recipes" to load all 7.
 
 ## Usage Tips
 
@@ -115,6 +168,20 @@ The `sample-recipes` folder contains example recipes to get you started:
 - Keep ingredients and instructions clear and concise
 
 ### Backup Your Recipes
+
+#### Method 1: Export as Documents (ZIP)
+1. Navigate to the "Data" page
+2. Click "Export as Documents (ZIP)"
+3. Download contains all recipes as formatted text files
+4. Perfect for printing or sharing
+
+#### Method 2: Archive as JSON
+1. Navigate to the "Data" page
+2. Click "Archive as JSON"
+3. Download contains all recipes as JSON
+4. Use this format to re-import recipes later
+
+#### Method 3: Browser Console (Legacy)
 Open browser console and run:
 ```javascript
 exportAllRecipes()
@@ -139,14 +206,22 @@ This will download all your recipes as a JSON file.
 ### File Structure
 ```
 RecipeHunter/
-├── index.html          # Main application page
-├── styles.css          # All styles and theme definitions
-├── app.js             # Application logic
-├── README.md          # This file
-└── sample-recipes/    # Sample recipe files
+├── index.html                      # Main application page
+├── styles.css                      # All styles and theme definitions
+├── app.js                          # Application logic
+├── README.md                       # This file
+├── CHANGELOG.md                    # Version history and release notes
+├── TEST_REPORT.md                  # Comprehensive test report
+├── CHANGES_DOCUMENTATION.md        # Detailed change tracking
+├── *.backup                        # Backup files for rollback
+└── sample-recipes/                 # Sample recipe files (7 total)
     ├── chocolate-chip-cookies.json
     ├── spaghetti-carbonara.json
-    └── avocado-toast.json
+    ├── avocado-toast.json
+    ├── banana-bread.json
+    ├── greek-salad.json
+    ├── chicken-stir-fry.json
+    └── beef-tacos.json
 ```
 
 ### Data Storage
@@ -216,8 +291,42 @@ Edit the default tags in `app.js` in the `loadDataFromStorage()` function.
 ## License
 This project is open source and available for personal and commercial use.
 
+## Testing & Quality Assurance
+
+### Comprehensive Testing Performed
+Recipe Hunter has undergone extensive testing to ensure quality and reliability:
+
+- ✅ **38 test cases** covering all major features
+- ✅ **Sample recipes** - Verified loading, duplicate detection, tag extraction
+- ✅ **Export features** - Both ZIP and JSON exports tested
+- ✅ **Help modal** - All interaction methods verified
+- ✅ **UI/UX** - Button states, loading indicators, error handling
+- ✅ **Performance** - Load times, animations, memory usage analyzed
+- ✅ **Accessibility** - Keyboard navigation, screen readers, ARIA labels
+
+**Test Results:** All tests passed (38/38) ✅
+
+For detailed test results, see [TEST_REPORT.md](TEST_REPORT.md)
+
+### Documentation
+- **TEST_REPORT.md** - Comprehensive test report with results
+- **CHANGES_DOCUMENTATION.md** - Detailed change tracking
+- **CHANGELOG.md** - Version history and release notes
+
+### Rollback & Safety
+Backup files are provided for safe rollback:
+- `app.js.backup` - Original JavaScript file
+- `styles.css.backup` - Original CSS file
+- `index.html.backup` - Original HTML file
+
+To rollback: `cp *.backup <original-filename>`
+
 ## Support
-For issues or questions, please check the browser console for error messages and ensure you're using a modern browser with localStorage enabled.
+For issues or questions:
+1. Check [TEST_REPORT.md](TEST_REPORT.md) for known issues
+2. Review [CHANGELOG.md](CHANGELOG.md) for recent changes
+3. Check browser console for error messages
+4. Ensure you're using a modern browser with localStorage enabled
 
 ---
 
