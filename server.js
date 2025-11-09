@@ -72,10 +72,28 @@ const server = http.createServer((req, res) => {
     });
 });
 
-server.listen(PORT, () => {
+// Get local network IP address
+function getNetworkIP() {
+    const os = require('os');
+    const interfaces = os.networkInterfaces();
+
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            // Skip internal (localhost) and non-IPv4 addresses
+            if (iface.family === 'IPv4' && !iface.internal) {
+                return iface.address;
+            }
+        }
+    }
+    return '127.0.0.1';
+}
+
+server.listen(PORT, '0.0.0.0', () => {
+    const networkIP = getNetworkIP();
     console.log('\n🍳 Recipe Hunter Server Started!\n');
     console.log(`   Local:   http://localhost:${PORT}`);
-    console.log(`   Network: http://127.0.0.1:${PORT}\n`);
+    console.log(`   Network: http://${networkIP}:${PORT}\n`);
+    console.log('📱 Access from other devices on your network using the Network URL above\n');
     console.log('Press Ctrl+C to stop the server\n');
 });
 
