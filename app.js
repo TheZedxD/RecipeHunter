@@ -2989,8 +2989,8 @@ function formatDate(date) {
     });
 }
 
-// ===== Export Function (for backup) =====
-function exportAllRecipes() {
+// ===== Export Functions (for backup) =====
+function archiveRecipesAsJSON() {
     const dataStr = JSON.stringify(state.recipes, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
@@ -3000,6 +3000,188 @@ function exportAllRecipes() {
     link.click();
     URL.revokeObjectURL(url);
     showToast('Recipes exported successfully', 'success');
+}
+
+// Backward compatibility
+const exportAllRecipes = archiveRecipesAsJSON;
+
+// Export recipes as formatted text documents in a ZIP file
+async function exportRecipesAsDocuments() {
+    // Check if there are recipes to export
+    if (!state.recipes || state.recipes.length === 0) {
+        showToast('No recipes to export', 'error');
+        return;
+    }
+
+    try {
+        showLoadingState('Preparing recipe documents...');
+
+        // Dynamically load JSZip if not already loaded
+        if (typeof JSZip === 'undefined') {
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+        }
+
+        const zip = new JSZip();
+        const recipesFolder = zip.folder('recipes');
+
+        // Helper function to strip HTML tags
+        function stripHtml(html) {
+            if (!html) return '';
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            return div.textContent || div.innerText || '';
+        }
+
+        // Helper function to format recipe name for filename
+        function formatFilename(index, name) {
+            const paddedIndex = String(index).padStart(3, '0');
+            const safeName = name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            return `${paddedIndex}-${safeName}.txt`;
+        }
+
+        // Helper function to format date
+        function formatDate(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = new Date(timestamp);
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Generate text documents for each recipe
+        state.recipes.forEach((recipe, index) => {
+            const recipeNum = index + 1;
+            const recipeName = recipe.name || 'Untitled Recipe';
+            const recipeNameUpper = recipeName.toUpperCase();
+
+            // Format ingredients
+            let ingredientsText = '';
+            if (recipe.ingredients && recipe.ingredients.length > 0) {
+                ingredientsText = recipe.ingredients
+                    .map((ing, idx) => `  ${idx + 1}. ${stripHtml(ing)}`)
+                    .join('\n');
+            } else {
+                ingredientsText = '  None listed';
+            }
+
+            // Format instructions
+            let instructionsText = '';
+            if (recipe.instructions && recipe.instructions.length > 0) {
+                instructionsText = recipe.instructions
+                    .map((inst, idx) => {
+                        const cleanInst = stripHtml(inst);
+                        return `  Step ${idx + 1}: ${cleanInst}`;
+                    })
+                    .join('\n\n');
+            } else {
+                instructionsText = '  None listed';
+            }
+
+            // Format tags
+            const tagsText = recipe.tags && recipe.tags.length > 0
+                ? recipe.tags.join(', ')
+                : 'None';
+
+            // Format notes
+            const notesText = recipe.notes
+                ? stripHtml(recipe.notes)
+                : 'No notes';
+
+            // Create the formatted text content
+            const content = `═══════════════════════════════════════
+   ${recipeNameUpper}
+═══════════════════════════════════════
+
+DETAILS:
+───────────────────────────────────────
+⏱️  Prep Time: ${recipe.prepTime || 'N/A'} min
+🔥 Cook Time: ${recipe.cookTime || 'N/A'} min
+🍽️  Servings: ${recipe.servings || 'N/A'}
+
+TAGS: ${tagsText}
+
+INGREDIENTS:
+───────────────────────────────────────
+${ingredientsText}
+
+INSTRUCTIONS:
+───────────────────────────────────────
+${instructionsText}
+
+NOTES:
+───────────────────────────────────────
+${notesText}
+
+───────────────────────────────────────
+Created: ${formatDate(recipe.createdAt)}
+Updated: ${formatDate(recipe.updatedAt)}
+`;
+
+            // Add file to the recipes folder
+            const filename = formatFilename(recipeNum, recipeName);
+            recipesFolder.file(filename, content);
+        });
+
+        // Create README file
+        const readmeContent = `═══════════════════════════════════════
+   RECIPE COLLECTION
+═══════════════════════════════════════
+
+Total Recipes: ${state.recipes.length}
+Export Date: ${formatDate(Date.now())}
+
+This archive contains your recipe collection
+exported from Recipe Hunter.
+
+Each recipe is saved as a separate text file
+in the 'recipes' folder, numbered and named
+for easy reference.
+
+To import these recipes back into Recipe Hunter,
+use the JSON backup feature instead.
+
+═══════════════════════════════════════
+`;
+
+        zip.file('_READ_ME.txt', readmeContent);
+
+        // Generate ZIP file
+        const content = await zip.generateAsync({ type: 'blob' });
+
+        // Download the ZIP file
+        const url = URL.createObjectURL(content);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `recipe-collection-${Date.now()}.zip`;
+        link.click();
+        URL.revokeObjectURL(url);
+
+        hideLoadingState();
+        showToast('Recipe documents exported successfully!', 'success');
+
+    } catch (error) {
+        console.error('Error exporting recipes as documents:', error);
+        hideLoadingState();
+        showToast('Failed to export recipe documents', 'error');
+    }
+}
+
+// Helper function to dynamically load external scripts
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
 }
 
 // ===== Recipe Editor Modal Management =====
@@ -4106,6 +4288,8 @@ async function importSampleRecipes() {
 // Make functions available globally
 window.navigateTo = navigateTo;
 window.exportAllRecipes = exportAllRecipes;
+window.exportRecipesAsDocuments = exportRecipesAsDocuments;
+window.archiveRecipesAsJSON = archiveRecipesAsJSON;
 window.openRecipeEditorModal = openRecipeEditorModal;
 window.closeRecipeEditorModal = closeRecipeEditorModal;
 window.openSidePanel = openSidePanel;
