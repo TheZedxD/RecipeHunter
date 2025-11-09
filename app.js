@@ -623,6 +623,24 @@ function setupEventListeners() {
         });
     });
 
+    // Logo click to navigate home
+    const logoBtn = document.getElementById('logoBtn');
+    if (logoBtn) {
+        logoBtn.addEventListener('click', () => {
+            navigateTo('home');
+            closeMobileMenu(); // Close menu if open on mobile
+        });
+
+        // Keyboard support
+        logoBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigateTo('home');
+                closeMobileMenu();
+            }
+        });
+    }
+
     // Hamburger Menu Toggle
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     const mobileMenuClose = document.getElementById('mobileMenuClose');
