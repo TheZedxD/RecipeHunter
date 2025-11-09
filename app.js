@@ -3434,7 +3434,13 @@ function openSidePanel(recipe, sourceCard = null) {
             sidePanel.classList.add('active');
         });
     } else {
-        // Mobile: Simple fade in from center
+        // Mobile: Simple fade + slide from bottom (no position tracking)
+        sidePanel.style.bottom = '0';
+        sidePanel.style.left = '0';
+        sidePanel.style.right = '0';
+        sidePanel.style.height = '95vh';
+        sidePanel.style.transform = 'none';
+
         sidePanelOverlay.classList.add('active');
         sidePanel.classList.add('expanding');
 
