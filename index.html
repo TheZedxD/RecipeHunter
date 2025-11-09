@@ -249,8 +249,25 @@
                 <div class="import-section">
                     <div class="export-section">
                         <h3>📤 Export Your Recipes</h3>
-                        <p>Download all your recipes as a JSON backup file</p>
-                        <button class="btn btn-primary" onclick="exportAllRecipes()">Export All Recipes</button>
+                        <p class="export-description">Choose how you want to export your recipe collection</p>
+
+                        <div class="export-buttons-container">
+                            <button class="btn btn-export btn-export-primary" onclick="exportRecipesAsDocuments()">
+                                <span class="btn-icon">📄</span>
+                                <div class="btn-text-container">
+                                    <span class="btn-title">Export as Documents (ZIP)</span>
+                                    <span class="btn-subtitle">Readable text files - perfect for printing or sharing</span>
+                                </div>
+                            </button>
+
+                            <button class="btn btn-archive btn-export-secondary" onclick="archiveRecipesAsJSON()">
+                                <span class="btn-icon">💾</span>
+                                <div class="btn-text-container">
+                                    <span class="btn-title">Archive as JSON</span>
+                                    <span class="btn-subtitle">Machine-readable format - use for backup or transfer</span>
+                                </div>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="section-divider"></div>

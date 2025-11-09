@@ -1660,6 +1660,144 @@ body.compact-view .recipe-card-preview {
     color: var(--text-secondary);
 }
 
+.export-description {
+    font-size: 14px;
+    margin-bottom: 24px !important;
+}
+
+/* Export buttons container */
+.export-buttons-container {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Base export button styles */
+.btn-export,
+.btn-archive {
+    min-height: 44px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 280px;
+    text-align: left;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.btn-export .btn-icon,
+.btn-archive .btn-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.btn-text-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.btn-title {
+    font-weight: 600;
+    font-size: 16px;
+    display: block;
+}
+
+.btn-subtitle {
+    font-size: 12px;
+    opacity: 0.85;
+    font-weight: 400;
+    display: block;
+    line-height: 1.3;
+}
+
+/* Primary export button (Documents) */
+.btn-export-primary {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    color: white;
+    border-color: var(--accent-primary);
+}
+
+.btn-export-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
+    border-color: var(--accent-secondary);
+}
+
+.btn-export-primary:active {
+    transform: translateY(0);
+}
+
+/* Secondary export button (JSON Archive) */
+.btn-export-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.btn-export-secondary:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-export-secondary:active {
+    transform: translateY(0);
+}
+
+/* Loading state for export buttons */
+.btn-export.loading,
+.btn-archive.loading {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.btn-export.loading::after,
+.btn-archive.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 0.6s linear infinite;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+@keyframes spin {
+    to { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .export-buttons-container {
+        flex-direction: column;
+    }
+
+    .btn-export,
+    .btn-archive {
+        min-width: 100%;
+        width: 100%;
+    }
+
+    .btn-title {
+        font-size: 15px;
+    }
+
+    .btn-subtitle {
+        font-size: 11px;
+    }
+}
+
 .section-divider {
     height: 2px;
     background: linear-gradient(to right, transparent, var(--border-color), transparent);
@@ -2041,6 +2179,32 @@ body.compact-view .recipe-card-preview {
 
 .modal.closing .modal-content-preferences {
     animation: modalExit 0.25s ease-out;
+}
+
+/* Help modal - non-blocking overlay */
+.help-modal {
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 3000;
+    pointer-events: auto;
+}
+
+.help-modal .modal-content {
+    max-width: 900px;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    pointer-events: auto;
+}
+
+/* Ensure help modal content is scrollable on mobile */
+@media (max-width: 768px) {
+    .help-modal .modal-content {
+        width: calc(100% - 24px);
+        max-height: calc(100vh - 48px);
+        margin: 12px;
+    }
 }
 
 @keyframes backdropFadeIn {

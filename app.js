@@ -71,6 +71,23 @@ function closeModalWithAnimation(modal, callback) {
     }, 250);
 }
 
+// ===== Help Modal Functions =====
+function openHelpModal() {
+    const helpModal = document.getElementById('helpModal');
+    if (helpModal) {
+        // Simply add visible class without locking body scroll
+        // This allows the modal to overlay without blocking interaction
+        helpModal.classList.add('visible');
+    }
+}
+
+function closeHelpModal() {
+    const helpModal = document.getElementById('helpModal');
+    if (helpModal) {
+        closeModalWithAnimation(helpModal);
+    }
+}
+
 // ===== Keyboard Visibility Detection =====
 function handleKeyboardVisibility() {
     let viewportHeight = window.innerHeight;
@@ -652,18 +669,7 @@ function setupEventListeners() {
             // Only trigger if not in an input field
             if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
                 e.preventDefault();
-                const helpModal = document.getElementById('helpModal');
-                if (helpModal) {
-                    // Save current scroll position
-                    state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-
-                    // Set body position fixed with top offset
-                    document.body.style.position = 'fixed';
-                    document.body.style.top = `-${state.scrollPosition}px`;
-
-                    helpModal.classList.add('visible');
-                    document.body.classList.add('modal-open');
-                }
+                openHelpModal();
             }
         }
 
@@ -739,25 +745,20 @@ function setupEventListeners() {
     const helpModalClose = document.getElementById('helpModalClose');
 
     if (helpBtn && helpModal && helpModalClose) {
+        // Desktop help button - opens overlay without blocking
         helpBtn.addEventListener('click', () => {
-            // Save current scroll position
-            state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-
-            // Set body position fixed with top offset
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${state.scrollPosition}px`;
-
-            helpModal.classList.add('visible');
-            document.body.classList.add('modal-open');
+            openHelpModal();
         });
 
+        // Close button
         helpModalClose.addEventListener('click', () => {
-            closeModalWithAnimation(helpModal);
+            closeHelpModal();
         });
 
+        // Click outside modal to close
         helpModal.addEventListener('click', (e) => {
             if (e.target === helpModal) {
-                closeModalWithAnimation(helpModal);
+                closeHelpModal();
             }
         });
     } else {
@@ -767,18 +768,10 @@ function setupEventListeners() {
     }
 
     if (helpBtnMobile && helpModal) {
+        // Mobile help button - closes menu first, then opens overlay
         helpBtnMobile.addEventListener('click', () => {
             closeMobileMenu();
-
-            // Save current scroll position
-            state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-
-            // Set body position fixed with top offset
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${state.scrollPosition}px`;
-
-            helpModal.classList.add('visible');
-            document.body.classList.add('modal-open');
+            openHelpModal();
         });
     }
 
