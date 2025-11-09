@@ -53,15 +53,18 @@ function closeModalWithAnimation(modal, callback) {
     // Add closing class to trigger exit animation
     modal.classList.add('closing');
 
-    // Wait for animation to complete (250ms + small buffer)
+    // Wait for animation to complete
     setTimeout(() => {
         modal.classList.remove('visible', 'closing');
 
-        // Remove position: fixed and restore scroll position
+        // Restore scroll position properly
         document.body.classList.remove('modal-open');
+        const scrollY = parseInt(document.body.style.top || '0') * -1;
         document.body.style.position = '';
         document.body.style.top = '';
-        window.scrollTo(0, state.scrollPosition);
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
 
         // Execute callback if provided
         if (callback) callback();
@@ -3029,12 +3032,14 @@ function openRecipeEditorModal(recipeId = null) {
     // Save current scroll position
     state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
 
-    // Set body position fixed with top offset
+    // Properly lock body scroll for all devices
     document.body.style.position = 'fixed';
     document.body.style.top = `-${state.scrollPosition}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
 
     modal.classList.add('visible');
-    document.body.classList.add('modal-open'); // Prevent body scroll on mobile
+    document.body.classList.add('modal-open');
     console.log('Modal opened, setting up rich text editors...');
     setupRichTextEditors();
     console.log('Modal setup complete');
