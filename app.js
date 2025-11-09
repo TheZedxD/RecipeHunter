@@ -1080,12 +1080,6 @@ function updateActiveThemeCard() {
 
 // ===== Navigation =====
 function navigateTo(page) {
-    // Handle add-recipe as modal instead of page navigation
-    if (page === 'add-recipe') {
-        openRecipeEditorModal();
-        return;
-    }
-
     state.currentPage = page;
 
     // Update nav buttons (desktop)

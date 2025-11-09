@@ -954,17 +954,19 @@ html {
 
 .page {
     display: none;
+    min-height: calc(100vh - 200px);
+    width: 100%;
 }
 
 .page.active {
     display: block;
-    animation: fadeIn 0.3s ease-in;
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(20px);
     }
     to {
         opacity: 1;
