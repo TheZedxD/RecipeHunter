@@ -11,6 +11,15 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body data-theme="claude">
+    <!-- Storage Warning Banner -->
+    <div class="storage-warning" id="storageWarning" style="display: none;">
+        <div class="storage-warning-content">
+            <span class="warning-icon">⚠️</span>
+            <span class="warning-text">Running in private mode - recipes won't be saved</span>
+            <button class="warning-close" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
+        </div>
+    </div>
+
     <!-- Main Container -->
     <div class="container" id="mainContainer">
         <!-- Header -->
@@ -316,7 +325,7 @@
                                 </div>
                             </div>
                             <div class="image-upload-controls">
-                                <input type="file" id="recipeImage" accept="image/*" style="display: none;">
+                                <input type="file" id="recipeImage" accept="image/*" capture="environment" style="display: none;">
                                 <button type="button" class="btn btn-secondary" id="uploadImageBtn">Choose Image</button>
                                 <button type="button" class="btn btn-secondary" id="removeImageBtn" style="display: none;">Remove Image</button>
                                 <p class="image-help-text">Supported formats: JPG, PNG, GIF (max 5MB)</p>
