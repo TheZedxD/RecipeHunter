@@ -648,7 +648,7 @@ html {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 40px 20px 20px;
+    padding: 20px;
 }
 
 .search-container {
@@ -2749,10 +2749,6 @@ body.compact-view .recipe-card-preview {
         padding: 30px 16px;
     }
 
-    .search-section.compact {
-        padding: 30px 16px 16px;
-    }
-
     .recipe-card {
         padding: 16px;
     }
@@ -2782,8 +2778,7 @@ body.compact-view .recipe-card-preview {
     }
 
     .search-section {
-        min-height: 60vh;
-        padding: 20px;
+        padding: 16px;
     }
 
     .modal-content {
