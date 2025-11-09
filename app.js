@@ -42,7 +42,8 @@ const state = {
     },
     touchTimer: null,
     touchStartX: 0,
-    touchStartY: 0
+    touchStartY: 0,
+    scrollPosition: 0
 };
 
 // ===== Modal Animation Helper =====
@@ -55,7 +56,12 @@ function closeModalWithAnimation(modal, callback) {
     // Wait for animation to complete (250ms + small buffer)
     setTimeout(() => {
         modal.classList.remove('visible', 'closing');
+
+        // Remove position: fixed and restore scroll position
         document.body.classList.remove('modal-open');
+        document.body.style.position = '';
+        document.body.style.top = '';
+        window.scrollTo(0, state.scrollPosition);
 
         // Execute callback if provided
         if (callback) callback();
@@ -621,6 +627,13 @@ function setupEventListeners() {
                 e.preventDefault();
                 const helpModal = document.getElementById('helpModal');
                 if (helpModal) {
+                    // Save current scroll position
+                    state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+                    // Set body position fixed with top offset
+                    document.body.style.position = 'fixed';
+                    document.body.style.top = `-${state.scrollPosition}px`;
+
                     helpModal.classList.add('visible');
                     document.body.classList.add('modal-open');
                 }
@@ -700,6 +713,13 @@ function setupEventListeners() {
 
     if (helpBtn && helpModal && helpModalClose) {
         helpBtn.addEventListener('click', () => {
+            // Save current scroll position
+            state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+            // Set body position fixed with top offset
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${state.scrollPosition}px`;
+
             helpModal.classList.add('visible');
             document.body.classList.add('modal-open');
         });
@@ -722,6 +742,14 @@ function setupEventListeners() {
     if (helpBtnMobile && helpModal) {
         helpBtnMobile.addEventListener('click', () => {
             closeMobileMenu();
+
+            // Save current scroll position
+            state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+            // Set body position fixed with top offset
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${state.scrollPosition}px`;
+
             helpModal.classList.add('visible');
             document.body.classList.add('modal-open');
         });
@@ -1919,6 +1947,13 @@ function openRecipeModal(recipe) {
         };
     }
 
+    // Save current scroll position
+    state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+    // Set body position fixed with top offset
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${state.scrollPosition}px`;
+
     modal.classList.add('visible');
     document.body.classList.add('modal-open'); // Prevent body scroll on mobile
 }
@@ -2900,6 +2935,13 @@ function openRecipeEditorModal(recipeId = null) {
         resetRecipeForm();
     }
 
+    // Save current scroll position
+    state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+    // Set body position fixed with top offset
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${state.scrollPosition}px`;
+
     modal.classList.add('visible');
     document.body.classList.add('modal-open'); // Prevent body scroll on mobile
     console.log('Modal opened, setting up rich text editors...');
@@ -3405,6 +3447,13 @@ function openSidePanel(recipe, sourceCard = null) {
         });
     }
 
+    // Save current scroll position
+    state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+    // Set body position fixed with top offset
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${state.scrollPosition}px`;
+
     document.body.classList.add('modal-open'); // Prevent body scroll
 }
 
@@ -3458,7 +3507,13 @@ function closeSidePanel() {
         sidePanel.style.width = '';
         sidePanel.style.height = '';
         sidePanel.style.transform = '';
+
+        // Remove position: fixed and restore scroll position
         document.body.classList.remove('modal-open');
+        document.body.style.position = '';
+        document.body.style.top = '';
+        window.scrollTo(0, state.scrollPosition);
+
         state.currentRecipe = null;
         state.sourceCard = null;
     }, 400); // Match transition duration
@@ -3711,6 +3766,14 @@ function openRecipeSelectionModal() {
     });
 
     list.innerHTML = html;
+
+    // Save current scroll position
+    state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+    // Set body position fixed with top offset
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${state.scrollPosition}px`;
+
     modal.classList.add('visible');
     document.body.classList.add('modal-open');
 }

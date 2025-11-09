@@ -183,6 +183,14 @@ body {
     overflow-x: hidden;
 }
 
+body.modal-open {
+    position: fixed;
+    width: 100%;
+    overflow: hidden;
+    -webkit-overflow-scrolling: auto;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
 html {
     scroll-behavior: smooth;
 }
@@ -580,6 +588,8 @@ html {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
 .mobile-menu.active {
@@ -2408,7 +2418,7 @@ body.compact-view .recipe-card-preview {
 /* Toast Notifications */
 .toast {
     position: fixed;
-    bottom: 24px;
+    bottom: max(24px, env(safe-area-inset-bottom) + 12px);
     right: 24px;
     background: var(--bg-secondary);
     color: var(--text-primary);
@@ -3739,7 +3749,7 @@ body.is-ios .results-container {
 /* ===== Floating Action Button (FAB) ===== */
 .fab {
     position: fixed;
-    bottom: 32px;
+    bottom: max(32px, env(safe-area-inset-bottom) + 20px);
     right: 32px;
     width: 64px;
     height: 64px;
