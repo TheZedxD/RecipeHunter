@@ -430,6 +430,25 @@ html {
     gap: 8px;
 }
 
+.nav-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+    padding-left: 16px;
+    border-left: 1px solid var(--border-color);
+}
+
+.nav-action-btn {
+    min-width: 44px;
+    padding: 10px 12px;
+}
+
+.mobile-menu-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 8px 16px;
+}
+
 .nav-btn {
     display: flex;
     align-items: center;
@@ -2569,6 +2588,10 @@ body.compact-view .recipe-card-preview {
 
     /* Hide desktop navigation on mobile */
     .nav {
+        display: none !important;
+    }
+
+    .nav-actions {
         display: none !important;
     }
 

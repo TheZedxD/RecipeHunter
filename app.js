@@ -675,48 +675,26 @@ function setupEventListeners() {
         }
     });
 
-    // Preferences Modal
-    const preferencesBtn = document.getElementById('preferencesBtn');
-    const preferencesModal = document.getElementById('preferencesModal');
-    const preferencesClose = document.getElementById('preferencesClose');
-    const themeBadge = document.getElementById('themeBadge');
-
-    // Check if user has seen the preferences before
-    const hasSeenPreferences = localStorage.getItem('hasSeenPreferences');
-    if (hasSeenPreferences && themeBadge) {
-        themeBadge.classList.add('hidden');
+    // Settings Button (Desktop)
+    const settingsBtn = document.getElementById('settingsBtn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            navigateTo('settings');
+        });
     }
 
-    if (preferencesBtn && preferencesModal && preferencesClose) {
-        preferencesBtn.addEventListener('click', () => {
-            // Hide the NEW badge on first click
-            if (themeBadge && !themeBadge.classList.contains('hidden')) {
-                themeBadge.classList.add('hidden');
-                localStorage.setItem('hasSeenPreferences', 'true');
-            }
-
-            preferencesModal.classList.add('visible');
-            document.body.classList.add('modal-open');
-            updateActiveThemeCard();
+    // Settings Button (Mobile)
+    const settingsBtnMobile = document.getElementById('settingsBtnMobile');
+    if (settingsBtnMobile) {
+        settingsBtnMobile.addEventListener('click', () => {
+            closeMobileMenu();
+            navigateTo('settings');
         });
-
-        preferencesClose.addEventListener('click', () => {
-            closeModalWithAnimation(preferencesModal);
-        });
-
-        preferencesModal.addEventListener('click', (e) => {
-            if (e.target === preferencesModal) {
-                closeModalWithAnimation(preferencesModal);
-            }
-        });
-    } else {
-        if (!preferencesBtn) console.warn('setupEventListeners: preferencesBtn element not found');
-        if (!preferencesModal) console.warn('setupEventListeners: preferencesModal element not found');
-        if (!preferencesClose) console.warn('setupEventListeners: preferencesClose element not found');
     }
 
     // Help Modal
     const helpBtn = document.getElementById('helpBtn');
+    const helpBtnMobile = document.getElementById('helpBtnMobile');
     const helpModal = document.getElementById('helpModal');
     const helpModalClose = document.getElementById('helpModalClose');
 
@@ -741,14 +719,13 @@ function setupEventListeners() {
         if (!helpModalClose) console.warn('setupEventListeners: helpModalClose element not found');
     }
 
-    // Theme switching
-    document.querySelectorAll('.theme-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-            const theme = e.currentTarget.dataset.theme;
-            setTheme(theme);
-            updateActiveThemeCard();
+    if (helpBtnMobile && helpModal) {
+        helpBtnMobile.addEventListener('click', () => {
+            closeMobileMenu();
+            helpModal.classList.add('visible');
+            document.body.classList.add('modal-open');
         });
-    });
+    }
 
     // Recipe Form
     const recipeForm = document.getElementById('recipeForm');
