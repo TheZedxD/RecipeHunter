@@ -2801,14 +2801,24 @@ function showLoadingState(message = 'Loading...') {
         if (messageEl) {
             messageEl.textContent = message;
         }
-        loadingOverlay.classList.add('visible');
     }
+
+    // Reset display and trigger reflow for animation
+    loadingOverlay.style.display = 'flex';
+    void loadingOverlay.offsetWidth; // Force reflow
+    loadingOverlay.classList.add('visible');
 }
 
 function hideLoadingState() {
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) {
         loadingOverlay.classList.remove('visible');
+        // Wait for fade out animation to complete before hiding
+        setTimeout(() => {
+            if (!loadingOverlay.classList.contains('visible')) {
+                loadingOverlay.style.display = 'none';
+            }
+        }, 300);
     }
 }
 
@@ -2836,10 +2846,30 @@ function showTooltip(element, message, duration = 5000) {
     activeTooltip = tooltip;
 
     // Position tooltip
-    const rect = element.getBoundingClientRect();
-    tooltip.style.left = `${rect.left + rect.width / 2}px`;
-    tooltip.style.top = `${rect.top - 10}px`;
-    tooltip.style.transform = 'translate(-50%, -100%)';
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) {
+        const rect = element.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+
+        // Calculate position with viewport overflow prevention
+        let left = rect.left + rect.width / 2;
+        let top = rect.top - 10;
+
+        // Prevent overflow on right edge
+        if (left + tooltipRect.width / 2 > window.innerWidth - 16) {
+            left = window.innerWidth - tooltipRect.width / 2 - 16;
+        }
+
+        // Prevent overflow on left edge
+        if (left - tooltipRect.width / 2 < 16) {
+            left = tooltipRect.width / 2 + 16;
+        }
+
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+        tooltip.style.transform = 'translate(-50%, -100%)';
+    }
+    // Mobile positioning is handled by CSS
 
     // Show tooltip
     setTimeout(() => {
@@ -2851,7 +2881,9 @@ function showTooltip(element, message, duration = 5000) {
         hideTooltip();
     }, duration);
 
-    // Allow manual dismissal on click
+    // Allow manual dismissal by tapping (especially for mobile)
+    tooltip.style.pointerEvents = 'auto';
+    tooltip.style.cursor = 'pointer';
     tooltip.addEventListener('click', hideTooltip);
 }
 
