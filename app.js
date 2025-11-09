@@ -353,6 +353,13 @@ function loadDataFromStorage() {
     if (!isLocalStorageAvailable()) {
         console.warn('localStorage is not available. Data will not persist across sessions.');
         showToast('Running in private mode - recipes won\'t be saved', 'warning');
+
+        // Show persistent warning banner
+        const storageWarning = document.getElementById('storageWarning');
+        if (storageWarning) {
+            storageWarning.style.display = 'block';
+        }
+
         // Initialize with default tags
         if (state.tags.length === 0) {
             state.tags = getDefaultTags();
@@ -1018,7 +1025,7 @@ function setupImageUploadListeners() {
     });
 }
 
-function compressImage(base64, maxWidth = 800) {
+function compressImage(base64, maxWidth = 800, quality = 0.85) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
@@ -1038,8 +1045,8 @@ function compressImage(base64, maxWidth = 800) {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Convert to base64 with compression (0.85 quality for JPEG)
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            // Convert to base64 with compression
+            const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
             resolve(compressedBase64);
         };
         img.onerror = () => {
@@ -1072,13 +1079,36 @@ function handleImageUpload(file) {
         return;
     }
 
+    // Show loading state
+    const preview = document.getElementById('imagePreview');
+    const uploadBtn = document.getElementById('uploadImageBtn');
+    if (preview) {
+        preview.innerHTML = `
+            <div class="image-placeholder">
+                <span class="image-icon">⏳</span>
+                <p>Processing image...</p>
+            </div>
+        `;
+    }
+    if (uploadBtn) {
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = 'Processing...';
+    }
+
     console.log('Reading image file...');
     const reader = new FileReader();
     reader.onload = async (e) => {
         console.log('Image file loaded successfully');
         try {
+            // Use mobile-specific compression settings
+            const isMobile = state.isMobile;
+            const maxWidth = isMobile ? 600 : 800;
+            const quality = isMobile ? 0.8 : 0.85;
+
+            console.log(`Compressing image with settings: maxWidth=${maxWidth}, quality=${quality}, isMobile=${isMobile}`);
+
             // Compress the image before saving
-            const compressedImage = await compressImage(e.target.result);
+            const compressedImage = await compressImage(e.target.result, maxWidth, quality);
             state.currentImageData = compressedImage;
             displayImagePreview(state.currentImageData);
             showToast('Image uploaded and compressed successfully', 'success');
@@ -1088,12 +1118,34 @@ function handleImageUpload(file) {
             state.currentImageData = e.target.result;
             displayImagePreview(state.currentImageData);
             showToast('Image uploaded successfully (compression failed)', 'success');
+        } finally {
+            // Restore button state
+            if (uploadBtn) {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Choose Image';
+            }
         }
     };
 
     reader.onerror = () => {
         console.error('Error reading image file');
         showToast('Unable to read image file. Please try a different file.', 'error');
+
+        // Restore button state
+        if (uploadBtn) {
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Choose Image';
+        }
+
+        // Restore preview placeholder
+        if (preview) {
+            preview.innerHTML = `
+                <div class="image-placeholder">
+                    <span class="image-icon">📷</span>
+                    <p>No image selected</p>
+                </div>
+            `;
+        }
     };
 
     reader.readAsDataURL(file);

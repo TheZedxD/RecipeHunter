@@ -2463,6 +2463,104 @@ body.compact-view .recipe-card-preview {
     }
 }
 
+/* Storage Warning Banner */
+.storage-warning {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #ff9966, #ff5e62);
+    color: #fff;
+    z-index: 4000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.storage-warning-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 48px 12px 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.storage-warning .warning-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.storage-warning .warning-text {
+    font-size: 14px;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.storage-warning .warning-close {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.storage-warning .warning-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.storage-warning .warning-close:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+@media (max-width: 768px) {
+    .storage-warning-content {
+        padding: 10px 40px 10px 12px;
+        gap: 8px;
+    }
+
+    .storage-warning .warning-icon {
+        font-size: 18px;
+    }
+
+    .storage-warning .warning-text {
+        font-size: 13px;
+    }
+
+    .storage-warning .warning-close {
+        right: 12px;
+        width: 24px;
+        height: 24px;
+        font-size: 16px;
+    }
+}
+
 /* Toast Notifications */
 .toast {
     position: fixed;
@@ -3857,9 +3955,10 @@ body.is-ios .results-container {
 /* Mobile FAB Positioning */
 @media (max-width: 768px) {
     .fab {
-        bottom: 20px;
-        right: 50%;
-        transform: translateX(50%);
+        bottom: max(80px, env(safe-area-inset-bottom) + 70px);
+        right: 20px;
+        transform: none;
+        z-index: 2500;
         width: 56px;
         height: 56px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
@@ -3867,15 +3966,26 @@ body.is-ios .results-container {
     }
 
     .fab:hover {
-        transform: translateX(50%) scale(1.05);
+        transform: scale(1.05);
     }
 
     .fab:active {
-        transform: translateX(50%) scale(0.95);
+        transform: scale(0.95);
     }
 
     .fab-icon {
         font-size: 28px;
+    }
+
+    /* When mobile menu is open, hide FAB */
+    body.mobile-menu-open .fab {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* When keyboard is visible (modal open), adjust position */
+    body.modal-open .fab {
+        bottom: max(20px, env(safe-area-inset-bottom) + 10px);
     }
 }
 
