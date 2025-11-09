@@ -1097,22 +1097,6 @@ function navigateTo(page) {
         p.classList.toggle('active', p.id === page + 'Page');
     });
 
-    // Hide/show results container based on page
-    const resultsContainer = document.getElementById('resultsContainer');
-    const emptyState = document.getElementById('emptyState');
-
-    if (page === 'home') {
-        // Show results on home page
-        resultsContainer.classList.remove('results-hidden');
-        emptyState.classList.remove('results-hidden');
-    } else {
-        // Hide results on other pages
-        resultsContainer.classList.add('results-hidden');
-        emptyState.classList.add('results-hidden');
-        // Clear any inline styles that might override the class
-        resultsContainer.style.display = '';
-    }
-
     // Render page content
     switch(page) {
         case 'home':
@@ -1370,10 +1354,8 @@ function renderRecipes() {
 
     if (filteredRecipes.length === 0) {
         emptyState.classList.add('visible');
-        container.classList.add('results-hidden');
     } else {
         emptyState.classList.remove('visible');
-        container.classList.remove('results-hidden');
 
         filteredRecipes.forEach(recipe => {
             const card = createRecipeCard(recipe);
