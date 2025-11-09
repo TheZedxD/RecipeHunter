@@ -252,16 +252,20 @@
                         <p class="export-description">Choose how you want to export your recipe collection</p>
 
                         <div class="export-buttons-container">
-                            <button class="btn btn-export btn-export-primary" onclick="exportRecipesAsDocuments()">
-                                <span class="btn-icon">📄</span>
+                            <button class="btn btn-export btn-export-primary"
+                                    onclick="exportRecipesAsDocuments()"
+                                    aria-label="Export recipes as readable text documents in a ZIP file">
+                                <span class="btn-icon" aria-hidden="true">📄</span>
                                 <div class="btn-text-container">
                                     <span class="btn-title">Export as Documents (ZIP)</span>
                                     <span class="btn-subtitle">Readable text files - perfect for printing or sharing</span>
                                 </div>
                             </button>
 
-                            <button class="btn btn-archive btn-export-secondary" onclick="archiveRecipesAsJSON()">
-                                <span class="btn-icon">💾</span>
+                            <button class="btn btn-archive btn-export-secondary"
+                                    onclick="archiveRecipesAsJSON()"
+                                    aria-label="Archive recipes as JSON format for backup or transfer">
+                                <span class="btn-icon" aria-hidden="true">💾</span>
                                 <div class="btn-text-container">
                                     <span class="btn-title">Archive as JSON</span>
                                     <span class="btn-subtitle">Machine-readable format - use for backup or transfer</span>

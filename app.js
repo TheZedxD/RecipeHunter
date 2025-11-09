@@ -2813,9 +2813,19 @@ function hideLoadingState() {
 }
 
 // ===== Tooltip System for First-Time Users =====
+let activeTooltip = null;
+let tooltipQueue = [];
+let tooltipTimeout = null;
+
 function showTooltip(element, message, duration = 5000) {
     // Don't show if user has dismissed tooltips
     if (isLocalStorageAvailable() && localStorage.getItem('tooltipsDisabled')) {
+        return;
+    }
+
+    // If there's already an active tooltip, add to queue
+    if (activeTooltip) {
+        tooltipQueue.push({ element, message, duration });
         return;
     }
 
@@ -2823,6 +2833,7 @@ function showTooltip(element, message, duration = 5000) {
     tooltip.className = 'tooltip';
     tooltip.textContent = message;
     document.body.appendChild(tooltip);
+    activeTooltip = tooltip;
 
     // Position tooltip
     const rect = element.getBoundingClientRect();
@@ -2836,12 +2847,38 @@ function showTooltip(element, message, duration = 5000) {
     }, 100);
 
     // Hide and remove tooltip
-    setTimeout(() => {
-        tooltip.classList.remove('visible');
-        setTimeout(() => {
-            tooltip.remove();
-        }, 300);
+    tooltipTimeout = setTimeout(() => {
+        hideTooltip();
     }, duration);
+
+    // Allow manual dismissal on click
+    tooltip.addEventListener('click', hideTooltip);
+}
+
+function hideTooltip() {
+    if (!activeTooltip) return;
+
+    // Clear timeout
+    if (tooltipTimeout) {
+        clearTimeout(tooltipTimeout);
+        tooltipTimeout = null;
+    }
+
+    activeTooltip.classList.remove('visible');
+    setTimeout(() => {
+        if (activeTooltip) {
+            activeTooltip.remove();
+            activeTooltip = null;
+        }
+
+        // Show next tooltip in queue
+        if (tooltipQueue.length > 0) {
+            const next = tooltipQueue.shift();
+            setTimeout(() => {
+                showTooltip(next.element, next.message, next.duration);
+            }, 500); // Small delay between tooltips
+        }
+    }, 300);
 }
 
 function initializeTooltips() {
