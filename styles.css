@@ -78,10 +78,10 @@
     --bg-secondary: #FFFFFF;
     --bg-tertiary: #E6EDE6;
     --text-primary: #1A1A1A;
-    --text-secondary: #2D5016;
+    --text-secondary: #1F3A0F;
     --text-tertiary: #4A5C4A;
-    --accent-primary: #3D6B1F;
-    --accent-secondary: #4D7F2A;
+    --accent-primary: #2D5016;
+    --accent-secondary: #3D6B1F;
     --accent-hover: #2D5016;
     --border-color: #C9D6C9;
     --success-color: #059669;
@@ -98,11 +98,11 @@
     --bg-secondary: #FFFFFF;
     --bg-tertiary: #E0F2FE;
     --text-primary: #0C4A6E;
-    --text-secondary: #075985;
+    --text-secondary: #064E68;
     --text-tertiary: #0369A1;
     --accent-primary: #0284C7;
     --accent-secondary: #0369A1;
-    --accent-hover: #075985;
+    --accent-hover: #0369A1;
     --border-color: #BAE6FD;
     --success-color: #06B6D4;
     --danger-color: #EF4444;
@@ -140,6 +140,13 @@
 
 input, textarea, button, select, a {
     -webkit-tap-highlight-color: rgba(139, 92, 246, 0.2);
+}
+
+/* Keyboard Navigation Focus Indicators for Accessibility */
+*:focus-visible {
+    outline: 3px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
 /* iOS Safe Area Support */
