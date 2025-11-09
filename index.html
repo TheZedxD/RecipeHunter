@@ -109,43 +109,42 @@
             </nav>
         </div>
 
-        <!-- Search Section -->
-        <div class="search-section" id="searchSection">
-            <div class="search-container">
-                <div class="welcome-text">
-                    <h1>Welcome to Recipe Hunter</h1>
-                    <p>Search your recipes, discover new favorites</p>
-                    <button class="try-demo-btn" id="tryDemoBtn" onclick="importSampleRecipes()">
-                        <span class="demo-icon">✨</span>
-                        <span>Try Sample Recipes</span>
-                    </button>
-                </div>
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Search recipes by name, ingredients, or tags..." autocomplete="off">
-                    <button class="search-btn" id="searchBtn">
-                        <span class="search-icon">🔍</span>
-                    </button>
-                </div>
-                <div class="quick-tags-container">
-                    <div class="quick-tags" id="quickTags">
-                        <!-- Tags will be dynamically inserted here -->
-                    </div>
-                    <div class="filter-actions">
-                        <button class="favorites-toggle-btn" id="toggleFavoritesBtn" onclick="toggleFavoritesView()">
-                            <span class="fav-icon">☆</span> Show Favorites
-                        </button>
-                        <button class="clear-filters-btn" id="clearFiltersBtn" style="display: none;">
-                            <span>✕</span> Clear filters
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Content Area -->
         <div class="content-area" id="contentArea">
             <!-- Home Page -->
             <div class="page active" id="homePage">
+                <!-- Search Section -->
+                <div class="search-section" id="searchSection">
+                    <div class="search-container">
+                        <div class="welcome-text">
+                            <h1>Welcome to Recipe Hunter</h1>
+                            <p>Search your recipes, discover new favorites</p>
+                            <button class="try-demo-btn" id="tryDemoBtn" onclick="importSampleRecipes()">
+                                <span class="demo-icon">✨</span>
+                                <span>Try Sample Recipes</span>
+                            </button>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" id="searchInput" placeholder="Search recipes by name, ingredients, or tags..." autocomplete="off">
+                            <button class="search-btn" id="searchBtn">
+                                <span class="search-icon">🔍</span>
+                            </button>
+                        </div>
+                        <div class="quick-tags-container">
+                            <div class="quick-tags" id="quickTags">
+                                <!-- Tags will be dynamically inserted here -->
+                            </div>
+                            <div class="filter-actions">
+                                <button class="favorites-toggle-btn" id="toggleFavoritesBtn" onclick="toggleFavoritesView()">
+                                    <span class="fav-icon">☆</span> Show Favorites
+                                </button>
+                                <button class="clear-filters-btn" id="clearFiltersBtn" style="display: none;">
+                                    <span>✕</span> Clear filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="results-container" id="resultsContainer">
                     <!-- Recipe cards will be inserted here -->
                 </div>

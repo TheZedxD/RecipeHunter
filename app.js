@@ -20,7 +20,6 @@ const state = {
     tags: [],
     shoppingList: [],
     currentRecipe: null,
-    searchActive: false,
     currentFilter: '',
     selectedTags: new Set(),
     currentPage: 'home',
@@ -1191,20 +1190,9 @@ function handleSearch(e) {
 }
 
 function handleSearchClick() {
-    if (!state.searchActive) {
-        activateSearch();
-    }
     navigateTo('home');
 }
 
-function activateSearch() {
-    state.searchActive = true;
-
-    const searchSection = document.getElementById('searchSection');
-    searchSection.classList.add('compact');
-
-    renderRecipes();
-}
 
 function renderQuickTags() {
     const container = document.getElementById('quickTags');
@@ -1547,11 +1535,6 @@ function createRecipeCard(recipe) {
             tagEl.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent opening recipe modal
 
-                // Ensure search is active
-                if (!state.searchActive) {
-                    activateSearch();
-                }
-
                 // Navigate to home page if not already there
                 if (state.currentPage !== 'home') {
                     navigateTo('home');
@@ -1844,11 +1827,6 @@ function openRecipeModal(recipe) {
             // Close modal
             closeModal();
 
-            // Ensure search is active
-            if (!state.searchActive) {
-                activateSearch();
-            }
-
             // Navigate to home page
             navigateTo('home');
 
@@ -2086,12 +2064,7 @@ function handleRecipeSubmit(e) {
     closeRecipeEditorModal();
 
     // Update the view
-    if (state.searchActive) {
-        renderRecipes();
-    } else {
-        activateSearch();
-        renderRecipes();
-    }
+    renderRecipes();
 }
 
 // ===== Tag Management in Form =====
@@ -2955,10 +2928,8 @@ function handleSearchWithPreview(e) {
         clearTimeout(searchPreviewTimeout);
     }
 
-    // Update main results if search is active
-    if (state.searchActive) {
-        renderRecipes();
-    }
+    // Update main results
+    renderRecipes();
 
     // Show preview with debounce
     if (query.length > 0) {
@@ -3034,11 +3005,6 @@ function showSearchPreview(query) {
             const tagName = tagEl.dataset.tagName;
 
             hideSearchPreview();
-
-            // Ensure search is active
-            if (!state.searchActive) {
-                activateSearch();
-            }
 
             // Navigate to home page if not already there
             if (state.currentPage !== 'home') {
@@ -3272,11 +3238,6 @@ function openSidePanel(recipe, sourceCard = null) {
 
             // Close side panel
             closeSidePanel();
-
-            // Ensure search is active
-            if (!state.searchActive) {
-                activateSearch();
-            }
 
             // Navigate to home page
             navigateTo('home');
@@ -3854,10 +3815,7 @@ async function importSampleRecipes() {
             });
             saveTagsToStorage();
 
-            // Activate search and render recipes
-            if (!state.searchActive) {
-                activateSearch();
-            }
+            // Render recipes
             renderRecipes();
 
             showToast(
