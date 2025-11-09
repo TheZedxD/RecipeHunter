@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body data-theme="claude">
+    <!-- Skip to Main Content Link for Screen Readers -->
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
+
     <!-- Storage Warning Banner -->
     <div class="storage-warning" id="storageWarning" style="display: none;">
         <div class="storage-warning-content">
@@ -54,10 +57,10 @@
                         <span>Data</span>
                     </button>
                     <div class="nav-actions">
-                        <button class="nav-btn nav-action-btn" id="helpBtn">
+                        <button class="nav-btn nav-action-btn" id="helpBtn" aria-label="Help and tips">
                             <span class="nav-icon">❓</span>
                         </button>
-                        <button class="nav-btn nav-action-btn" id="settingsBtn">
+                        <button class="nav-btn nav-action-btn" id="settingsBtn" aria-label="Settings">
                             <span class="nav-icon">⚙️</span>
                         </button>
                     </div>
@@ -97,17 +100,19 @@
                     <span>Import & Export</span>
                 </button>
                 <div class="mobile-nav-divider"></div>
-                <button class="mobile-nav-btn" id="helpBtnMobile">
+                <button class="mobile-nav-btn" id="helpBtnMobile" aria-label="Help and tips">
                     <span class="nav-icon">❓</span>
+                    <span>Help</span>
                 </button>
-                <button class="mobile-nav-btn" id="settingsBtnMobile">
+                <button class="mobile-nav-btn" id="settingsBtnMobile" aria-label="Settings">
                     <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
                 </button>
             </nav>
         </div>
 
         <!-- Content Area -->
-        <div class="content-area" id="contentArea">
+        <div class="content-area" id="contentArea" role="main" id="mainContent">
             <!-- Home Page -->
             <div class="page active" id="homePage">
                 <!-- Search Section -->
@@ -286,7 +291,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalRecipeName"></h2>
-                <button class="modal-close" id="modalClose">&times;</button>
+                <button class="modal-close" id="modalClose" aria-label="Close recipe details">&times;</button>
             </div>
             <div class="modal-body" id="modalBody">
                 <!-- Recipe details will be inserted here -->
@@ -304,7 +309,7 @@
         <div class="modal-content modal-content-large">
             <div class="modal-header">
                 <h2 id="recipeFormTitle">Add New Recipe</h2>
-                <button class="modal-close" id="recipeEditorClose">&times;</button>
+                <button class="modal-close" id="recipeEditorClose" aria-label="Close recipe editor">&times;</button>
             </div>
             <div class="modal-body">
                 <form class="recipe-form" id="recipeForm">
@@ -421,7 +426,7 @@ You can format text with colors and styles!"></div>
     <div class="side-panel" id="sidePanel">
         <div class="side-panel-header">
             <h2 id="sidePanelRecipeName"></h2>
-            <button class="side-panel-close" id="sidePanelClose">&times;</button>
+            <button class="side-panel-close" id="sidePanelClose" aria-label="Close side panel">&times;</button>
         </div>
         <div class="side-panel-content" id="sidePanelContent">
             <!-- Recipe details will be inserted here -->
@@ -440,7 +445,7 @@ You can format text with colors and styles!"></div>
         <div class="modal-content modal-content-large">
             <div class="modal-header">
                 <h2>Select Recipes</h2>
-                <button class="modal-close" id="recipeSelectionClose">&times;</button>
+                <button class="modal-close" id="recipeSelectionClose" aria-label="Close recipe selection">&times;</button>
             </div>
             <div class="modal-body">
                 <p class="modal-description">Choose one or more recipes to add their ingredients to your shopping list</p>
@@ -461,7 +466,7 @@ You can format text with colors and styles!"></div>
     <!-- Mobile Helper Tooltip -->
     <div class="mobile-helper" id="mobileHelper" style="display: none;">
         <div class="mobile-helper-content">
-            <button class="mobile-helper-close" id="mobileHelperClose">&times;</button>
+            <button class="mobile-helper-close" id="mobileHelperClose" aria-label="Close mobile tips">&times;</button>
             <h3>💡 Mobile Tips</h3>
             <ul>
                 <li>Long-press on recipe cards to add/remove tags quickly</li>
@@ -482,7 +487,7 @@ You can format text with colors and styles!"></div>
         <div class="modal-content modal-content-large">
             <div class="modal-header">
                 <h2>Help & Tips</h2>
-                <button class="modal-close" id="helpModalClose">&times;</button>
+                <button class="modal-close" id="helpModalClose" aria-label="Close help modal">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="help-section">

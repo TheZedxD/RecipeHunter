@@ -221,4 +221,53 @@ For issues or questions, please check the browser console for error messages and
 
 ---
 
+## Mobile Testing Checklist
+
+### iOS Safari
+- [ ] Recipe creation and editing works
+- [ ] localStorage persists (not in private mode)
+- [ ] Images upload and compress correctly
+- [ ] Touch gestures work (long-press, tap, swipe)
+- [ ] Safe area insets respected
+- [ ] Keyboard doesn't break layout
+- [ ] Modals scroll correctly
+- [ ] No zoom on input focus
+
+### iOS Chrome
+- [ ] All iOS Safari tests
+- [ ] Viewport height handles correctly
+
+### Android Chrome
+- [ ] Recipe CRUD operations work
+- [ ] Address bar hide/show doesn't break layout
+- [ ] Back button behavior correct
+- [ ] File uploads work
+- [ ] Touch feedback responsive
+
+### Android Firefox
+- [ ] All Android Chrome tests
+- [ ] Rich text editor works
+
+### Landscape Mode (All)
+- [ ] Layout adapts correctly
+- [ ] Modals don't overflow
+- [ ] Navigation accessible
+- [ ] FAB positioned correctly
+
+### Offline Mode
+- [ ] App loads without internet
+- [ ] Data persists
+- [ ] Warning shown when offline
+- [ ] Sync works when reconnected
+
+### Accessibility
+- [ ] Touch targets minimum 44x44px
+- [ ] Screen reader navigation works
+- [ ] Skip-to-content link functional
+- [ ] Keyboard navigation complete
+- [ ] Focus indicators visible
+- [ ] ARIA labels present on icon buttons
+
+---
+
 **Enjoy organizing your recipes! Happy cooking! 🍳👨‍🍳👩‍🍳**
