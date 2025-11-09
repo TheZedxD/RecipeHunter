@@ -1,0 +1,31 @@
+{
+  "name": "Classic Greek Salad",
+  "ingredients": [
+    "4 large tomatoes, cut into wedges",
+    "1 English cucumber, sliced",
+    "1 red onion, thinly sliced",
+    "1 green bell pepper, cut into rings",
+    "1 cup Kalamata olives",
+    "8 oz feta cheese, cubed",
+    "1/4 cup extra virgin olive oil",
+    "2 tbsp red wine vinegar",
+    "1 tsp dried oregano",
+    "Salt and pepper to taste"
+  ],
+  "instructions": [
+    "Cut tomatoes into wedges and place in large bowl",
+    "Add sliced cucumber, red onion, and bell pepper",
+    "Add Kalamata olives to the bowl",
+    "In a small bowl, whisk together olive oil, vinegar, and oregano",
+    "Pour dressing over vegetables and toss gently",
+    "Season with salt and pepper to taste",
+    "Top with feta cheese cubes",
+    "Let salad sit for 10 minutes before serving to allow flavors to meld",
+    "Serve at room temperature or chilled"
+  ],
+  "tags": ["Lunch", "Dinner", "Vegetarian", "Healthy", "Quick"],
+  "prepTime": "15 min",
+  "cookTime": "0 min",
+  "servings": 4,
+  "notes": "For authentic Greek flavor, use good quality feta and don't skimp on the olive oil. This salad is best served fresh but can be refrigerated for up to 2 days."
+}

@@ -3918,8 +3918,13 @@ async function loadInitialSampleRecipes() {
 
     const initialSampleFiles = [
         'sample-recipes/chocolate-chip-cookies.json',
-        'sample-recipes/avocado-toast.json'
+        'sample-recipes/avocado-toast.json',
+        'sample-recipes/banana-bread.json',
+        'sample-recipes/greek-salad.json'
     ];
+
+    let loadedCount = 0;
+    let errorCount = 0;
 
     try {
         showLoadingState('Loading sample recipes...');
@@ -3928,7 +3933,9 @@ async function loadInitialSampleRecipes() {
             try {
                 const response = await fetch(filePath);
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch ${filePath}`);
+                    console.warn(`Warning: Could not load ${filePath} (${response.status})`);
+                    errorCount++;
+                    return;
                 }
                 const data = await response.json();
                 const recipe = normalizeRecipe(data);
@@ -3938,9 +3945,14 @@ async function loadInitialSampleRecipes() {
                     recipe.createdAt = new Date().toISOString();
                     recipe.updatedAt = new Date().toISOString();
                     state.recipes.unshift(recipe);
+                    loadedCount++;
+                } else {
+                    console.warn(`Warning: Invalid recipe format in ${filePath}`);
+                    errorCount++;
                 }
             } catch (error) {
-                console.error(`Error loading ${filePath}:`, error);
+                console.warn(`Warning: Error loading ${filePath}:`, error.message);
+                errorCount++;
             }
         });
 
@@ -3964,7 +3976,7 @@ async function loadInitialSampleRecipes() {
             });
             saveTagsToStorage();
 
-            // Mark that we've loaded initial recipes
+            // Mark that we've loaded initial recipes only if successful
             if (isLocalStorageAvailable()) {
                 try {
                     localStorage.setItem('recipesLoaded', 'true');
@@ -3972,6 +3984,14 @@ async function loadInitialSampleRecipes() {
                     console.warn('Unable to save recipes loaded flag:', e);
                 }
             }
+
+            // Show success toast with count
+            showToast(
+                `Loaded ${loadedCount} sample recipe${loadedCount !== 1 ? 's' : ''}!`,
+                'success'
+            );
+        } else if (errorCount > 0) {
+            console.warn(`Failed to load any sample recipes (${errorCount} errors)`);
         }
 
         hideLoadingState();
@@ -3985,10 +4005,15 @@ async function importSampleRecipes() {
     const sampleRecipeFiles = [
         'sample-recipes/chocolate-chip-cookies.json',
         'sample-recipes/spaghetti-carbonara.json',
-        'sample-recipes/avocado-toast.json'
+        'sample-recipes/avocado-toast.json',
+        'sample-recipes/banana-bread.json',
+        'sample-recipes/greek-salad.json',
+        'sample-recipes/chicken-stir-fry.json',
+        'sample-recipes/beef-tacos.json'
     ];
 
     let successCount = 0;
+    let skippedCount = 0;
     let errorCount = 0;
 
     try {
@@ -3998,7 +4023,9 @@ async function importSampleRecipes() {
             try {
                 const response = await fetch(filePath);
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch ${filePath}`);
+                    console.warn(`Warning: Could not fetch ${filePath} (${response.status})`);
+                    errorCount++;
+                    return;
                 }
                 const data = await response.json();
                 const recipe = normalizeRecipe(data);
@@ -4015,12 +4042,15 @@ async function importSampleRecipes() {
                         recipe.updatedAt = new Date().toISOString();
                         state.recipes.unshift(recipe);
                         successCount++;
+                    } else {
+                        skippedCount++;
                     }
                 } else {
-                    throw new Error('Invalid recipe format');
+                    console.warn(`Warning: Invalid recipe format in ${filePath}`);
+                    errorCount++;
                 }
             } catch (error) {
-                console.error(`Error importing ${filePath}:`, error);
+                console.warn(`Warning: Error importing ${filePath}:`, error.message);
                 errorCount++;
             }
         });
@@ -4048,14 +4078,21 @@ async function importSampleRecipes() {
             // Render recipes
             renderRecipes();
 
-            showToast(
-                `Successfully imported ${successCount} sample recipe${successCount > 1 ? 's' : ''}!`,
-                'success'
-            );
-        } else if (successCount === 0 && errorCount === 0) {
-            showToast('Sample recipes already imported!', 'info');
+            // Build informative message
+            let message = `Successfully imported ${successCount} recipe${successCount !== 1 ? 's' : ''}`;
+            if (skippedCount > 0) {
+                message += `, skipped ${skippedCount} already imported`;
+            }
+            if (errorCount > 0) {
+                message += `, ${errorCount} error${errorCount !== 1 ? 's' : ''}`;
+            }
+            showToast(message + '!', 'success');
+        } else if (skippedCount > 0 && errorCount === 0) {
+            showToast(`All ${skippedCount} sample recipes already imported!`, 'info');
+        } else if (errorCount > 0) {
+            showToast(`Failed to import sample recipes (${errorCount} error${errorCount !== 1 ? 's' : ''})`, 'error');
         } else {
-            showToast('Failed to import sample recipes', 'error');
+            showToast('No recipes to import', 'info');
         }
 
         hideLoadingState();

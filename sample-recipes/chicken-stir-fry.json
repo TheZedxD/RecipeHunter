@@ -1,0 +1,36 @@
+{
+  "name": "Easy Chicken Stir-Fry",
+  "ingredients": [
+    "1 lb boneless chicken breast, sliced thin",
+    "2 tbsp vegetable oil",
+    "3 cloves garlic, minced",
+    "1 tbsp fresh ginger, minced",
+    "2 cups broccoli florets",
+    "1 red bell pepper, sliced",
+    "1 cup snap peas",
+    "3 tbsp soy sauce",
+    "2 tbsp oyster sauce",
+    "1 tbsp cornstarch",
+    "1/4 cup chicken broth",
+    "1 tsp sesame oil",
+    "Cooked rice for serving"
+  ],
+  "instructions": [
+    "Mix soy sauce, oyster sauce, cornstarch, and chicken broth in a small bowl",
+    "Heat 1 tbsp oil in a large wok or skillet over high heat",
+    "Add chicken and stir-fry for 4-5 minutes until cooked through",
+    "Remove chicken and set aside",
+    "Add remaining oil to the wok",
+    "Add garlic and ginger, stir-fry for 30 seconds",
+    "Add broccoli, bell pepper, and snap peas, stir-fry for 3-4 minutes",
+    "Return chicken to the wok",
+    "Pour sauce over everything and stir until thickened, about 1-2 minutes",
+    "Drizzle with sesame oil",
+    "Serve hot over rice"
+  ],
+  "tags": ["Dinner", "Asian", "Quick", "Healthy"],
+  "prepTime": "15 min",
+  "cookTime": "15 min",
+  "servings": 4,
+  "notes": "The key to a good stir-fry is high heat and quick cooking. Have all ingredients prepped before you start cooking. Feel free to substitute vegetables based on what you have available."
+}
