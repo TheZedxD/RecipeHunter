@@ -2278,6 +2278,30 @@ body.compact-view .recipe-card-preview {
     font-style: italic;
 }
 
+/* Mobile-specific rich text styles */
+@media (max-width: 768px) {
+    .rich-text-toolbar {
+        gap: 12px;
+        padding: 12px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .toolbar-btn {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    .rich-text-editor {
+        min-height: 200px;
+        font-size: 16px;
+        line-height: 1.8;
+        padding: 16px;
+    }
+}
+
 /* Search Results Live Preview */
 .search-results-preview {
     position: absolute;
@@ -2413,6 +2437,30 @@ body.compact-view .recipe-card-preview {
 
 .search-box {
     position: relative;
+}
+
+/* Mobile-specific search preview styles */
+@media (max-width: 768px) {
+    .search-results-preview {
+        max-height: 50vh;
+        border-radius: 0 0 12px 12px;
+    }
+
+    .search-result-item {
+        padding: 18px 20px;
+        min-height: 68px;
+    }
+
+    .search-result-name {
+        font-size: 16px;
+        line-height: 1.5;
+    }
+}
+
+@media (max-width: 896px) and (orientation: landscape) {
+    .search-results-preview {
+        max-height: 40vh;
+    }
 }
 
 /* Toast Notifications */
@@ -3402,15 +3450,15 @@ body.is-ios .results-container {
         border-radius: 0;
     }
 
-    /* On mobile, just fade in from center (no position tracking) */
+    /* On mobile, fade + slide from bottom (no position tracking) */
     .side-panel.expanding {
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) scale(0.95) !important;
+        bottom: -100%;
+        transform: none !important;
     }
 
     .side-panel.active {
-        transform: translate(-50%, -50%) scale(1) !important;
+        bottom: 0 !important;
+        transform: none !important;
     }
 
     .side-panel-header {
