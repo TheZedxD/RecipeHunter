@@ -110,11 +110,15 @@ function setupMobileFeatures() {
         }
     });
 
-    // Handle window resize for orientation changes
+    // Handle window resize for orientation changes with debouncing
+    let resizeTimeout;
     window.addEventListener('resize', () => {
-        state.isMobile = isMobile();
-        hideContextMenu();
-        hideSearchPreview();
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            state.isMobile = isMobile();
+            hideContextMenu();
+            hideSearchPreview();
+        }, 150);
     });
 
     // Show mobile helper on first visit
@@ -396,7 +400,7 @@ function loadDataFromStorage() {
             } catch (e) {
                 console.error('Error parsing recipes:', e);
                 state.recipes = [];
-                showToast('Error loading recipes from storage', 'error');
+                showToast('Cannot load recipes. Please check browser settings.', 'error');
             }
         }
 
@@ -429,7 +433,7 @@ function loadDataFromStorage() {
         loadShoppingListFromStorage();
     } catch (e) {
         console.error('Error accessing localStorage:', e);
-        showToast('Error accessing local storage', 'error');
+        showToast('Cannot access browser storage. Please check browser settings.', 'error');
     }
 
     // Add default tags if none exist
@@ -473,6 +477,19 @@ function getDefaultTags() {
     ];
 }
 
+function checkStorageQuota() {
+    if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then(estimate => {
+            const percentUsed = (estimate.usage / estimate.quota) * 100;
+            if (percentUsed > 80) {
+                showToast('Storage is getting full. Consider exporting your recipes.', 'warning', 5000);
+            }
+        }).catch(err => {
+            console.warn('Unable to check storage quota:', err);
+        });
+    }
+}
+
 function saveRecipesToStorage() {
     if (!isLocalStorageAvailable()) {
         console.warn('localStorage not available, skipping save');
@@ -482,14 +499,15 @@ function saveRecipesToStorage() {
     try {
         const recipesJson = JSON.stringify(state.recipes);
         localStorage.setItem('recipes', recipesJson);
+        checkStorageQuota();
     } catch (e) {
         console.error('Error saving recipes to storage:', e);
         if (e.name === 'QuotaExceededError') {
-            showToast('Storage quota exceeded. Please delete some recipes or clear browser data.', 'error');
+            showToast('Unable to save recipe. Your browser storage may be full.', 'error', 5000);
         } else if (state.isIOS) {
             showToast('Unable to save - check if private browsing is enabled', 'error');
         } else {
-            showToast('Error saving recipes', 'error');
+            showToast('Unable to save recipe. Please check browser settings.', 'error');
         }
     }
 }
@@ -505,10 +523,12 @@ function saveTagsToStorage() {
         localStorage.setItem('tags', tagsJson);
     } catch (e) {
         console.error('Error saving tags to storage:', e);
-        if (state.isIOS) {
+        if (e.name === 'QuotaExceededError') {
+            showToast('Unable to save tags. Your browser storage may be full.', 'error');
+        } else if (state.isIOS) {
             showToast('Unable to save - check if private browsing is enabled', 'error');
         } else {
-            showToast('Error saving tags', 'error');
+            showToast('Unable to save tags. Please check browser settings.', 'error');
         }
     }
 }
@@ -524,7 +544,11 @@ function saveSettingsToStorage() {
         localStorage.setItem('settings', settingsJson);
     } catch (e) {
         console.error('Error saving settings to storage:', e);
-        showToast('Error saving settings', 'error');
+        if (e.name === 'QuotaExceededError') {
+            showToast('Unable to save settings. Your browser storage may be full.', 'error');
+        } else {
+            showToast('Unable to save settings. Please check browser settings.', 'error');
+        }
     }
 }
 
@@ -617,6 +641,37 @@ function setupEventListeners() {
         if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
             e.preventDefault();
             openRecipeEditorModal();
+        }
+
+        // Navigate between recipe cards with arrow keys
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+            const target = e.target;
+            // Only trigger if not in an input field
+            if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+                const recipeCards = Array.from(document.querySelectorAll('.recipe-card:not([style*="display: none"])'));
+                if (recipeCards.length === 0) return;
+
+                let currentIndex = -1;
+                const focusedCard = recipeCards.find((card, index) => {
+                    if (card === document.activeElement || card.contains(document.activeElement)) {
+                        currentIndex = index;
+                        return true;
+                    }
+                    return false;
+                });
+
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    const nextIndex = currentIndex < recipeCards.length - 1 ? currentIndex + 1 : 0;
+                    recipeCards[nextIndex].focus();
+                    recipeCards[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : recipeCards.length - 1;
+                    recipeCards[prevIndex].focus();
+                    recipeCards[prevIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
         }
     });
 
@@ -958,6 +1013,37 @@ function setupImageUploadListeners() {
     });
 }
 
+function compressImage(base64, maxWidth = 800) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            // Calculate new dimensions while maintaining aspect ratio
+            if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Convert to base64 with compression (0.85 quality for JPEG)
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            resolve(compressedBase64);
+        };
+        img.onerror = () => {
+            reject(new Error('Failed to load image for compression'));
+        };
+        img.src = base64;
+    });
+}
+
 function handleImageUpload(file) {
     console.log('handleImageUpload called with file:', file?.name);
     if (!file) {
@@ -983,16 +1069,26 @@ function handleImageUpload(file) {
 
     console.log('Reading image file...');
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
         console.log('Image file loaded successfully');
-        state.currentImageData = e.target.result;
-        displayImagePreview(state.currentImageData);
-        showToast('Image uploaded successfully', 'success');
+        try {
+            // Compress the image before saving
+            const compressedImage = await compressImage(e.target.result);
+            state.currentImageData = compressedImage;
+            displayImagePreview(state.currentImageData);
+            showToast('Image uploaded and compressed successfully', 'success');
+        } catch (error) {
+            console.error('Error compressing image:', error);
+            // Fallback to original image if compression fails
+            state.currentImageData = e.target.result;
+            displayImagePreview(state.currentImageData);
+            showToast('Image uploaded successfully (compression failed)', 'success');
+        }
     };
 
     reader.onerror = () => {
         console.error('Error reading image file');
-        showToast('Error reading image file', 'error');
+        showToast('Unable to read image file. Please try a different file.', 'error');
     };
 
     reader.readAsDataURL(file);
@@ -1130,6 +1226,7 @@ function openMobileMenu() {
     mobileMenu.classList.add('active');
     mobileMenuOverlay.classList.add('active');
     hamburgerBtn.classList.add('active');
+    hamburgerBtn.setAttribute('aria-expanded', 'true');
     document.body.classList.add('mobile-menu-open');
 }
 
@@ -1140,7 +1237,10 @@ function closeMobileMenu() {
 
     if (mobileMenu) mobileMenu.classList.remove('active');
     if (mobileMenuOverlay) mobileMenuOverlay.classList.remove('active');
-    if (hamburgerBtn) hamburgerBtn.classList.remove('active');
+    if (hamburgerBtn) {
+        hamburgerBtn.classList.remove('active');
+        hamburgerBtn.setAttribute('aria-expanded', 'false');
+    }
     document.body.classList.remove('mobile-menu-open');
 }
 
@@ -1426,7 +1526,17 @@ function createRecipeCard(recipe) {
     const card = document.createElement('div');
     card.className = 'recipe-card';
     card.dataset.recipeId = recipe.id; // Add recipe ID for touch handlers
+    card.tabIndex = 0; // Make focusable for keyboard navigation
+    card.setAttribute('aria-label', `Recipe: ${recipe.name || 'Untitled'}`);
     card.onclick = (e) => openSidePanel(recipe, e.currentTarget);
+
+    // Allow Enter key to open recipe
+    card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            openSidePanel(recipe, e.currentTarget);
+        }
+    });
 
     // Add right-click context menu (only for non-touch devices)
     if (!state.isTouchDevice) {
