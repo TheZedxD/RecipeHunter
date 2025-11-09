@@ -3765,46 +3765,19 @@ function openSidePanel(recipe, sourceCard = null) {
         };
     }
 
-    // Show the side panel with expansion animation
-    const isMobile = window.innerWidth <= 768;
+    // Show the side panel with clean fade-in animation
+    // Modal content is populated first, then we show it with a smooth animation
+    // CSS handles the centering and sizing - no position tracking needed
+    sidePanelOverlay.classList.add('active');
+    sidePanel.classList.add('expanding');
 
-    if (!isMobile && sourceCard) {
-        // Desktop: Animate from card position
-        const cardRect = sourceCard.getBoundingClientRect();
+    // Force reflow to ensure initial state is applied
+    sidePanel.offsetHeight;
 
-        // Set initial position and scale to match the card
-        sidePanel.style.top = `${cardRect.top}px`;
-        sidePanel.style.left = `${cardRect.left}px`;
-        sidePanel.style.width = `${cardRect.width}px`;
-        sidePanel.style.height = `${cardRect.height}px`;
-        sidePanel.style.transform = 'scale(1)';
-        sidePanel.style.borderRadius = '12px';
-
-        // Show overlay and panel
-        sidePanelOverlay.classList.add('active');
-        sidePanel.classList.add('expanding');
-
-        // Force reflow to ensure initial state is applied
-        sidePanel.offsetHeight;
-
-        // Use requestAnimationFrame to trigger expansion
-        requestAnimationFrame(() => {
-            sidePanel.classList.add('active');
-        });
-    } else {
-        // Mobile: Simple slide up from bottom (no position tracking)
-        // Don't set inline styles - let CSS handle the full-screen layout and animation
-        sidePanelOverlay.classList.add('active');
-        sidePanel.classList.add('expanding');
-
-        // Force reflow
-        sidePanel.offsetHeight;
-
-        // Trigger expansion
-        requestAnimationFrame(() => {
-            sidePanel.classList.add('active');
-        });
-    }
+    // Use requestAnimationFrame to trigger smooth fade-in and scale-up
+    requestAnimationFrame(() => {
+        sidePanel.classList.add('active');
+    });
 
     // Save current scroll position
     state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
@@ -3824,38 +3797,9 @@ function closeSidePanel() {
 
     if (!sidePanel || !sidePanelOverlay) return;
 
-    const isMobile = window.innerWidth <= 768;
-    const sourceCard = state.sourceCard;
-
-    if (!isMobile && sourceCard) {
-        // Desktop: Animate back to card position
-        try {
-            const cardRect = sourceCard.getBoundingClientRect();
-
-            // Remove active class to start closing animation
-            sidePanel.classList.remove('active');
-
-            // Set the panel to animate back to card position
-            sidePanel.style.top = `${cardRect.top}px`;
-            sidePanel.style.left = `${cardRect.left}px`;
-            sidePanel.style.width = `${cardRect.width}px`;
-            sidePanel.style.height = `${cardRect.height}px`;
-            sidePanel.style.transform = 'scale(1)';
-
-            // Add collapsing class for fade out
-            setTimeout(() => {
-                sidePanel.classList.add('collapsing');
-            }, 100);
-        } catch (e) {
-            // If card is not available (e.g., filtered out), just fade out
-            sidePanel.classList.remove('active');
-            sidePanel.classList.add('collapsing');
-        }
-    } else {
-        // Mobile: Simple fade out
-        sidePanel.classList.remove('active');
-        sidePanel.classList.add('collapsing');
-    }
+    // Clean fade-out animation - CSS handles the scaling and positioning
+    sidePanel.classList.remove('active');
+    sidePanel.classList.add('collapsing');
 
     // Fade out overlay
     sidePanelOverlay.classList.remove('active');

@@ -3783,7 +3783,7 @@ body.is-ios .results-container {
     display: flex;
     gap: 24px;
     margin-bottom: 20px;
-    padding: 16px;
+    padding: 12px 16px;
     background: var(--bg-tertiary);
     border-radius: var(--border-radius);
     flex-wrap: wrap;
@@ -3810,7 +3810,7 @@ body.is-ios .results-container {
 }
 
 .side-panel-section {
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .side-panel-section h3 {
