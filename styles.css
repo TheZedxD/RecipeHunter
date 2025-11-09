@@ -616,6 +616,7 @@ html {
     width: 280px;
     max-width: 80vw;
     height: 100vh;
+    height: 100dvh; /* Use dynamic viewport height */
     background: var(--bg-secondary);
     box-shadow: 4px 0 20px var(--shadow-color);
     z-index: 1999;
@@ -624,8 +625,8 @@ html {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
 
 .mobile-menu.active {
@@ -4743,4 +4744,44 @@ body.is-ios .results-container {
 
 .pulse-hint {
     animation: pulse 2s infinite;
+}
+
+/* ===== Recipe Editor Modal Mobile Fixes ===== */
+@media (max-width: 768px) {
+    .recipe-editor-modal .modal-content {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+    }
+
+    .recipe-editor-modal .modal-header {
+        flex-shrink: 0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--bg-secondary);
+    }
+
+    .recipe-editor-modal .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 20px 16px;
+    }
+
+    .recipe-form {
+        padding: 0;
+        max-width: 100%;
+    }
+
+    .image-upload-container {
+        flex-direction: column;
+    }
+
+    .image-preview {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+    }
 }
