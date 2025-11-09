@@ -9,8 +9,22 @@ import http.server
 import socketserver
 import sys
 import os
+import socket
 
 PORT = int(os.environ.get('PORT', 8080))
+
+def get_network_ip():
+    """Get the local network IP address"""
+    try:
+        # Create a socket to find the local network IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # Connect to a remote address (doesn't actually send data)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return '127.0.0.1'
 
 class RecipeHunterHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -24,10 +38,12 @@ class RecipeHunterHandler(http.server.SimpleHTTPRequestHandler):
 
 if __name__ == '__main__':
     try:
-        with socketserver.TCPServer(("", PORT), RecipeHunterHandler) as httpd:
+        network_ip = get_network_ip()
+        with socketserver.TCPServer(("0.0.0.0", PORT), RecipeHunterHandler) as httpd:
             print('\n🍳 Recipe Hunter Server Started!\n')
             print(f'   Local:   http://localhost:{PORT}')
-            print(f'   Network: http://127.0.0.1:{PORT}\n')
+            print(f'   Network: http://{network_ip}:{PORT}\n')
+            print('📱 Access from other devices on your network using the Network URL above\n')
             print('Press Ctrl+C to stop the server\n')
             httpd.serve_forever()
     except KeyboardInterrupt:
