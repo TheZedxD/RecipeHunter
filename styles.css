@@ -529,6 +529,7 @@ html {
     backdrop-filter: blur(4px);
     z-index: 1998;
     opacity: 0;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     transition: opacity var(--transition-speed);
 }
 
@@ -1911,7 +1912,7 @@ body.compact-view .recipe-card-preview {
     z-index: 2000;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .modal.visible {
@@ -3071,6 +3072,7 @@ body.is-ios .results-container {
     z-index: 9998;
     opacity: 0;
     visibility: hidden;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
                 visibility 0.4s cubic-bezier(0.4, 0, 0.2, 1),
                 backdrop-filter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -3767,7 +3769,7 @@ body.is-ios .results-container {
 /* Mobile FAB Positioning */
 @media (max-width: 768px) {
     .fab {
-        bottom: 24px;
+        bottom: 20px;
         right: 50%;
         transform: translateX(50%);
         width: 56px;
@@ -4107,8 +4109,8 @@ body.is-ios .results-container {
 /* NEW badge styles */
 .new-badge {
     position: absolute;
-    top: -4px;
-    right: -4px;
+    top: -2px;
+    right: -2px;
     background: linear-gradient(135deg, #ff6b6b, #ff4757);
     color: white;
     font-size: 9px;
@@ -4117,6 +4119,7 @@ body.is-ios .results-container {
     border-radius: 10px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    line-height: 1;
     box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
     pointer-events: none;
     z-index: 1;
@@ -4374,8 +4377,9 @@ body.is-ios .results-container {
     border-radius: 8px;
     font-size: 14px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 10000;
+    z-index: 10001;
     max-width: 250px;
+    white-space: nowrap;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
