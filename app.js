@@ -3530,13 +3530,8 @@ function openSidePanel(recipe, sourceCard = null) {
             sidePanel.classList.add('active');
         });
     } else {
-        // Mobile: Simple fade + slide from bottom (no position tracking)
-        sidePanel.style.bottom = '0';
-        sidePanel.style.left = '0';
-        sidePanel.style.right = '0';
-        sidePanel.style.height = '95vh';
-        sidePanel.style.transform = 'none';
-
+        // Mobile: Simple slide up from bottom (no position tracking)
+        // Don't set inline styles - let CSS handle the full-screen layout and animation
         sidePanelOverlay.classList.add('active');
         sidePanel.classList.add('expanding');
 
@@ -3552,9 +3547,11 @@ function openSidePanel(recipe, sourceCard = null) {
     // Save current scroll position
     state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
 
-    // Set body position fixed with top offset
+    // Properly lock body scroll for all devices
     document.body.style.position = 'fixed';
     document.body.style.top = `-${state.scrollPosition}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
 
     document.body.classList.add('modal-open'); // Prevent body scroll
 }
@@ -3614,6 +3611,8 @@ function closeSidePanel() {
         document.body.classList.remove('modal-open');
         document.body.style.position = '';
         document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
         window.scrollTo(0, state.scrollPosition);
 
         state.currentRecipe = null;
