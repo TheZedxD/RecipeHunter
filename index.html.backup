@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Recipe Hunter">
+    <meta name="format-detection" content="telephone=no">
+    <title>Recipe Hunter - Your Personal Recipe Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="claude">
+    <!-- Skip to Main Content Link for Screen Readers -->
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+    <!-- Storage Warning Banner -->
+    <div class="storage-warning" id="storageWarning" style="display: none;">
+        <div class="storage-warning-content">
+            <span class="warning-icon">⚠️</span>
+            <span class="warning-text">Running in private mode - recipes won't be saved</span>
+            <button class="warning-close" onclick="this.parentElement.parentElement.style.display='none'">✕</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container" id="mainContainer">
+        <!-- Header -->
+        <header class="header" id="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🍳</span>
+                    <span class="logo-text">Recipe Hunter</span>
+                </div>
+                <!-- Hamburger Menu Button (Mobile Only) -->
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobileMenu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                <!-- Desktop Navigation -->
+                <nav class="nav" id="desktopNav" role="navigation" aria-label="Main navigation">
+                    <button class="nav-btn active" data-page="home">
+                        <span class="nav-icon">🏠</span>
+                        <span>Home</span>
+                    </button>
+                    <button class="nav-btn" data-page="tags">
+                        <span class="nav-icon">🏷️</span>
+                        <span>Tags</span>
+                    </button>
+                    <button class="nav-btn" data-page="shopping-list">
+                        <span class="nav-icon">🛒</span>
+                        <span>Shopping</span>
+                    </button>
+                    <button class="nav-btn" data-page="import">
+                        <span class="nav-icon">💾</span>
+                        <span>Data</span>
+                    </button>
+                    <div class="nav-actions">
+                        <button class="nav-btn nav-action-btn" id="helpBtn" aria-label="Help and tips">
+                            <span class="nav-icon">❓</span>
+                        </button>
+                        <button class="nav-btn nav-action-btn" id="settingsBtn" aria-label="Settings">
+                            <span class="nav-icon">⚙️</span>
+                        </button>
+                    </div>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+        <!-- Mobile Slide-In Menu -->
+        <div class="mobile-menu" id="mobileMenu">
+            <div class="mobile-menu-header">
+                <div class="mobile-menu-logo">
+                    <span class="logo-icon">🍳</span>
+                    <span class="logo-text">Recipe Hunter</span>
+                </div>
+                <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">
+                    <span>✕</span>
+                </button>
+            </div>
+            <nav class="mobile-menu-nav" role="navigation" aria-label="Mobile navigation">
+                <button class="mobile-nav-btn active" data-page="home">
+                    <span class="nav-icon">🏠</span>
+                    <span>Home</span>
+                </button>
+                <button class="mobile-nav-btn" data-page="tags">
+                    <span class="nav-icon">🏷️</span>
+                    <span>Tags</span>
+                </button>
+                <button class="mobile-nav-btn" data-page="shopping-list">
+                    <span class="nav-icon">🛒</span>
+                    <span>Shopping List</span>
+                </button>
+                <button class="mobile-nav-btn" data-page="import">
+                    <span class="nav-icon">💾</span>
+                    <span>Import & Export</span>
+                </button>
+                <div class="mobile-nav-divider"></div>
+                <button class="mobile-nav-btn" id="helpBtnMobile" aria-label="Help and tips">
+                    <span class="nav-icon">❓</span>
+                    <span>Help</span>
+                </button>
+                <button class="mobile-nav-btn" id="settingsBtnMobile" aria-label="Settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area" id="contentArea" role="main" id="mainContent">
+            <!-- Home Page -->
+            <div class="page active" id="homePage">
+                <!-- Search Section -->
+                <div class="search-section" id="searchSection">
+                    <div class="search-container">
+                        <div class="welcome-text" id="welcomeText">
+                            <p>Want to explore? <button class="try-demo-link" onclick="importSampleRecipes()">Try Sample Recipes ✨</button></p>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" id="searchInput" placeholder="Search recipes by name, ingredients, or tags..." autocomplete="off" aria-label="Search recipes">
+                            <button class="search-btn" id="searchBtn" aria-label="Search">
+                                <span class="search-icon">🔍</span>
+                            </button>
+                        </div>
+                        <div class="quick-tags-container">
+                            <div class="quick-tags" id="quickTags">
+                                <!-- Tags will be dynamically inserted here -->
+                            </div>
+                            <div class="filter-actions">
+                                <button class="favorites-toggle-btn" id="toggleFavoritesBtn" onclick="toggleFavoritesView()">
+                                    <span class="fav-icon">☆</span> Show Favorites
+                                </button>
+                                <button class="clear-filters-btn" id="clearFiltersBtn" style="display: none;">
+                                    <span>✕</span> Clear filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="results-container" id="resultsContainer">
+                    <!-- Recipe cards will be inserted here -->
+                </div>
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">📚</div>
+                    <h2>No recipes yet</h2>
+                    <p>Start by importing recipes or adding a new one</p>
+                    <div class="empty-state-actions">
+                        <button class="btn btn-primary empty-state-btn" onclick="openRecipeEditorModal()">
+                            <span class="btn-icon">➕</span>
+                            <span>Add Your First Recipe</span>
+                        </button>
+                        <button class="btn btn-secondary empty-state-btn" onclick="navigateTo('import')">
+                            <span class="btn-icon">📥</span>
+                            <span>Import Recipes</span>
+                        </button>
+                        <button class="btn btn-accent empty-state-btn" onclick="importSampleRecipes()">
+                            <span class="btn-icon">✨</span>
+                            <span>Browse Sample Recipes</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tags Page -->
+            <div class="page" id="tagsPage">
+                <div class="page-header">
+                    <h2>Manage Tags</h2>
+                    <p>Organize your recipes with custom tags</p>
+                </div>
+                <div class="tags-management">
+                    <div class="add-tag-section">
+                        <input type="text" id="newTagInput" placeholder="Enter new tag name..." maxlength="30">
+                        <input type="color" id="newTagColor" value="#8B5CF6">
+                        <button class="btn btn-primary" id="addTagBtn">Add Tag</button>
+                    </div>
+                    <div class="tags-list" id="tagsList">
+                        <!-- Tags will be listed here -->
+                    </div>
+                    <div class="tags-empty-state" id="tagsEmptyState" style="display: none;">
+                        <div class="empty-icon">🏷️</div>
+                        <h3>No custom tags yet</h3>
+                        <p>Tags help you organize and filter your recipes. Create your first tag using the form above!</p>
+                        <div class="tags-suggestions-list">
+                            <p><strong>Popular tag ideas:</strong></p>
+                            <div class="tag-chips">
+                                <span class="tag-chip">Breakfast</span>
+                                <span class="tag-chip">Lunch</span>
+                                <span class="tag-chip">Dinner</span>
+                                <span class="tag-chip">Vegetarian</span>
+                                <span class="tag-chip">Quick</span>
+                                <span class="tag-chip">Dessert</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div class="page" id="settingsPage">
+                <div class="page-header">
+                    <h2>Settings</h2>
+                    <p>Customize your Recipe Hunter experience</p>
+                </div>
+                <div id="settingsContent">
+                    <!-- Settings will be dynamically rendered here -->
+                </div>
+            </div>
+
+            <!-- Shopping List Page -->
+            <div class="page" id="shopping-listPage">
+                <div class="page-header">
+                    <h2>Shopping List</h2>
+                    <p>Manage your shopping list from recipes</p>
+                </div>
+                <div class="shopping-list-container">
+                    <div class="shopping-list-actions">
+                        <button class="btn btn-primary" id="addToShoppingListBtn">
+                            ➕ Add from Recipes
+                        </button>
+                        <button class="btn btn-secondary" id="addCustomItemBtn">
+                            📝 Add Custom Item
+                        </button>
+                        <button class="btn btn-danger" id="clearShoppingListBtn">
+                            🗑️ Clear All
+                        </button>
+                    </div>
+                    <div class="shopping-list-content" id="shoppingListContent">
+                        <!-- Shopping list items will be rendered here -->
+                    </div>
+                    <div class="shopping-list-empty" id="shoppingListEmpty">
+                        <div class="empty-icon">🛒</div>
+                        <h3>Your shopping list is empty</h3>
+                        <p>Add ingredients from your recipes or create custom items</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Import Page -->
+            <div class="page" id="importPage">
+                <div class="page-header">
+                    <h2>Import & Export Recipes</h2>
+                    <p>Upload recipe files or folders in JSON format, or export your collection</p>
+                </div>
+                <div class="import-section">
+                    <div class="export-section">
+                        <h3>📤 Export Your Recipes</h3>
+                        <p class="export-description">Choose how you want to export your recipe collection</p>
+
+                        <div class="export-buttons-container">
+                            <button class="btn btn-export btn-export-primary"
+                                    onclick="exportRecipesAsDocuments()"
+                                    aria-label="Export recipes as readable text documents in a ZIP file">
+                                <span class="btn-icon" aria-hidden="true">📄</span>
+                                <div class="btn-text-container">
+                                    <span class="btn-title">Export as Documents (ZIP)</span>
+                                    <span class="btn-subtitle">Readable text files - perfect for printing or sharing</span>
+                                </div>
+                            </button>
+
+                            <button class="btn btn-archive btn-export-secondary"
+                                    onclick="archiveRecipesAsJSON()"
+                                    aria-label="Archive recipes as JSON format for backup or transfer">
+                                <span class="btn-icon" aria-hidden="true">💾</span>
+                                <div class="btn-text-container">
+                                    <span class="btn-title">Archive as JSON</span>
+                                    <span class="btn-subtitle">Machine-readable format - use for backup or transfer</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <h3>📥 Import Recipes</h3>
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📁</div>
+                        <h3>Drop files here</h3>
+                        <p>or click to browse</p>
+                        <input type="file" id="singleFileInput" multiple accept=".json,.txt">
+                    </div>
+                    <div class="import-format-info">
+                        <h3>Expected JSON Format:</h3>
+                        <pre>{
+  "name": "Recipe Name",
+  "ingredients": ["ingredient 1", "ingredient 2"],
+  "instructions": ["step 1", "step 2"],
+  "tags": ["tag1", "tag2"],
+  "prepTime": "15 min",
+  "cookTime": "30 min",
+  "servings": 4,
+  "notes": "Optional notes",
+  "image": "data:image/png;base64,..." (optional base64 image)
+}</pre>
+                    </div>
+                    <div class="import-results" id="importResults"></div>
+                </div>
+            </div>
+
+            <!-- Add/Edit Recipe Page (kept for backwards compatibility, hidden) -->
+            <div class="page" id="addRecipePage" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipe Detail Modal -->
+    <div class="modal" id="recipeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalRecipeName"></h2>
+                <button class="modal-close" id="modalClose" aria-label="Close recipe details">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Recipe details will be inserted here -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="modalFavoriteBtn">☆ Add to Favorites</button>
+                <button class="btn btn-secondary" id="editRecipeBtn">Edit</button>
+                <button class="btn btn-danger" id="deleteRecipeBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipe Editor Modal -->
+    <div class="modal recipe-editor-modal" id="recipeEditorModal">
+        <div class="modal-content modal-content-large">
+            <div class="modal-header">
+                <h2 id="recipeFormTitle">Add New Recipe</h2>
+                <button class="modal-close" id="recipeEditorClose" aria-label="Close recipe editor">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form class="recipe-form" id="recipeForm">
+                    <input type="hidden" id="recipeId">
+
+                    <div class="form-group">
+                        <label for="recipeName">Recipe Name *</label>
+                        <input type="text" id="recipeName" required placeholder="e.g., Chocolate Chip Cookies">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recipeImage">Recipe Image</label>
+                        <div class="image-upload-container">
+                            <div class="image-preview" id="imagePreview">
+                                <div class="image-placeholder">
+                                    <span class="image-icon">📷</span>
+                                    <p>No image selected</p>
+                                </div>
+                            </div>
+                            <div class="image-upload-controls">
+                                <input type="file" id="recipeImage" accept="image/*" capture="environment" style="display: none;">
+                                <button type="button" class="btn btn-secondary" id="uploadImageBtn">Choose Image</button>
+                                <button type="button" class="btn btn-secondary" id="removeImageBtn" style="display: none;">Remove Image</button>
+                                <p class="image-help-text">Supported formats: JPG, PNG, GIF (max 5MB)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="prepTime">Prep Time</label>
+                            <input type="text" id="prepTime" placeholder="e.g., 15 min">
+                        </div>
+                        <div class="form-group">
+                            <label for="cookTime">Cook Time</label>
+                            <input type="text" id="cookTime" placeholder="e.g., 30 min">
+                        </div>
+                        <div class="form-group">
+                            <label for="servings">Servings</label>
+                            <input type="number" id="servings" min="1" placeholder="4">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ingredients">Ingredients * <span class="label-hint">(supports HTML formatting)</span></label>
+                        <div class="rich-text-toolbar" data-target="ingredients">
+                            <button type="button" class="toolbar-btn" data-command="bold" title="Bold"><b>B</b></button>
+                            <button type="button" class="toolbar-btn" data-command="italic" title="Italic"><i>I</i></button>
+                            <button type="button" class="toolbar-btn" data-command="underline" title="Underline"><u>U</u></button>
+                            <button type="button" class="toolbar-btn" data-command="foreColor" title="Text Color">🎨</button>
+                            <input type="color" class="color-picker" data-target="ingredients" style="display: none;">
+                        </div>
+                        <div id="ingredients" class="rich-text-editor" contenteditable="true" data-placeholder="Enter each ingredient on a new line
+e.g.,
+2 cups flour
+1 cup sugar
+2 eggs
+
+You can format text with colors and styles!"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="instructions">Instructions * <span class="label-hint">(supports HTML formatting)</span></label>
+                        <div class="rich-text-toolbar" data-target="instructions">
+                            <button type="button" class="toolbar-btn" data-command="bold" title="Bold"><b>B</b></button>
+                            <button type="button" class="toolbar-btn" data-command="italic" title="Italic"><i>I</i></button>
+                            <button type="button" class="toolbar-btn" data-command="underline" title="Underline"><u>U</u></button>
+                            <button type="button" class="toolbar-btn" data-command="foreColor" title="Text Color">🎨</button>
+                            <input type="color" class="color-picker" data-target="instructions" style="display: none;">
+                        </div>
+                        <div id="instructions" class="rich-text-editor" contenteditable="true" data-placeholder="Enter each step on a new line
+e.g.,
+1. Preheat oven to 350°F
+2. Mix dry ingredients
+3. Combine wet ingredients
+
+You can format text with colors and styles!"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recipeTags">Tags</label>
+                        <div class="tags-input-container">
+                            <div class="selected-tags" id="selectedTags"></div>
+                            <input type="text" id="recipeTagsInput" placeholder="Type to add tags...">
+                        </div>
+                        <div class="tags-suggestions" id="tagsSuggestions"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Notes <span class="label-hint">(supports HTML formatting)</span></label>
+                        <div class="rich-text-toolbar" data-target="notes">
+                            <button type="button" class="toolbar-btn" data-command="bold" title="Bold"><b>B</b></button>
+                            <button type="button" class="toolbar-btn" data-command="italic" title="Italic"><i>I</i></button>
+                            <button type="button" class="toolbar-btn" data-command="underline" title="Underline"><u>U</u></button>
+                            <button type="button" class="toolbar-btn" data-command="foreColor" title="Text Color">🎨</button>
+                            <input type="color" class="color-picker" data-target="notes" style="display: none;">
+                        </div>
+                        <div id="notes" class="rich-text-editor" contenteditable="true" data-placeholder="Any additional notes or tips...
+
+You can format text with colors and styles!"></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Recipe</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side Panel for Recipe Information -->
+    <div class="side-panel-overlay" id="sidePanelOverlay"></div>
+    <div class="side-panel" id="sidePanel">
+        <div class="side-panel-header">
+            <h2 id="sidePanelRecipeName"></h2>
+            <button class="side-panel-close" id="sidePanelClose" aria-label="Close side panel">&times;</button>
+        </div>
+        <div class="side-panel-content" id="sidePanelContent">
+            <!-- Recipe details will be inserted here -->
+        </div>
+        <div class="side-panel-actions">
+            <button class="btn btn-primary" id="sidePanelFavoriteBtn">☆ Add to Favorites</button>
+            <button class="btn btn-secondary" id="sidePanelShoppingBtn">🛒 Add to Shopping List</button>
+            <button class="btn btn-secondary" id="sidePanelPrintBtn">🖨️ Print</button>
+            <button class="btn btn-secondary" id="sidePanelEditBtn">Edit</button>
+            <button class="btn btn-danger" id="sidePanelDeleteBtn">Delete</button>
+        </div>
+    </div>
+
+    <!-- Recipe Selection Modal for Shopping List -->
+    <div class="modal" id="recipeSelectionModal">
+        <div class="modal-content modal-content-large">
+            <div class="modal-header">
+                <h2>Select Recipes</h2>
+                <button class="modal-close" id="recipeSelectionClose" aria-label="Close recipe selection">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Choose one or more recipes to add their ingredients to your shopping list</p>
+                <div class="recipe-selection-list" id="recipeSelectionList">
+                    <!-- Recipe checkboxes will be inserted here -->
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelRecipeSelectionBtn">Cancel</button>
+                <button class="btn btn-primary" id="confirmRecipeSelectionBtn">Add to Shopping List</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Mobile Helper Tooltip -->
+    <div class="mobile-helper" id="mobileHelper" style="display: none;">
+        <div class="mobile-helper-content">
+            <button class="mobile-helper-close" id="mobileHelperClose" aria-label="Close mobile tips">&times;</button>
+            <h3>💡 Mobile Tips</h3>
+            <ul>
+                <li>Long-press on recipe cards to add/remove tags quickly</li>
+                <li>Tap on tags to filter recipes</li>
+                <li>Click recipe cards to view details in the side panel</li>
+                <li>All your data is saved locally on your device</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" id="fabBtn" onclick="openRecipeEditorModal()" aria-label="Add new recipe" title="Add new recipe">
+        <span class="fab-icon">+</span>
+    </button>
+
+    <!-- Help Modal -->
+    <div class="modal help-modal" id="helpModal">
+        <div class="modal-content modal-content-large">
+            <div class="modal-header">
+                <h2>Help & Tips</h2>
+                <button class="modal-close" id="helpModalClose" aria-label="Close help modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="help-section">
+                    <h3>⌨️ Keyboard Shortcuts</h3>
+                    <div class="shortcuts-grid">
+                        <div class="shortcut-item">
+                            <kbd>Ctrl/Cmd</kbd> + <kbd>F</kbd>
+                            <span>Focus search</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl/Cmd</kbd> + <kbd>N</kbd>
+                            <span>Add new recipe</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Esc</kbd>
+                            <span>Close modal/panel</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>?</kbd>
+                            <span>Show this help</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h3>💡 Quick Tips</h3>
+                    <ul class="tips-list">
+                        <li><strong>Search:</strong> Type in the search bar to find recipes by name, ingredients, or tags</li>
+                        <li><strong>Tags:</strong> Click on tags to filter recipes, or create custom tags in the Tags page</li>
+                        <li><strong>Favorites:</strong> Click the star icon to mark recipes as favorites</li>
+                        <li><strong>Shopping List:</strong> Add ingredients from recipes to your shopping list for easy meal planning</li>
+                        <li><strong>Rich Text:</strong> Use the formatting toolbar when editing recipes to add colors and styles</li>
+                        <li><strong>Import/Export:</strong> Back up your recipes by exporting them as JSON files</li>
+                        <li><strong>Themes:</strong> Customize the app's appearance with different color themes</li>
+                        <li><strong>Mobile:</strong> On touch devices, long-press recipe cards for quick actions</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>🎯 Getting Started</h3>
+                    <ol class="getting-started-list">
+                        <li>Click the <strong>+ button</strong> to add your first recipe</li>
+                        <li>Or use the <strong>"Try Sample Recipes"</strong> button to load examples</li>
+                        <li>Organize recipes with <strong>tags</strong> for easy filtering</li>
+                        <li>Build a <strong>shopping list</strong> from your favorite recipes</li>
+                        <li>Export your collection to <strong>back up</strong> your recipes</li>
+                    </ol>
+                </div>
+
+                <div class="help-section">
+                    <h3>📝 Recipe Format</h3>
+                    <p>When importing recipes, use this JSON structure:</p>
+                    <pre class="help-code">{
+  "name": "Recipe Name",
+  "ingredients": ["2 cups flour", "1 cup sugar"],
+  "instructions": ["Step 1", "Step 2"],
+  "tags": ["Dessert", "Quick"],
+  "prepTime": "15 min",
+  "cookTime": "30 min",
+  "servings": 4,
+  "notes": "Optional notes"
+}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- First-Time User Guide Overlay -->
+    <div class="first-time-overlay" id="firstTimeOverlay">
+        <div class="first-time-content">
+            <div class="first-time-header">
+                <h2>🎂 Happy Birthday Hunny Buns!</h2>
+                <p class="first-time-subtitle">Here's the basics!</p>
+            </div>
+            <div class="first-time-steps">
+                <div class="first-time-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Add a Recipe</h3>
+                        <p>Click the <strong>+</strong> button to add your favorite recipes</p>
+                    </div>
+                </div>
+                <div class="first-time-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Import from JSON</h3>
+                        <p>Or import recipes from JSON files in the Data section</p>
+                    </div>
+                </div>
+                <div class="first-time-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Organize with Tags</h3>
+                        <p>Use tags to categorize and organize your recipes</p>
+                    </div>
+                </div>
+                <div class="first-time-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Search & Filter</h3>
+                        <p>Easily find recipes using the search bar and filters</p>
+                    </div>
+                </div>
+            </div>
+            <div class="first-time-footer">
+                <div class="first-time-checkbox">
+                    <input type="checkbox" id="dontShowAgain">
+                    <label for="dontShowAgain">Don't show this again</label>
+                </div>
+                <button class="btn btn-primary first-time-btn" id="gotItBtn">Got it!</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
