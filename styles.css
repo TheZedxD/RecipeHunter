@@ -654,10 +654,25 @@ html {
 .mobile-menu-nav {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     padding: 12px 0;
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+/* Prevent rubber-band scrolling from closing menu */
+.mobile-menu-nav::-webkit-scrollbar {
+    display: none;
+}
+
+/* Add momentum scrolling on iOS */
+@supports (-webkit-touch-callout: none) {
+    .mobile-menu-nav {
+        -webkit-overflow-scrolling: touch;
+    }
 }
 
 .mobile-nav-btn {
@@ -3015,6 +3030,28 @@ body.is-mobile .recipe-card:active {
 body.is-mobile .tag:active,
 body.is-mobile .btn:active {
     opacity: 0.8;
+}
+
+/* Text selection on mobile */
+.recipe-card-title,
+.modal-body,
+.side-panel-content {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* Allow long-press to copy on mobile */
+.side-panel-ingredient,
+.side-panel-instruction {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+}
+
+/* Prevent selection on UI elements */
+.btn, .nav-btn, .tag, .favorite-btn {
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* iOS-specific fixes */

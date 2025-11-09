@@ -1449,6 +1449,12 @@ function toggleFavorite(recipeId) {
     if (!recipe) return;
 
     recipe.isFavorite = !recipe.isFavorite;
+
+    // Haptic feedback for toggle
+    if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+    }
+
     updateRecipeTimestamp(recipe);
     saveRecipesToStorage();
     renderRecipes();
@@ -1732,6 +1738,11 @@ function createRecipeCard(recipe) {
 function showContextMenu(event, recipe) {
     event.preventDefault();
     event.stopPropagation();
+
+    // Haptic feedback for context menu
+    if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+    }
 
     state.contextMenu.targetRecipe = recipe;
     state.contextMenu.x = event.clientX;
@@ -2053,6 +2064,11 @@ function handleDeleteRecipe() {
     const confirmMessage = `Are you sure you want to delete "${recipeName}"?\n\nThis action cannot be undone.`;
 
     if (confirm(confirmMessage)) {
+        // Haptic feedback for delete
+        if ('vibrate' in navigator) {
+            navigator.vibrate([50, 100, 50]);
+        }
+
         const index = state.recipes.findIndex(r => r.id === state.currentRecipe.id);
         if (index !== -1) {
             state.recipes.splice(index, 1);
@@ -2227,6 +2243,12 @@ function handleRecipeSubmit(e) {
     } else {
         console.log('Adding new recipe');
         state.recipes.unshift(recipe);
+
+        // Haptic feedback for successful add
+        if ('vibrate' in navigator) {
+            navigator.vibrate(100);
+        }
+
         showToast('Recipe added successfully', 'success');
     }
 
