@@ -3382,31 +3382,26 @@ body.is-ios .results-container {
     border-radius: 16px;
     opacity: 0;
     visibility: hidden;
-
-    /* These will be set dynamically by JavaScript */
-    transform-origin: center center;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform, opacity;
 }
 
-/* Initial state - positioned at card location with small scale */
 .side-panel.expanding {
     opacity: 1;
     visibility: visible;
 }
 
-/* Final state - centered and full scale */
 .side-panel.active {
     opacity: 1;
     visibility: visible;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) scale(1) !important;
+    transform: translate(-50%, -50%) scale(1);
 }
 
-/* Closing state - animate back to card */
 .side-panel.collapsing {
     opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
 }
 
 .side-panel-header {
@@ -3644,19 +3639,26 @@ body.is-ios .results-container {
     .side-panel {
         width: 100vw;
         max-width: 100vw;
-        max-height: 95vh;
+        height: 100vh;
+        max-height: 100vh;
         border-radius: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        transform: translateY(100%);
     }
 
-    /* On mobile, fade + slide from bottom (no position tracking) */
     .side-panel.expanding {
-        bottom: -100%;
-        transform: none !important;
+        transform: translateY(100%);
     }
 
     .side-panel.active {
-        bottom: 0 !important;
-        transform: none !important;
+        transform: translateY(0);
+    }
+
+    .side-panel.collapsing {
+        transform: translateY(100%);
     }
 
     .side-panel-header {
