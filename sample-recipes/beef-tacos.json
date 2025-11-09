@@ -1,0 +1,33 @@
+{
+  "name": "Classic Beef Tacos",
+  "ingredients": [
+    "1 lb ground beef",
+    "1 small onion, diced",
+    "2 cloves garlic, minced",
+    "2 tbsp taco seasoning",
+    "1/2 cup water",
+    "8 taco shells or tortillas",
+    "1 cup shredded lettuce",
+    "1 cup diced tomatoes",
+    "1 cup shredded cheddar cheese",
+    "1/2 cup sour cream",
+    "Salsa for serving"
+  ],
+  "instructions": [
+    "Heat a large skillet over medium-high heat",
+    "Add ground beef and diced onion, cook until beef is browned (about 5-7 minutes)",
+    "Drain excess fat from the pan",
+    "Add minced garlic and cook for 1 minute",
+    "Stir in taco seasoning and water",
+    "Simmer for 5 minutes until sauce thickens",
+    "Warm taco shells according to package directions",
+    "Fill each shell with seasoned beef",
+    "Top with lettuce, tomatoes, cheese, and sour cream",
+    "Serve with salsa on the side"
+  ],
+  "tags": ["Dinner", "Mexican", "Quick"],
+  "prepTime": "10 min",
+  "cookTime": "15 min",
+  "servings": 4,
+  "notes": "For a healthier option, use ground turkey or lean ground beef. Add jalapeños for extra heat, or guacamole for creaminess. Soft tortillas can be substituted for hard shells."
+}
