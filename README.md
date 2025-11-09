@@ -92,8 +92,27 @@ A modern, feature-rich recipe management web application with a beautiful UI ins
 ## Getting Started
 
 ### Quick Start
-1. Open `index.html` in any modern web browser
-2. Start adding recipes or import existing ones
+
+**IMPORTANT:** Due to browser security restrictions (CORS), you must run a local web server to use Recipe Hunter. Opening `index.html` directly from the file system will cause errors when loading sample recipes.
+
+#### Option 1: Using Node.js (Recommended)
+1. Make sure you have [Node.js](https://nodejs.org/) installed (version 12 or higher)
+2. Open a terminal in the Recipe Hunter folder
+3. Run: `npm start`
+4. Open your browser to: `http://localhost:8080`
+
+#### Option 2: Using Python 3
+1. Make sure you have Python 3 installed
+2. Open a terminal in the Recipe Hunter folder
+3. Run: `python3 serve.py`
+4. Open your browser to: `http://localhost:8080`
+
+#### Option 3: Using any other HTTP server
+You can use any HTTP server of your choice (e.g., `http-server`, VS Code's Live Server extension, etc.)
+
+Once the server is running:
+1. Navigate to `http://localhost:8080` in your browser
+2. Start adding recipes or try the sample recipes!
 
 ### Adding Your First Recipe
 1. Click the "Add Recipe" button or navigate using the top menu
@@ -209,6 +228,9 @@ RecipeHunter/
 ├── index.html                      # Main application page
 ├── styles.css                      # All styles and theme definitions
 ├── app.js                          # Application logic
+├── server.js                       # Node.js local web server
+├── serve.py                        # Python local web server
+├── package.json                    # Node.js project configuration
 ├── README.md                       # This file
 ├── CHANGELOG.md                    # Version history and release notes
 ├── TEST_REPORT.md                  # Comprehensive test report
@@ -264,6 +286,11 @@ Edit the default tags in `app.js` in the `loadDataFromStorage()` function.
 
 ## Troubleshooting
 
+### CORS Errors / Sample Recipes Not Loading
+**Error:** "Cross-Origin Request Blocked" in browser console
+
+**Solution:** You must run a local web server (see Quick Start above). Do NOT open `index.html` directly from your file system.
+
 ### Recipes Not Saving
 - Check if browser has localStorage enabled
 - Ensure you're not in private/incognito mode
@@ -273,6 +300,7 @@ Edit the default tags in `app.js` in the `loadDataFromStorage()` function.
 - Verify JSON file format is correct
 - Check browser console for error messages
 - Ensure files are valid JSON
+- Make sure you're running a local web server (see CORS Errors above)
 
 ### Search Not Working
 - Click the search button or press Enter to activate
