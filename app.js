@@ -68,6 +68,22 @@ function closeModalWithAnimation(modal, callback) {
     }, 250);
 }
 
+// ===== Keyboard Visibility Detection =====
+function handleKeyboardVisibility() {
+    let viewportHeight = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+        const newHeight = window.innerHeight;
+        const isKeyboardVisible = newHeight < viewportHeight - 150;
+
+        if (isKeyboardVisible) {
+            document.body.classList.add('keyboard-visible');
+        } else {
+            document.body.classList.remove('keyboard-visible');
+        }
+    });
+}
+
 // ===== Initialization =====
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
@@ -86,6 +102,7 @@ async function initializeApp() {
     setupMobileFeatures();
     setupFirstTimeGuide();
     initializeTooltips();
+    handleKeyboardVisibility();
 
     // Log device info for debugging
     console.log('Device Info:', {
