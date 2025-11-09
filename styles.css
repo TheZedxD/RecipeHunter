@@ -463,6 +463,18 @@ html {
     font-size: 20px;
     font-weight: 600;
     color: var(--text-primary);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.logo:hover {
+    opacity: 0.8;
+    transform: translateY(-1px);
+}
+
+.logo:active {
+    transform: translateY(0);
 }
 
 .logo-icon {
