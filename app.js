@@ -1066,6 +1066,11 @@ function updateActiveThemeCard() {
 function navigateTo(page) {
     state.currentPage = page;
 
+    // Close any open overlays, modals, and panels for clean page transition
+    closeSidePanel();
+    hideSearchPreview();
+    hideContextMenu();
+
     // Update nav buttons (desktop)
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.page === page);
@@ -1084,6 +1089,7 @@ function navigateTo(page) {
     // Render page content
     switch(page) {
         case 'home':
+            renderQuickTags(); // Re-render tags in case they were modified
             renderRecipes();
             break;
         case 'tags':
