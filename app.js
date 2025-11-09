@@ -623,15 +623,39 @@ function setupEventListeners() {
         });
     });
 
-    // Logo click to navigate home
+    /**
+     * Logo Click Navigation - User Experience Enhancement
+     *
+     * Makes the Recipe Hunter logo clickable to navigate home, following standard web UX patterns.
+     *
+     * BEHAVIOR:
+     * - Clicking logo from any page (Tags, Shopping List, Import, Settings) navigates to Home
+     * - Clicking logo on Home page does nothing disruptive (idempotent operation)
+     * - Mobile menu closes automatically when logo is clicked (mobile-friendly)
+     *
+     * ACCESSIBILITY:
+     * - Full keyboard support (Enter and Space keys)
+     * - Logo has role="button" and tabindex="0" in HTML
+     * - Provides clear visual feedback (hover effects in CSS)
+     * - Screen reader friendly with aria-label
+     *
+     * WHY THIS IMPROVES UX:
+     * - Matches user expectations from other websites (e.g., GitHub, Amazon, etc.)
+     * - Provides quick way to return home without using navigation menu
+     * - Especially helpful on mobile where navigation is hidden in menu
+     * - No negative side effects - always safe to click
+     *
+     * CROSS-BROWSER: Works in all modern browsers (Chrome, Firefox, Safari, Edge)
+     */
     const logoBtn = document.getElementById('logoBtn');
     if (logoBtn) {
+        // Mouse/touch interaction
         logoBtn.addEventListener('click', () => {
             navigateTo('home');
             closeMobileMenu(); // Close menu if open on mobile
         });
 
-        // Keyboard support
+        // Keyboard accessibility (Enter or Space)
         logoBtn.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -3572,6 +3596,39 @@ function setEditorContent(editorId, content) {
 }
 
 // ===== Side Panel Functions =====
+
+/**
+ * openSidePanel - Display recipe details in a centered modal
+ *
+ * MODAL DISPLAY BEHAVIOR:
+ * - Shows recipe in an 800px × 85vh modal centered in viewport
+ * - Modal uses CSS-based centering (top: 50%, left: 50%, transform: translate(-50%, -50%))
+ * - The 85vh height shows most content without immediate scrolling
+ * - Content area has overflow-y: auto for longer recipes
+ *
+ * ANIMATION:
+ * - Smooth fade-in + scale-up animation (0.4s cubic-bezier)
+ * - Uses requestAnimationFrame for smooth 60fps rendering
+ * - No position tracking needed - CSS handles all positioning
+ *
+ * MOBILE BEHAVIOR:
+ * - On mobile (≤768px), modal becomes full-screen slide-up panel
+ * - Slide animation from bottom feels natural on touch devices
+ * - Maximizes content space on small screens
+ *
+ * SCROLL LOCKING:
+ * - Locks body scroll when modal opens (prevents background scrolling)
+ * - Preserves scroll position for when modal closes
+ * - Uses position: fixed technique for reliable cross-browser support
+ *
+ * INTERACTION:
+ * - Overlay click closes modal
+ * - Escape key closes modal
+ * - All recipe actions available via buttons in modal
+ *
+ * @param {Object} recipe - Recipe object to display
+ * @param {HTMLElement} sourceCard - Optional source card for animation reference
+ */
 function openSidePanel(recipe, sourceCard = null) {
     state.currentRecipe = recipe;
     state.sourceCard = sourceCard; // Store for closing animation
@@ -3768,13 +3825,18 @@ function openSidePanel(recipe, sourceCard = null) {
     // Show the side panel with clean fade-in animation
     // Modal content is populated first, then we show it with a smooth animation
     // CSS handles the centering and sizing - no position tracking needed
+    // This simplified approach ensures:
+    // 1. Modal is always centered regardless of content size
+    // 2. Animations are smooth (60fps) with CSS transitions
+    // 3. No layout shifts or jumps during opening
     sidePanelOverlay.classList.add('active');
     sidePanel.classList.add('expanding');
 
-    // Force reflow to ensure initial state is applied
+    // Force reflow to ensure initial state is applied before animation starts
     sidePanel.offsetHeight;
 
     // Use requestAnimationFrame to trigger smooth fade-in and scale-up
+    // This ensures the browser has painted the initial state before animating
     requestAnimationFrame(() => {
         sidePanel.classList.add('active');
     });
@@ -3791,6 +3853,30 @@ function openSidePanel(recipe, sourceCard = null) {
     document.body.classList.add('modal-open'); // Prevent body scroll
 }
 
+/**
+ * closeSidePanel - Close the recipe modal with smooth animation
+ *
+ * ANIMATION:
+ * - Smooth fade-out + scale-down animation (matches opening animation)
+ * - Modal scales down to 0.9 while fading out (reverse of opening)
+ * - Maintains centering throughout animation for clean visual effect
+ *
+ * CLEANUP:
+ * - Removes all animation classes after transition completes
+ * - Clears any inline styles that might have been applied
+ * - Restores body scroll and scroll position
+ *
+ * SCROLL RESTORATION:
+ * - Unlocks body scroll (removes position: fixed)
+ * - Restores user's original scroll position
+ * - Prevents jarring scroll jumps
+ *
+ * TRIGGERS:
+ * - Close button click
+ * - Overlay click
+ * - Escape key press
+ * - Delete recipe action
+ */
 function closeSidePanel() {
     const sidePanel = document.getElementById('sidePanel');
     const sidePanelOverlay = document.getElementById('sidePanelOverlay');
@@ -3798,6 +3884,7 @@ function closeSidePanel() {
     if (!sidePanel || !sidePanelOverlay) return;
 
     // Clean fade-out animation - CSS handles the scaling and positioning
+    // Modal scales down and fades out while staying centered
     sidePanel.classList.remove('active');
     sidePanel.classList.add('collapsing');
 
