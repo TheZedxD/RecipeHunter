@@ -3637,8 +3637,9 @@ body.is-ios .results-container {
 .side-panel {
     position: fixed;
     width: 800px;
-    max-width: 95vw;
-    max-height: 95vh;
+    max-width: 90vw;
+    height: 85vh;
+    max-height: 85vh;
     background: var(--bg-secondary);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     z-index: 9999;
@@ -3657,6 +3658,7 @@ body.is-ios .results-container {
 .side-panel.expanding {
     opacity: 1;
     visibility: visible;
+    transform: translate(-50%, -50%) scale(0.9);
 }
 
 .side-panel.active {
@@ -3719,6 +3721,7 @@ body.is-ios .results-container {
     flex: 1;
     overflow-y: auto;
     padding: 24px;
+    -webkit-overflow-scrolling: touch;
 }
 
 .side-panel-content::-webkit-scrollbar {
