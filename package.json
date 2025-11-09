@@ -1,0 +1,22 @@
+{
+  "name": "recipe-hunter",
+  "version": "1.0.0",
+  "description": "Your Personal Recipe Manager",
+  "main": "app.js",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js",
+    "serve:python": "python3 serve.py"
+  },
+  "keywords": [
+    "recipe",
+    "manager",
+    "cooking",
+    "food"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=12.0.0"
+  }
+}
