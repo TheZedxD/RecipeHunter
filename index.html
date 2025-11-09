@@ -11,17 +11,6 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body data-theme="claude">
-    <!-- Top Action Buttons -->
-    <div class="top-action-buttons">
-        <button class="action-btn help-btn" id="helpBtn" title="Help & Shortcuts">
-            <span class="action-icon">❓</span>
-        </button>
-        <button class="action-btn theme-btn" id="preferencesBtn" title="Preferences & Themes">
-            <span class="action-icon">⚙️</span>
-            <span class="new-badge" id="themeBadge">NEW</span>
-        </button>
-    </div>
-
     <!-- Main Container -->
     <div class="container" id="mainContainer">
         <!-- Header -->
@@ -58,6 +47,15 @@
                     <button class="nav-btn" data-page="import">
                         <span class="nav-icon">💾</span>
                         <span>Data</span>
+                    </button>
+                    <button class="nav-btn" id="helpBtn">
+                        <span class="nav-icon">❓</span>
+                        <span>Help</span>
+                    </button>
+                    <button class="nav-btn" id="preferencesBtn">
+                        <span class="nav-icon">⚙️</span>
+                        <span>Preferences</span>
+                        <span class="new-badge" id="themeBadge">NEW</span>
                     </button>
                 </nav>
             </div>
@@ -97,6 +95,15 @@
                 <button class="mobile-nav-btn" data-page="import">
                     <span class="nav-icon">💾</span>
                     <span>Import & Export</span>
+                </button>
+                <button class="mobile-nav-btn" id="helpBtnMobile">
+                    <span class="nav-icon">❓</span>
+                    <span>Help</span>
+                </button>
+                <button class="mobile-nav-btn" id="preferencesBtnMobile">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Preferences</span>
+                    <span class="new-badge" id="themeBadgeMobile">NEW</span>
                 </button>
             </nav>
         </div>
