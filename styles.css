@@ -659,22 +659,38 @@ html {
 
 .welcome-text {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 16px;
+    opacity: 0.85;
+    transition: opacity 0.3s ease;
 }
 
-.welcome-text h1 {
-    font-size: 48px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+.welcome-text.hidden {
+    display: none;
 }
 
 .welcome-text p {
-    font-size: 18px;
+    font-size: 14px;
     color: var(--text-secondary);
+    margin: 0;
+}
+
+.try-demo-link {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+    transition: all 0.2s ease;
+}
+
+.try-demo-link:hover {
+    color: var(--accent-dark);
+    text-decoration-style: solid;
 }
 
 .search-box {
@@ -2515,10 +2531,6 @@ body.compact-view .recipe-card-preview {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .welcome-text h1 {
-        font-size: 32px;
-    }
-
     .header-content {
         flex-direction: row;
         gap: 16px;
@@ -2711,12 +2723,8 @@ body.compact-view .recipe-card-preview {
         grid-template-columns: 1fr;
     }
 
-    .welcome-text h1 {
-        font-size: 28px;
-    }
-
     .welcome-text p {
-        font-size: 16px;
+        font-size: 13px;
     }
 
     .page-header h2 {
@@ -2769,9 +2777,8 @@ body.compact-view .recipe-card-preview {
 
 /* Landscape orientation mobile */
 @media (max-width: 896px) and (max-height: 428px) and (orientation: landscape) {
-    .welcome-text h1 {
-        font-size: 24px;
-        margin-bottom: 8px;
+    .welcome-text p {
+        font-size: 12px;
     }
 
     .search-section {
@@ -4203,37 +4210,6 @@ body.is-ios .results-container {
     }
 }
 
-/* ===== Try Demo Button ===== */
-.try-demo-btn {
-    margin-top: 20px;
-    padding: 12px 24px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-    color: white;
-    border: none;
-    border-radius: 25px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.try-demo-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
-}
-
-.try-demo-btn:active {
-    transform: translateY(0);
-}
-
-.demo-icon {
-    font-size: 18px;
-}
-
 /* ===== Help Modal Styles ===== */
 .help-section {
     margin-bottom: 32px;
@@ -4515,11 +4491,6 @@ body.is-ios .results-container {
         width: 44px;
         height: 44px;
         font-size: 18px;
-    }
-
-    .try-demo-btn {
-        padding: 10px 20px;
-        font-size: 14px;
     }
 
     .shortcuts-grid {
