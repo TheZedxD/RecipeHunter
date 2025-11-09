@@ -2000,13 +2000,15 @@ body.compact-view .recipe-card-preview {
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     z-index: 2000;
-    align-items: center;
-    justify-content: center;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    padding: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .modal.visible {
     display: flex;
+    align-items: center;
+    justify-content: center;
     animation: backdropFadeIn 0.2s ease-out;
 }
 
@@ -2018,12 +2020,13 @@ body.compact-view .recipe-card-preview {
     background: var(--bg-secondary);
     border-radius: var(--border-radius);
     max-width: 800px;
-    width: 100%;
-    max-height: 90vh;
+    width: calc(100% - 32px);
+    max-height: calc(100vh - 32px);
+    margin: 16px;
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     animation: modalEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    will-change: transform, opacity;
+    position: relative;
 }
 
 .modal.closing .modal-content {
@@ -2900,13 +2903,23 @@ body.compact-view .recipe-card-preview {
 
     /* Mobile modals */
     .modal {
-        padding: 0;
+        align-items: flex-start;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
 
     .modal-content {
-        max-height: 100vh;
-        border-radius: 0;
         width: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        margin: 0;
+        border-radius: 0;
+        min-height: 100vh;
+    }
+
+    .modal-content-large {
+        width: 100%;
+        max-width: 100%;
+        max-height: 100%;
     }
 
     .modal-header {
