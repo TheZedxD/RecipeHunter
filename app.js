@@ -1310,9 +1310,17 @@ function renderInitialView() {
     // Always render quick tags so they're available immediately
     renderQuickTags();
 
+    const welcomeText = document.getElementById('welcomeText');
+
     if (state.recipes.length === 0) {
         document.getElementById('emptyState').classList.add('visible');
+        if (welcomeText) {
+            welcomeText.classList.add('hidden');
+        }
     } else {
+        if (welcomeText) {
+            welcomeText.classList.remove('hidden');
+        }
         renderRecipes();
     }
     updateFavoritesButton();
@@ -1326,10 +1334,20 @@ function renderRecipes() {
 
     const container = document.getElementById('resultsContainer');
     const emptyState = document.getElementById('emptyState');
+    const welcomeText = document.getElementById('welcomeText');
 
     const filteredRecipes = getFilteredRecipes();
 
     container.innerHTML = '';
+
+    // Toggle welcome text visibility based on total recipes (not filtered)
+    // Hide welcome when there are no recipes at all (empty state will show)
+    // Show welcome when there are recipes (even if filtered results are empty)
+    if (state.recipes.length === 0) {
+        welcomeText.classList.add('hidden');
+    } else {
+        welcomeText.classList.remove('hidden');
+    }
 
     if (filteredRecipes.length === 0) {
         emptyState.classList.add('visible');
