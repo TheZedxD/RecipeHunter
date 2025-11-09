@@ -21,13 +21,13 @@
                     <span class="logo-text">Recipe Hunter</span>
                 </div>
                 <!-- Hamburger Menu Button (Mobile Only) -->
-                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+                <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobileMenu">
                     <span class="hamburger-line"></span>
                     <span class="hamburger-line"></span>
                     <span class="hamburger-line"></span>
                 </button>
                 <!-- Desktop Navigation -->
-                <nav class="nav" id="desktopNav">
+                <nav class="nav" id="desktopNav" role="navigation" aria-label="Main navigation">
                     <button class="nav-btn active" data-page="home">
                         <span class="nav-icon">🏠</span>
                         <span>Home</span>
@@ -75,7 +75,7 @@
                     <span>✕</span>
                 </button>
             </div>
-            <nav class="mobile-menu-nav">
+            <nav class="mobile-menu-nav" role="navigation" aria-label="Mobile navigation">
                 <button class="mobile-nav-btn active" data-page="home">
                     <span class="nav-icon">🏠</span>
                     <span>Home</span>
@@ -119,8 +119,8 @@
                             <p>Want to explore? <button class="try-demo-link" onclick="importSampleRecipes()">Try Sample Recipes ✨</button></p>
                         </div>
                         <div class="search-box">
-                            <input type="text" id="searchInput" placeholder="Search recipes by name, ingredients, or tags..." autocomplete="off">
-                            <button class="search-btn" id="searchBtn">
+                            <input type="text" id="searchInput" placeholder="Search recipes by name, ingredients, or tags..." autocomplete="off" aria-label="Search recipes">
+                            <button class="search-btn" id="searchBtn" aria-label="Search">
                                 <span class="search-icon">🔍</span>
                             </button>
                         </div>
