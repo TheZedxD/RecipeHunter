@@ -16,3 +16,6 @@ npm-debug.log*
 # Temporary files
 *.tmp
 .cache
+
+# Recipe data directory (server-side storage)
+data/
