@@ -7,9 +7,22 @@
 
 :root {
     --transition-speed: 0.3s;
+    --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
     --border-radius: 8px;
     --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     --box-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Reduced Motion Support for Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 /* Theme Variables - Claude (Default) */
@@ -235,7 +248,7 @@ html {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    transition: all var(--transition-speed);
+    transition: opacity var(--transition-speed) ease;
 }
 
 /* Preferences Button */
@@ -257,7 +270,9 @@ html {
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    transition: all var(--transition-speed);
+    transition: transform var(--transition-speed) var(--transition-timing),
+                box-shadow var(--transition-speed) var(--transition-timing),
+                background var(--transition-speed) ease;
     box-shadow: var(--box-shadow);
 }
 
@@ -313,7 +328,10 @@ html {
     border-radius: var(--border-radius);
     padding: 16px;
     cursor: pointer;
-    transition: all var(--transition-speed);
+    transition: transform var(--transition-speed) var(--transition-timing),
+                box-shadow var(--transition-speed) var(--transition-timing),
+                border-color var(--transition-speed) ease,
+                background var(--transition-speed) ease;
     text-align: left;
     position: relative;
     overflow: hidden;
@@ -443,7 +461,9 @@ html {
     padding: 0;
     opacity: 1;
     transform: translateY(0);
-    transition: all var(--transition-speed);
+    transition: opacity var(--transition-speed) ease,
+                transform var(--transition-speed) var(--transition-timing),
+                background var(--transition-speed) ease;
     box-shadow: var(--box-shadow);
 }
 
@@ -516,7 +536,9 @@ html {
     cursor: pointer;
     color: var(--text-secondary);
     font-size: 14px;
-    transition: all var(--transition-speed);
+    transition: background var(--transition-speed) ease,
+                color var(--transition-speed) ease,
+                transform 0.1s ease;
     position: relative;
 }
 
@@ -941,7 +963,7 @@ html {
         transform: scale(1);
     }
     50% {
-        transform: scale(1.1);
+        transform: scale(1.05);
     }
     100% {
         transform: scale(1);
@@ -1072,10 +1094,10 @@ html {
 
 @keyframes pulse {
     0%, 100% {
-        transform: scale(1.15) rotate(12deg);
+        transform: scale(1);
     }
     50% {
-        transform: scale(1.25) rotate(12deg);
+        transform: scale(1.1);
     }
 }
 
@@ -1150,23 +1172,31 @@ html {
     border-radius: var(--border-radius);
     padding: 24px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--transition-speed) var(--transition-timing),
+                box-shadow var(--transition-speed) var(--transition-timing),
+                border-color var(--transition-speed) var(--transition-timing),
+                opacity 0.2s ease;
     box-shadow: var(--box-shadow);
     position: relative;
     overflow: hidden;
-    will-change: transform;
 }
 
-.recipe-card:hover {
-    transform: translate3d(0, -8px, 0);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15),
-                0 0 0 1px var(--accent-primary),
-                0 0 20px rgba(var(--accent-primary-rgb, 99, 102, 241), 0.2);
-    border-color: var(--accent-primary);
+/* Desktop hover effects */
+@media (hover: hover) and (pointer: fine) {
+    .recipe-card:hover {
+        transform: translate3d(0, -4px, 0);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        border-color: var(--accent-primary);
+    }
 }
 
-.recipe-card:hover .recipe-card-image {
-    transform: scale(1.05);
+/* Mobile touch feedback - simpler and faster */
+@media (hover: none) and (pointer: coarse) {
+    .recipe-card:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+        transition: transform 0.1s ease, opacity 0.1s ease;
+    }
 }
 
 .recipe-card-header {
@@ -1297,7 +1327,11 @@ html {
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
-    transition: all var(--transition-speed);
+    transition: background var(--transition-speed) ease,
+                color var(--transition-speed) ease,
+                transform var(--transition-speed) var(--transition-timing),
+                box-shadow var(--transition-speed) var(--transition-timing),
+                opacity 0.2s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2294,18 +2328,7 @@ body.compact-view .recipe-card-preview {
 @keyframes modalEnter {
     from {
         opacity: 0;
-        transform: scale(0.9) translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-
-@keyframes modalEnterDramatic {
-    from {
-        opacity: 0;
-        transform: scale(0.85) translateY(30px);
+        transform: scale(0.95) translateY(10px);
     }
     to {
         opacity: 1;
@@ -2320,7 +2343,32 @@ body.compact-view .recipe-card-preview {
     }
     to {
         opacity: 0;
-        transform: scale(0.95) translateY(-20px);
+        transform: scale(0.98) translateY(-10px);
+    }
+}
+
+/* Mobile modal animations - slide from bottom */
+@media (max-width: 768px) {
+    @keyframes modalEnter {
+        from {
+            opacity: 0;
+            transform: translateY(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes modalExit {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(100%);
+        }
     }
 }
 
@@ -3115,6 +3163,19 @@ body.compact-view .recipe-card-preview {
 
     .recipe-card:active {
         transform: scale(0.98);
+        transition: transform 0.1s ease;
+    }
+
+    /* Ensure proper touch target sizes */
+    .btn {
+        min-height: 44px;
+        padding: 12px 20px;
+        font-size: 15px;
+    }
+
+    .nav-btn {
+        min-height: 44px;
+        padding: 12px 16px;
     }
 
     .form-row {
@@ -3369,6 +3430,7 @@ body.modal-open {
 }
 
 /* Mobile-specific styles */
+/* Enhanced mobile touch feedback */
 body.is-mobile .recipe-card {
     cursor: default;
     user-select: none;
@@ -3376,11 +3438,33 @@ body.is-mobile .recipe-card {
 
 body.is-mobile .recipe-card:active {
     opacity: 0.9;
+    transform: scale(0.98);
+    transition: opacity 0.1s ease, transform 0.1s ease;
 }
 
 body.is-mobile .tag:active,
-body.is-mobile .btn:active {
+body.is-mobile .btn:active,
+body.is-mobile .nav-btn:active {
     opacity: 0.8;
+    transform: scale(0.97);
+    transition: opacity 0.1s ease, transform 0.1s ease;
+}
+
+/* Faster transitions for touch interactions */
+@media (hover: none) and (pointer: coarse) {
+    .btn,
+    .nav-btn,
+    .tag,
+    .theme-btn {
+        transition-duration: 0.15s;
+    }
+
+    .btn:active,
+    .nav-btn:active,
+    .tag:active {
+        transform: scale(0.97);
+        opacity: 0.85;
+    }
 }
 
 /* Text selection on mobile */
@@ -3688,7 +3772,9 @@ body.is-ios .results-container {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0.9);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.3s ease,
+                transform 0.3s var(--transition-timing),
+                visibility 0.3s;
 }
 
 .side-panel.expanding {
@@ -4315,17 +4401,23 @@ body.is-ios .results-container {
     justify-content: center;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
                 0 8px 24px rgba(139, 92, 246, 0.3);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--transition-speed) var(--transition-timing),
+                box-shadow var(--transition-speed) var(--transition-timing),
+                background var(--transition-speed) ease,
+                opacity 0.2s ease;
     z-index: 2500;
     outline: none;
     -webkit-tap-highlight-color: transparent;
 }
 
-.fab:hover {
-    transform: scale(1.1) translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2),
-                0 12px 32px rgba(139, 92, 246, 0.4);
-    background: var(--accent-secondary);
+/* Desktop hover effects only */
+@media (hover: hover) and (pointer: fine) {
+    .fab:hover {
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2),
+                    0 12px 32px rgba(139, 92, 246, 0.4);
+        background: var(--accent-secondary);
+    }
 }
 
 .fab:active {
@@ -4345,20 +4437,6 @@ body.is-ios .results-container {
     user-select: none;
 }
 
-/* FAB Animation on Hover */
-@keyframes fabBounce {
-    0%, 100% {
-        transform: scale(1.1) translateY(-2px);
-    }
-    50% {
-        transform: scale(1.15) translateY(-4px);
-    }
-}
-
-.fab:hover {
-    animation: fabBounce 0.6s ease-in-out;
-}
-
 /* Mobile FAB Positioning */
 @media (max-width: 768px) {
     .fab {
@@ -4372,12 +4450,9 @@ body.is-ios .results-container {
                     0 8px 20px rgba(139, 92, 246, 0.35);
     }
 
-    .fab:hover {
-        transform: scale(1.05);
-    }
-
     .fab:active {
         transform: scale(0.95);
+        transition: transform 0.1s ease;
     }
 
     .fab-icon {
