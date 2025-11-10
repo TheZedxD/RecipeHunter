@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initializeApp() {
-    loadDataFromStorage();
+    await loadDataFromStorage();
 
     // Pre-populate with sample recipes on first load
     await loadInitialSampleRecipes();
@@ -348,6 +348,100 @@ function handleTouchEnd(e) {
     }
 }
 
+// ===== Server API Communication =====
+const API_BASE = window.location.origin;
+
+async function apiRequest(endpoint, options = {}) {
+    try {
+        const url = `${API_BASE}${endpoint}`;
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('API request failed:', error);
+        throw error;
+    }
+}
+
+async function loadRecipesFromServer() {
+    try {
+        const recipes = await apiRequest('/api/recipes');
+        return recipes;
+    } catch (error) {
+        console.warn('Failed to load recipes from server, using cache:', error);
+        return null;
+    }
+}
+
+async function saveRecipesToServer(recipes) {
+    try {
+        await apiRequest('/api/recipes', {
+            method: 'POST',
+            body: JSON.stringify(recipes)
+        });
+        return true;
+    } catch (error) {
+        console.error('Failed to save recipes to server:', error);
+        return false;
+    }
+}
+
+async function loadTagsFromServer() {
+    try {
+        const tags = await apiRequest('/api/tags');
+        return tags;
+    } catch (error) {
+        console.warn('Failed to load tags from server, using cache:', error);
+        return null;
+    }
+}
+
+async function saveTagsToServer(tags) {
+    try {
+        await apiRequest('/api/tags', {
+            method: 'POST',
+            body: JSON.stringify(tags)
+        });
+        return true;
+    } catch (error) {
+        console.error('Failed to save tags to server:', error);
+        return false;
+    }
+}
+
+async function loadSettingsFromServer() {
+    try {
+        const settings = await apiRequest('/api/settings');
+        return settings;
+    } catch (error) {
+        console.warn('Failed to load settings from server, using cache:', error);
+        return null;
+    }
+}
+
+async function saveSettingsToServer(settings) {
+    try {
+        await apiRequest('/api/settings', {
+            method: 'POST',
+            body: JSON.stringify(settings)
+        });
+        return true;
+    } catch (error) {
+        console.error('Failed to save settings to server:', error);
+        return false;
+    }
+}
+
 // ===== Local Storage Management =====
 function isLocalStorageAvailable() {
     try {
@@ -360,105 +454,131 @@ function isLocalStorageAvailable() {
     }
 }
 
-function loadDataFromStorage() {
+async function loadDataFromStorage() {
     // Check if localStorage is available (can be disabled in iOS private browsing)
-    if (!isLocalStorageAvailable()) {
+    const hasLocalStorage = isLocalStorageAvailable();
+
+    if (!hasLocalStorage) {
         console.warn('localStorage is not available. Data will not persist across sessions.');
-        showToast('Running in private mode - recipes won\'t be saved', 'warning');
-
-        // Show persistent warning banner
-        const storageWarning = document.getElementById('storageWarning');
-        if (storageWarning) {
-            storageWarning.style.display = 'block';
-        }
-
-        // Initialize with default tags
-        if (state.tags.length === 0) {
-            state.tags = getDefaultTags();
-        }
-        return;
     }
 
     try {
-        const storedRecipes = localStorage.getItem('recipes');
-        const storedTags = localStorage.getItem('tags');
-        const storedSettings = localStorage.getItem('settings');
+        // Try to load from server first
+        const serverRecipes = await loadRecipesFromServer();
+        const serverTags = await loadTagsFromServer();
+        const serverSettings = await loadSettingsFromServer();
 
-        if (storedRecipes) {
-            try {
-                const parsedRecipes = JSON.parse(storedRecipes);
-                // Validate that it's an array
-                if (Array.isArray(parsedRecipes)) {
-                    state.recipes = parsedRecipes;
-                    // Ensure all recipes have required fields and timestamps
-                    state.recipes.forEach(recipe => {
-                        if (!recipe.id) {
-                            recipe.id = generateId();
-                        }
-                        if (!recipe.name) {
-                            recipe.name = 'Untitled Recipe';
-                        }
-                        if (!recipe.ingredients || !Array.isArray(recipe.ingredients)) {
-                            recipe.ingredients = [];
-                        }
-                        if (!recipe.instructions || !Array.isArray(recipe.instructions)) {
-                            recipe.instructions = [];
-                        }
-                        if (!recipe.tags || !Array.isArray(recipe.tags)) {
-                            recipe.tags = [];
-                        }
-                        if (!recipe.createdAt) {
-                            recipe.createdAt = new Date().toISOString();
-                        }
-                        if (!recipe.updatedAt) {
-                            recipe.updatedAt = recipe.createdAt;
-                        }
-                        // Add isFavorite property if it doesn't exist
-                        if (recipe.isFavorite === undefined) {
-                            recipe.isFavorite = false;
-                        }
-                    });
-                } else {
-                    console.warn('Invalid recipes data format, resetting to empty array');
-                    state.recipes = [];
+        // Process recipes from server
+        if (serverRecipes && Array.isArray(serverRecipes)) {
+            state.recipes = serverRecipes;
+            // Cache to localStorage
+            if (hasLocalStorage) {
+                try {
+                    localStorage.setItem('recipes', JSON.stringify(serverRecipes));
+                } catch (e) {
+                    console.warn('Failed to cache recipes to localStorage:', e);
                 }
-            } catch (e) {
-                console.error('Error parsing recipes:', e);
-                state.recipes = [];
-                showToast('Cannot load recipes. Please check browser settings.', 'error');
             }
-        }
-
-        if (storedTags) {
-            try {
-                const parsedTags = JSON.parse(storedTags);
-                if (Array.isArray(parsedTags)) {
-                    state.tags = parsedTags;
-                } else {
-                    console.warn('Invalid tags data format, will use defaults');
-                    state.tags = [];
+        } else if (hasLocalStorage) {
+            // Fallback to localStorage cache
+            const storedRecipes = localStorage.getItem('recipes');
+            if (storedRecipes) {
+                try {
+                    const parsedRecipes = JSON.parse(storedRecipes);
+                    if (Array.isArray(parsedRecipes)) {
+                        state.recipes = parsedRecipes;
+                    }
+                } catch (e) {
+                    console.error('Error parsing cached recipes:', e);
                 }
-            } catch (e) {
-                console.error('Error parsing tags:', e);
-                state.tags = [];
             }
         }
 
-        // Load settings
-        if (storedSettings) {
-            try {
-                const parsedSettings = JSON.parse(storedSettings);
-                state.settings = { ...state.settings, ...parsedSettings };
-            } catch (e) {
-                console.error('Error parsing settings:', e);
+        // Ensure all recipes have required fields
+        state.recipes.forEach(recipe => {
+            if (!recipe.id) {
+                recipe.id = generateId();
+            }
+            if (!recipe.name) {
+                recipe.name = 'Untitled Recipe';
+            }
+            if (!recipe.ingredients || !Array.isArray(recipe.ingredients)) {
+                recipe.ingredients = [];
+            }
+            if (!recipe.instructions || !Array.isArray(recipe.instructions)) {
+                recipe.instructions = [];
+            }
+            if (!recipe.tags || !Array.isArray(recipe.tags)) {
+                recipe.tags = [];
+            }
+            if (!recipe.createdAt) {
+                recipe.createdAt = new Date().toISOString();
+            }
+            if (!recipe.updatedAt) {
+                recipe.updatedAt = recipe.createdAt;
+            }
+            if (recipe.isFavorite === undefined) {
+                recipe.isFavorite = false;
+            }
+        });
+
+        // Process tags from server
+        if (serverTags && Array.isArray(serverTags)) {
+            state.tags = serverTags;
+            // Cache to localStorage
+            if (hasLocalStorage) {
+                try {
+                    localStorage.setItem('tags', JSON.stringify(serverTags));
+                } catch (e) {
+                    console.warn('Failed to cache tags to localStorage:', e);
+                }
+            }
+        } else if (hasLocalStorage) {
+            // Fallback to localStorage cache
+            const storedTags = localStorage.getItem('tags');
+            if (storedTags) {
+                try {
+                    const parsedTags = JSON.parse(storedTags);
+                    if (Array.isArray(parsedTags)) {
+                        state.tags = parsedTags;
+                    }
+                } catch (e) {
+                    console.error('Error parsing cached tags:', e);
+                }
             }
         }
 
-        // Load shopping list
-        loadShoppingListFromStorage();
+        // Process settings from server
+        if (serverSettings && typeof serverSettings === 'object') {
+            state.settings = { ...state.settings, ...serverSettings };
+            // Cache to localStorage
+            if (hasLocalStorage) {
+                try {
+                    localStorage.setItem('settings', JSON.stringify(serverSettings));
+                } catch (e) {
+                    console.warn('Failed to cache settings to localStorage:', e);
+                }
+            }
+        } else if (hasLocalStorage) {
+            // Fallback to localStorage cache
+            const storedSettings = localStorage.getItem('settings');
+            if (storedSettings) {
+                try {
+                    const parsedSettings = JSON.parse(storedSettings);
+                    state.settings = { ...state.settings, ...parsedSettings };
+                } catch (e) {
+                    console.error('Error parsing cached settings:', e);
+                }
+            }
+        }
+
+        // Load shopping list from localStorage (not synced to server)
+        if (hasLocalStorage) {
+            loadShoppingListFromStorage();
+        }
     } catch (e) {
-        console.error('Error accessing localStorage:', e);
-        showToast('Cannot access browser storage. Please check browser settings.', 'error');
+        console.error('Error loading data:', e);
+        showToast('Using cached data. Server connection may be unavailable.', 'warning');
     }
 
     // Add default tags if none exist
@@ -515,65 +635,72 @@ function checkStorageQuota() {
     }
 }
 
-function saveRecipesToStorage() {
-    if (!isLocalStorageAvailable()) {
-        console.warn('localStorage not available, skipping save');
-        return;
-    }
+async function saveRecipesToStorage() {
+    const hasLocalStorage = isLocalStorageAvailable();
 
     try {
-        const recipesJson = JSON.stringify(state.recipes);
-        localStorage.setItem('recipes', recipesJson);
-        checkStorageQuota();
-    } catch (e) {
-        console.error('Error saving recipes to storage:', e);
-        if (e.name === 'QuotaExceededError') {
-            showToast('Unable to save recipe. Your browser storage may be full.', 'error', 5000);
-        } else if (state.isIOS) {
-            showToast('Unable to save - check if private browsing is enabled', 'error');
-        } else {
-            showToast('Unable to save recipe. Please check browser settings.', 'error');
+        // Save to server first
+        const serverSaved = await saveRecipesToServer(state.recipes);
+
+        // Also cache to localStorage
+        if (hasLocalStorage) {
+            try {
+                const recipesJson = JSON.stringify(state.recipes);
+                localStorage.setItem('recipes', recipesJson);
+                checkStorageQuota();
+            } catch (e) {
+                console.warn('Failed to cache recipes to localStorage:', e);
+            }
         }
+
+        if (!serverSaved && !hasLocalStorage) {
+            showToast('Unable to save recipes. Server connection unavailable.', 'error');
+        }
+    } catch (e) {
+        console.error('Error saving recipes:', e);
+        showToast('Failed to save recipes. Please try again.', 'error');
     }
 }
 
-function saveTagsToStorage() {
-    if (!isLocalStorageAvailable()) {
-        console.warn('localStorage not available, skipping save');
-        return;
-    }
+async function saveTagsToStorage() {
+    const hasLocalStorage = isLocalStorageAvailable();
 
     try {
-        const tagsJson = JSON.stringify(state.tags);
-        localStorage.setItem('tags', tagsJson);
-    } catch (e) {
-        console.error('Error saving tags to storage:', e);
-        if (e.name === 'QuotaExceededError') {
-            showToast('Unable to save tags. Your browser storage may be full.', 'error');
-        } else if (state.isIOS) {
-            showToast('Unable to save - check if private browsing is enabled', 'error');
-        } else {
-            showToast('Unable to save tags. Please check browser settings.', 'error');
+        // Save to server first
+        await saveTagsToServer(state.tags);
+
+        // Also cache to localStorage
+        if (hasLocalStorage) {
+            try {
+                const tagsJson = JSON.stringify(state.tags);
+                localStorage.setItem('tags', tagsJson);
+            } catch (e) {
+                console.warn('Failed to cache tags to localStorage:', e);
+            }
         }
+    } catch (e) {
+        console.error('Error saving tags:', e);
     }
 }
 
-function saveSettingsToStorage() {
-    if (!isLocalStorageAvailable()) {
-        console.warn('localStorage not available, skipping save');
-        return;
-    }
+async function saveSettingsToStorage() {
+    const hasLocalStorage = isLocalStorageAvailable();
 
     try {
-        const settingsJson = JSON.stringify(state.settings);
-        localStorage.setItem('settings', settingsJson);
-    } catch (e) {
-        console.error('Error saving settings to storage:', e);
-        if (e.name === 'QuotaExceededError') {
-            showToast('Unable to save settings. Your browser storage may be full.', 'error');
-        } else {
-            showToast('Unable to save settings. Please check browser settings.', 'error');
+        // Save to server first
+        await saveSettingsToServer(state.settings);
+
+        // Also cache to localStorage
+        if (hasLocalStorage) {
+            try {
+                const settingsJson = JSON.stringify(state.settings);
+                localStorage.setItem('settings', settingsJson);
+            } catch (e) {
+                console.warn('Failed to cache settings to localStorage:', e);
+            }
         }
+    } catch (e) {
+        console.error('Error saving settings:', e);
     }
 }
 
