@@ -2273,32 +2273,6 @@ body.compact-view .recipe-card-preview {
     animation: modalExit 0.25s ease-out;
 }
 
-/* Help modal - non-blocking overlay */
-.help-modal {
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 3000;
-    pointer-events: auto;
-}
-
-.help-modal .modal-content {
-    max-width: 900px;
-    max-height: calc(100vh - 64px);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    pointer-events: auto;
-}
-
-/* Ensure help modal content is scrollable on mobile */
-@media (max-width: 768px) {
-    .help-modal .modal-content {
-        width: calc(100% - 24px);
-        max-height: calc(100vh - 48px);
-        margin: 12px;
-    }
-}
-
 @keyframes backdropFadeIn {
     from {
         opacity: 0;
