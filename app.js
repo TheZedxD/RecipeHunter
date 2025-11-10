@@ -71,23 +71,6 @@ function closeModalWithAnimation(modal, callback) {
     }, 250);
 }
 
-// ===== Help Modal Functions =====
-function openHelpModal() {
-    const helpModal = document.getElementById('helpModal');
-    if (helpModal) {
-        // Simply add visible class without locking body scroll
-        // This allows the modal to overlay without blocking interaction
-        helpModal.classList.add('visible');
-    }
-}
-
-function closeHelpModal() {
-    const helpModal = document.getElementById('helpModal');
-    if (helpModal) {
-        closeModalWithAnimation(helpModal);
-    }
-}
-
 // ===== Keyboard Visibility Detection =====
 function handleKeyboardVisibility() {
     let viewportHeight = window.innerHeight;
@@ -673,13 +656,13 @@ function setupEventListeners() {
             }
         }
 
-        // Show help modal with ? key
+        // Show help page with ? key
         if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
             const target = e.target;
             // Only trigger if not in an input field
             if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
                 e.preventDefault();
-                openHelpModal();
+                navigateTo('help');
             }
         }
 
@@ -745,43 +728,6 @@ function setupEventListeners() {
         settingsBtnMobile.addEventListener('click', () => {
             closeMobileMenu();
             navigateTo('settings');
-        });
-    }
-
-    // Help Modal
-    const helpBtn = document.getElementById('helpBtn');
-    const helpBtnMobile = document.getElementById('helpBtnMobile');
-    const helpModal = document.getElementById('helpModal');
-    const helpModalClose = document.getElementById('helpModalClose');
-
-    if (helpBtn && helpModal && helpModalClose) {
-        // Desktop help button - opens overlay without blocking
-        helpBtn.addEventListener('click', () => {
-            openHelpModal();
-        });
-
-        // Close button
-        helpModalClose.addEventListener('click', () => {
-            closeHelpModal();
-        });
-
-        // Click outside modal to close
-        helpModal.addEventListener('click', (e) => {
-            if (e.target === helpModal) {
-                closeHelpModal();
-            }
-        });
-    } else {
-        if (!helpBtn) console.warn('setupEventListeners: helpBtn element not found');
-        if (!helpModal) console.warn('setupEventListeners: helpModal element not found');
-        if (!helpModalClose) console.warn('setupEventListeners: helpModalClose element not found');
-    }
-
-    if (helpBtnMobile && helpModal) {
-        // Mobile help button - closes menu first, then opens overlay
-        helpBtnMobile.addEventListener('click', () => {
-            closeMobileMenu();
-            openHelpModal();
         });
     }
 
@@ -1266,6 +1212,9 @@ function navigateTo(page) {
             break;
         case 'settings':
             renderSettingsPage();
+            break;
+        case 'help':
+            renderHelpPage();
             break;
         case 'shopping-list':
             renderShoppingList();
@@ -2613,6 +2562,76 @@ function updateActiveThemeCardSettings() {
     });
 }
 
+// ===== Help Page =====
+function renderHelpPage() {
+    const container = document.getElementById('helpContent');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="help-section">
+            <h3>⌨️ Keyboard Shortcuts</h3>
+            <div class="shortcuts-grid">
+                <div class="shortcut-item">
+                    <kbd>Ctrl/Cmd</kbd> + <kbd>F</kbd>
+                    <span>Focus search</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Ctrl/Cmd</kbd> + <kbd>N</kbd>
+                    <span>Add new recipe</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Esc</kbd>
+                    <span>Close modal/panel</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>?</kbd>
+                    <span>Show this help</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h3>💡 Quick Tips</h3>
+            <ul class="tips-list">
+                <li><strong>Search:</strong> Type in the search bar to find recipes by name, ingredients, or tags</li>
+                <li><strong>Tags:</strong> Click on tags to filter recipes, or create custom tags in the Tags page</li>
+                <li><strong>Favorites:</strong> Click the star icon to mark recipes as favorites</li>
+                <li><strong>Shopping List:</strong> Add ingredients from recipes to your shopping list for easy meal planning</li>
+                <li><strong>Rich Text:</strong> Use the formatting toolbar when editing recipes to add colors and styles</li>
+                <li><strong>Import/Export:</strong> Back up your recipes by exporting them as JSON files</li>
+                <li><strong>Themes:</strong> Customize the app's appearance with different color themes</li>
+                <li><strong>Mobile:</strong> On touch devices, long-press recipe cards for quick actions</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>🎯 Getting Started</h3>
+            <ol class="getting-started-list">
+                <li>Click the <strong>+ button</strong> to add your first recipe</li>
+                <li>Or use the <strong>"Try Sample Recipes"</strong> button to load examples</li>
+                <li>Organize recipes with <strong>tags</strong> for easy filtering</li>
+                <li>Build a <strong>shopping list</strong> from your favorite recipes</li>
+                <li>Export your collection to <strong>back up</strong> your recipes</li>
+            </ol>
+        </div>
+
+        <div class="help-section">
+            <h3>📝 Recipe Format</h3>
+            <p>When importing recipes, use this JSON structure:</p>
+            <pre class="help-code">{
+  "name": "Recipe Name",
+  "ingredients": ["2 cups flour", "1 cup sugar"],
+  "instructions": ["Step 1", "Step 2"],
+  "tags": ["Dessert", "Quick"],
+  "prepTime": "15 min",
+  "cookTime": "30 min",
+  "servings": 4,
+  "notes": "Optional notes"
+}</pre>
+        </div>
+    `;
+}
+
 // ===== Import Functionality =====
 function handleFilesDrop(files) {
     const importResults = document.getElementById('importResults');
@@ -2896,7 +2915,7 @@ function initializeTooltips() {
     }, 3000);
 
     setTimeout(() => {
-        const helpBtn = document.getElementById('helpBtn');
+        const helpBtn = document.querySelector('.nav-btn[data-page="help"]');
         if (helpBtn) {
             showTooltip(helpBtn, 'Press ? for keyboard shortcuts', 3000);
         }
