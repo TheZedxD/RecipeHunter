@@ -780,12 +780,23 @@ async function loadDataFromStorage() {
         saveTagsToStorage();
     }
 
-    // Ensure existing tags have defaultVisible property
+    // Ensure existing tags have required properties
+    let needsSave = false;
     state.tags.forEach(tag => {
         if (tag.defaultVisible === undefined) {
             tag.defaultVisible = true;
+            needsSave = true;
+        }
+        if (!tag.id) {
+            tag.id = generateId();
+            needsSave = true;
         }
     });
+
+    // Save if we had to add missing properties
+    if (needsSave) {
+        saveTagsToStorage();
+    }
 
     // Apply default view setting
     if (state.settings.defaultView === 'favorites') {
@@ -800,18 +811,18 @@ async function loadDataFromStorage() {
 
 function getDefaultTags() {
     return [
-        { name: 'Breakfast', color: '#F59E0B', defaultVisible: true },
-        { name: 'Lunch', color: '#10B981', defaultVisible: true },
-        { name: 'Dinner', color: '#3B82F6', defaultVisible: true },
-        { name: 'Dessert', color: '#EC4899', defaultVisible: true },
-        { name: 'Snack', color: '#F97316', defaultVisible: false },
-        { name: 'Appetizer', color: '#06B6D4', defaultVisible: false },
-        { name: 'Side Dish', color: '#84CC16', defaultVisible: false },
-        { name: 'Vegetarian', color: '#059669', defaultVisible: true },
-        { name: 'Vegan', color: '#14B8A6', defaultVisible: false },
-        { name: 'Quick', color: '#8B5CF6', defaultVisible: true },
-        { name: 'Slow Cooker', color: '#A855F7', defaultVisible: false },
-        { name: 'Healthy', color: '#22C55E', defaultVisible: false }
+        { id: generateId(), name: 'Breakfast', color: '#F59E0B', defaultVisible: true },
+        { id: generateId(), name: 'Lunch', color: '#10B981', defaultVisible: true },
+        { id: generateId(), name: 'Dinner', color: '#3B82F6', defaultVisible: true },
+        { id: generateId(), name: 'Dessert', color: '#EC4899', defaultVisible: true },
+        { id: generateId(), name: 'Snack', color: '#F97316', defaultVisible: false },
+        { id: generateId(), name: 'Appetizer', color: '#06B6D4', defaultVisible: false },
+        { id: generateId(), name: 'Side Dish', color: '#84CC16', defaultVisible: false },
+        { id: generateId(), name: 'Vegetarian', color: '#059669', defaultVisible: true },
+        { id: generateId(), name: 'Vegan', color: '#14B8A6', defaultVisible: false },
+        { id: generateId(), name: 'Quick', color: '#8B5CF6', defaultVisible: true },
+        { id: generateId(), name: 'Slow Cooker', color: '#A855F7', defaultVisible: false },
+        { id: generateId(), name: 'Healthy', color: '#22C55E', defaultVisible: false }
     ];
 }
 
@@ -3112,7 +3123,7 @@ function handleAddTag() {
         return;
     }
 
-    state.tags.push({ name, color, defaultVisible: true });
+    state.tags.push({ id: generateId(), name, color, defaultVisible: true });
     saveTagsToStorage();
     renderTagsPage();
     renderQuickTags();
@@ -3588,8 +3599,10 @@ function finishImport(successCount, errorCount) {
             recipe.tags.forEach(tag => {
                 if (!allTags.has(tag)) {
                     state.tags.push({
+                        id: generateId(),
                         name: tag,
-                        color: generateRandomColor()
+                        color: generateRandomColor(),
+                        defaultVisible: true
                     });
                     allTags.add(tag);
                 }
@@ -4996,8 +5009,10 @@ async function loadInitialSampleRecipes() {
                 recipe.tags.forEach(tag => {
                     if (!allTags.has(tag)) {
                         state.tags.push({
+                            id: generateId(),
                             name: tag,
-                            color: generateRandomColor()
+                            color: generateRandomColor(),
+                            defaultVisible: true
                         });
                         allTags.add(tag);
                     }
@@ -5095,8 +5110,10 @@ async function importSampleRecipes() {
                 recipe.tags.forEach(tag => {
                     if (!allTags.has(tag)) {
                         state.tags.push({
+                            id: generateId(),
                             name: tag,
-                            color: generateRandomColor()
+                            color: generateRandomColor(),
+                            defaultVisible: true
                         });
                         allTags.add(tag);
                     }
