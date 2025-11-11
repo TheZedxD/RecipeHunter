@@ -628,6 +628,74 @@ async function handleSaveShoppingList(req, res) {
     }
 }
 
+// JSON Health check handler for API
+async function handleHealthCheckJSON(req, res) {
+    try {
+        const uptime = Date.now() - serverStats.startTime;
+
+        // Get file existence and counts
+        const dataFiles = {
+            recipes: { exists: false, count: 0 },
+            tags: { exists: false, count: 0 },
+            settings: { exists: false },
+            shoppingList: { exists: false, count: 0 }
+        };
+
+        try {
+            const recipesData = JSON.parse(await fs.readFile(RECIPES_FILE, 'utf8'));
+            dataFiles.recipes = {
+                exists: true,
+                count: Array.isArray(recipesData) ? recipesData.length : 0
+            };
+        } catch (e) {}
+
+        try {
+            const tagsData = JSON.parse(await fs.readFile(TAGS_FILE, 'utf8'));
+            dataFiles.tags = {
+                exists: true,
+                count: Array.isArray(tagsData) ? tagsData.length : 0
+            };
+        } catch (e) {}
+
+        try {
+            await fs.readFile(SETTINGS_FILE, 'utf8');
+            dataFiles.settings = { exists: true };
+        } catch (e) {}
+
+        try {
+            const shoppingListData = JSON.parse(await fs.readFile(SHOPPING_LIST_FILE, 'utf8'));
+            dataFiles.shoppingList = {
+                exists: true,
+                count: Array.isArray(shoppingListData) ? shoppingListData.length : 0
+            };
+        } catch (e) {}
+
+        const healthData = {
+            status: 'healthy',
+            uptime: uptime,
+            timestamp: new Date().toISOString(),
+            server: {
+                platform: process.platform,
+                nodeVersion: process.version,
+                startTime: new Date(serverStats.startTime).toISOString()
+            },
+            stats: {
+                requests: serverStats.requests,
+                lastSync: serverStats.lastSync
+            },
+            data: dataFiles
+        };
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(healthData));
+        console.log('✓ GET /api/health');
+    } catch (error) {
+        console.error('Error generating health check:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'error', error: 'Health check failed' }));
+    }
+}
+
 // Health check handler
 async function handleHealthCheck(req, res) {
     try {
@@ -1072,9 +1140,14 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // Health check endpoint
+    // Health check endpoints
     if (url === '/health' && method === 'GET') {
         await handleHealthCheck(req, res);
+        return;
+    }
+
+    if (url === '/api/health' && method === 'GET') {
+        await handleHealthCheckJSON(req, res);
         return;
     }
 

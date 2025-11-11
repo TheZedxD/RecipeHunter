@@ -5459,3 +5459,63 @@ body.is-ios .results-container {
         margin: 0 auto;
     }
 }
+
+/* ===== Conflict Resolution Modal ===== */
+.conflict-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.conflict-option {
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.conflict-option:hover {
+    border-color: var(--primary-color);
+    background: var(--hover-bg);
+}
+
+.conflict-option h4 {
+    margin-bottom: 10px;
+    color: var(--text-primary);
+    font-size: 1.1em;
+}
+
+.conflict-detail {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+}
+
+.conflict-option .btn {
+    width: 100%;
+    margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+    .conflict-options {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+}
+
+/* ===== Sync Indicator Clickable ===== */
+.sync-indicator {
+    transition: all 0.2s ease;
+}
+
+.sync-indicator:hover {
+    transform: scale(1.05);
+    opacity: 0.8;
+}
+
+.sync-indicator:active {
+    transform: scale(0.95);
+}
+
