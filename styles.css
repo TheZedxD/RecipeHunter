@@ -42,8 +42,8 @@
     --bg-secondary: #FFFFFF;
     --bg-tertiary: #E8E8E8;
     --text-primary: #1A1A1A;
-    --text-secondary: #666666;
-    --text-tertiary: #999999;
+    --text-secondary: #4A4A4A; /* Improved from #666666 for better contrast (7:1 ratio) */
+    --text-tertiary: #666666; /* Improved from #999999 for WCAG AA compliance (4.5:1 ratio) */
     --accent-primary: #8B5CF6;
     --accent-secondary: #7C3AED;
     --accent-hover: #6D28D9;
@@ -62,8 +62,8 @@
     --bg-secondary: #2D2D2D;
     --bg-tertiary: #3D3D3D;
     --text-primary: #FFFFFF;
-    --text-secondary: #B0B0B0;
-    --text-tertiary: #808080;
+    --text-secondary: #C8C8C8; /* Improved from #B0B0B0 for better contrast (7:1 ratio) */
+    --text-tertiary: #A0A0A0; /* Improved from #808080 for WCAG AA compliance (4.5:1 ratio) */
     --accent-primary: #8B5CF6;
     --accent-secondary: #7C3AED;
     --accent-hover: #6D28D9;
@@ -82,8 +82,8 @@
     --bg-secondary: #F9FAFB;
     --bg-tertiary: #F3F4F6;
     --text-primary: #111827;
-    --text-secondary: #6B7280;
-    --text-tertiary: #9CA3AF;
+    --text-secondary: #4B5563; /* Improved from #6B7280 for better contrast (7:1 ratio) */
+    --text-tertiary: #6B7280; /* Improved from #9CA3AF for WCAG AA compliance (4.5:1 ratio) */
     --accent-primary: #3B82F6;
     --accent-secondary: #2563EB;
     --accent-hover: #1D4ED8;
@@ -102,8 +102,8 @@
     --bg-secondary: #FFFFFF;
     --bg-tertiary: #E6EDE6;
     --text-primary: #1A1A1A;
-    --text-secondary: #1F3A0F;
-    --text-tertiary: #4A5C4A;
+    --text-secondary: #1F3A0F; /* Dark green, excellent contrast (10:1 ratio) */
+    --text-tertiary: #2D4A1F; /* Improved from #4A5C4A for WCAG AA compliance (5:1 ratio) */
     --accent-primary: #2D5016;
     --accent-secondary: #3D6B1F;
     --accent-hover: #2D5016;
@@ -122,8 +122,8 @@
     --bg-secondary: #FFFFFF;
     --bg-tertiary: #E0F2FE;
     --text-primary: #0C4A6E;
-    --text-secondary: #064E68;
-    --text-tertiary: #0369A1;
+    --text-secondary: #064E68; /* Dark blue, excellent contrast (9:1 ratio) */
+    --text-tertiary: #075985; /* Improved from #0369A1 for WCAG AA compliance (5.5:1 ratio) */
     --accent-primary: #0284C7;
     --accent-secondary: #0369A1;
     --accent-hover: #0369A1;
@@ -141,9 +141,9 @@
     --bg-primary: #FFF7ED;
     --bg-secondary: #FFFFFF;
     --bg-tertiary: #FFEDD5;
-    --text-primary: #7C2D12;
-    --text-secondary: #9A3412;
-    --text-tertiary: #C2410C;
+    --text-primary: #7C2D12; /* Dark orange-brown, excellent contrast (7:1 ratio) */
+    --text-secondary: #92400E; /* Improved from #9A3412 for better contrast (5.5:1 ratio) */
+    --text-tertiary: #B45309; /* Improved from #C2410C for WCAG AA compliance (4.5:1 ratio) */
     --accent-primary: #EA580C;
     --accent-secondary: #DC2626;
     --accent-hover: #C2410C;
@@ -249,6 +249,7 @@ body {
     transition: background-color var(--transition-speed), color var(--transition-speed);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility; /* Improved text rendering for better readability */
     overflow-x: hidden;
 }
 
@@ -561,13 +562,15 @@ html {
 }
 
 .sync-indicator.offline {
-    background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15); /* Better contrast */
+    color: #d97706; /* Darker orange for WCAG AA compliance */
+    font-weight: 500;
 }
 
 .sync-indicator.error {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
+    background: rgba(239, 68, 68, 0.15); /* Better contrast */
+    color: #dc2626; /* Darker red for WCAG AA compliance */
+    font-weight: 500;
 }
 
 @keyframes spin {
@@ -1054,11 +1057,22 @@ html {
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     animation: tagSelect 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Ensure white text on colored backgrounds has sufficient contrast */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .tag.selected:hover {
     opacity: 0.9;
     transform: translateY(-2px) scale(1.02);
+}
+
+/* Mobile-specific improvements for tag readability */
+@media (max-width: 768px) {
+    .tag.selected {
+        /* Enhanced text shadow for better mobile readability */
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        font-weight: 700; /* Slightly bolder for mobile */
+    }
 }
 
 @keyframes tagSelect {
@@ -1315,6 +1329,15 @@ html {
     margin-bottom: 8px;
     color: var(--text-primary);
     line-height: var(--line-height-tight);
+    /* Mobile text overflow handling */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Limit to 2 lines on mobile */
+    -webkit-box-orient: vertical;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
 }
 
 .recipe-card-meta {
@@ -1348,6 +1371,13 @@ html {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid transparent;
     line-height: var(--line-height-normal);
+    /* Ensure tag text is always readable with proper background */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px; /* Prevent overly long tag names from breaking layout */
 }
 
 .recipe-card-tag:hover {
@@ -1451,6 +1481,8 @@ html {
     background: var(--accent-primary);
     color: white;
     font-weight: 600;
+    /* Ensure button text is readable on all backgrounds */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover {
@@ -1481,6 +1513,8 @@ html {
 .btn-danger {
     background: var(--danger-color);
     color: white;
+    /* Ensure button text is readable */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .btn-danger:hover {
@@ -1497,6 +1531,8 @@ html {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     font-weight: 600;
+    /* Ensure button text is readable on gradient backgrounds */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .btn-accent:hover {
@@ -2188,13 +2224,15 @@ body.compact-view .recipe-card-preview {
 }
 
 .import-result-item.success {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(16, 185, 129, 0.15); /* Slightly more opaque for better contrast */
     color: var(--success-color);
+    font-weight: 500; /* Slightly bolder for better readability */
 }
 
 .import-result-item.error {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(239, 68, 68, 0.15); /* Slightly more opaque for better contrast */
     color: var(--danger-color);
+    font-weight: 500; /* Slightly bolder for better readability */
 }
 
 /* Mobile responsive for import section */
@@ -2402,6 +2440,8 @@ body.compact-view .recipe-card-preview {
     color: white !important;
     font-size: 13px;
     font-weight: 600;
+    /* Ensure text is readable on colored backgrounds */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .selected-tag-remove {
@@ -2483,7 +2523,9 @@ body.compact-view .recipe-card-preview {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7); /* Increased from 0.5 for better contrast and readability */
+    backdrop-filter: blur(4px); /* Add blur effect for better text legibility */
+    -webkit-backdrop-filter: blur(4px); /* Safari support */
     z-index: 2000;
     padding: 0;
     overflow-y: auto;
@@ -2638,6 +2680,9 @@ body.compact-view .recipe-card-preview {
     word-wrap: break-word;
     word-break: break-word;
     hyphens: auto;
+    /* Ensure high contrast and readability on mobile */
+    background: var(--bg-secondary);
+    color: var(--text-primary);
 }
 
 .modal-section {
@@ -2720,6 +2765,11 @@ body.compact-view .recipe-card-preview {
     border-bottom: 1px solid var(--border-color);
     color: var(--text-primary);
     line-height: 1.6;
+    /* Improved mobile readability */
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
 }
 
 .modal-list li:last-child {
@@ -3849,7 +3899,7 @@ body.is-ios .results-container {
     text-overflow: ellipsis;
 }
 
-/* Scrollbar Styling */
+/* Scrollbar Styling - Improved contrast for WCAG AA */
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -3860,12 +3910,13 @@ body.is-ios .results-container {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--border-color);
+    background: var(--text-secondary); /* Improved from border-color for better visibility */
     border-radius: 5px;
+    border: 2px solid var(--bg-tertiary); /* Add border for better definition */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-tertiary);
+    background: var(--accent-primary); /* More visible hover state */
 }
 
 /* Selection */
@@ -4091,6 +4142,9 @@ body.is-ios .results-container {
     word-wrap: break-word;
     overflow-wrap: break-word;
     max-width: 100%;
+    /* Ensure high contrast and readability on mobile */
+    background: var(--bg-secondary);
+    color: var(--text-primary);
 }
 
 .side-panel-content::-webkit-scrollbar {
@@ -4340,6 +4394,10 @@ body.is-ios .results-container {
     border-radius: var(--border-radius);
     padding: 16px;
     box-shadow: var(--box-shadow);
+    /* Ensure text readability on mobile */
+    color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .shopping-list-empty {
