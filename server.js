@@ -1140,6 +1140,13 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // Favicon handler - return 204 No Content to avoid 404 errors
+    if (url === '/favicon.ico') {
+        res.writeHead(204); // No Content
+        res.end();
+        return;
+    }
+
     // Health check endpoints
     if (url === '/health' && method === 'GET') {
         await handleHealthCheck(req, res);
