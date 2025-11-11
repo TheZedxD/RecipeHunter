@@ -219,7 +219,7 @@ select:focus-visible,
     }
 }
 
-/* Prevent iOS zoom on input focus */
+/* Prevent iOS zoom on input focus and optimize touch targets */
 @media screen and (max-width: 768px) {
     input[type="text"],
     input[type="number"],
@@ -229,6 +229,13 @@ select:focus-visible,
     textarea,
     select {
         font-size: 16px !important;
+    }
+
+    /* Ensure all clickable elements have adequate spacing on mobile */
+    button,
+    a,
+    .clickable {
+        -webkit-tap-highlight-color: rgba(139, 92, 246, 0.2); /* Custom tap highlight color */
     }
 }
 
@@ -341,7 +348,8 @@ html {
     background: var(--bg-secondary);
     border: 2px solid var(--border-color);
     border-radius: var(--border-radius);
-    padding: 16px;
+    padding: 20px; /* Increased from 16px for better touch target */
+    min-height: 140px; /* Ensure adequate touch target size */
     cursor: pointer;
     transition: all var(--transition-speed);
     text-align: left;
@@ -353,6 +361,10 @@ html {
     transform: translateY(-4px);
     box-shadow: var(--box-shadow-hover);
     border-color: var(--accent-primary);
+}
+
+.theme-card:active {
+    transform: translateY(-2px) scale(0.98); /* Touch feedback */
 }
 
 .theme-card.active {
@@ -569,12 +581,12 @@ html {
 
 .nav {
     display: flex;
-    gap: 8px;
+    gap: 12px; /* Increased from 8px for better touch spacing */
 }
 
 .nav-actions {
     display: flex;
-    gap: 8px;
+    gap: 12px; /* Increased from 8px for better touch spacing */
     margin-left: auto;
     padding-left: 16px;
     border-left: 1px solid var(--border-color);
@@ -582,7 +594,13 @@ html {
 
 .nav-action-btn {
     min-width: 44px;
+    min-height: 44px; /* WCAG minimum touch target */
     padding: 10px 12px;
+    transition: all var(--transition-speed);
+}
+
+.nav-action-btn:active {
+    transform: scale(0.95); /* Touch feedback */
 }
 
 .mobile-menu-divider {
@@ -595,7 +613,8 @@ html {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 16px;
+    padding: 12px 16px; /* Increased from 10px for better touch target */
+    min-height: 44px; /* WCAG minimum touch target */
     background: none;
     border: none;
     border-radius: var(--border-radius);
@@ -611,10 +630,19 @@ html {
     color: var(--text-primary);
 }
 
+.nav-btn:active {
+    transform: scale(0.97); /* Touch feedback */
+    background: var(--border-color);
+}
+
 .nav-btn.active {
     background: var(--accent-primary);
     color: white !important;
     font-weight: 600;
+}
+
+.nav-btn.active:active {
+    transform: scale(0.97);
 }
 
 .nav-icon {
@@ -662,6 +690,7 @@ html {
 
 .hamburger-btn:active {
     transform: scale(0.95);
+    background: var(--bg-tertiary); /* Visual feedback on tap */
 }
 
 .hamburger-line {
@@ -756,8 +785,10 @@ html {
 }
 
 .mobile-menu-close {
-    width: 40px;
-    height: 40px;
+    width: 44px; /* Increased from 40px for WCAG minimum */
+    height: 44px; /* Increased from 40px for WCAG minimum */
+    min-width: 44px; /* Ensure minimum size */
+    min-height: 44px; /* Ensure minimum size */
     border-radius: 50%;
     background: var(--bg-tertiary);
     border: none;
@@ -951,6 +982,11 @@ html {
     transform: scale(1.05);
 }
 
+.search-btn:active {
+    transform: scale(0.95); /* Touch feedback */
+    background: var(--accent-secondary);
+}
+
 .search-btn .search-icon {
     filter: brightness(0) invert(1);
 }
@@ -970,7 +1006,7 @@ html {
 
 .filter-actions {
     display: flex;
-    gap: 12px;
+    gap: 16px; /* Increased from 12px for better touch spacing */
     flex-wrap: wrap;
     align-items: center;
 }
@@ -978,12 +1014,13 @@ html {
 .quick-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 12px; /* Increased from 8px for better touch spacing */
     justify-content: flex-start;
 }
 
 .tag {
-    padding: 8px 16px;
+    padding: 12px 18px; /* Increased from 8px 16px for better touch target */
+    min-height: 44px; /* WCAG minimum touch target */
     border-radius: 20px;
     background: var(--bg-tertiary);
     color: var(--text-primary);
@@ -1050,7 +1087,8 @@ html {
 }
 
 .clear-filters-btn {
-    padding: 8px 20px;
+    padding: 12px 24px; /* Increased from 8px 20px for better touch target */
+    min-height: 44px; /* WCAG minimum touch target */
     border-radius: 20px;
     background: var(--bg-secondary);
     color: var(--text-primary);
@@ -1085,7 +1123,8 @@ html {
 
 /* Favorites Toggle Button */
 .favorites-toggle-btn {
-    padding: 8px 20px;
+    padding: 12px 24px; /* Increased from 8px 20px for better touch target */
+    min-height: 44px; /* WCAG minimum touch target */
     border-radius: 20px;
     background: var(--bg-secondary);
     color: var(--text-primary);
@@ -1393,7 +1432,8 @@ html {
 
 /* Buttons */
 .btn {
-    padding: 12px 24px;
+    padding: 14px 24px; /* Increased from 12px for better touch target */
+    min-height: 44px; /* WCAG minimum touch target */
     border-radius: var(--border-radius);
     border: none;
     cursor: pointer;
@@ -1420,6 +1460,11 @@ html {
     color: white;
 }
 
+.btn-primary:active {
+    transform: translateY(0) scale(0.98); /* Touch feedback */
+    background: var(--accent-secondary);
+}
+
 .btn-secondary {
     background: var(--bg-tertiary);
     color: var(--text-primary);
@@ -1427,6 +1472,10 @@ html {
 
 .btn-secondary:hover {
     background: var(--border-color);
+}
+
+.btn-secondary:active {
+    transform: scale(0.98); /* Touch feedback */
 }
 
 .btn-danger {
@@ -1437,6 +1486,11 @@ html {
 .btn-danger:hover {
     background: #DC2626;
     transform: translateY(-2px);
+}
+
+.btn-danger:active {
+    transform: translateY(0) scale(0.98); /* Touch feedback */
+    background: #B91C1C;
 }
 
 .btn-accent {
@@ -1450,6 +1504,10 @@ html {
     transform: translateY(-2px);
     box-shadow: var(--box-shadow);
     color: white;
+}
+
+.btn-accent:active {
+    transform: translateY(0) scale(0.98); /* Touch feedback */
 }
 
 /* Tags Management */
@@ -1470,17 +1528,19 @@ html {
 .add-tag-section input[type="text"] {
     flex: 1;
     min-width: 200px;
-    padding: 12px 16px;
+    padding: 14px 18px; /* Increased from 12px 16px for better touch target */
+    min-height: 44px; /* WCAG minimum touch target */
     border: 1px solid var(--input-border);
     border-radius: var(--border-radius);
     background: var(--input-bg);
     color: var(--text-primary);
-    font-size: 14px;
+    font-size: 16px; /* Increased from 14px to prevent zoom on iOS */
 }
 
 .add-tag-section input[type="color"] {
     width: 60px;
     height: 44px;
+    min-height: 44px; /* WCAG minimum touch target */
     border: 1px solid var(--input-border);
     border-radius: var(--border-radius);
     cursor: pointer;
@@ -1568,12 +1628,21 @@ html {
     color: var(--danger-color);
     cursor: pointer;
     font-size: 18px;
-    padding: 4px;
+    padding: 12px; /* Increased from 4px for better touch target */
+    min-width: 44px; /* WCAG minimum touch target */
+    min-height: 44px; /* WCAG minimum touch target */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transition: all var(--transition-speed);
 }
 
 .tag-item-delete:hover {
     transform: scale(1.2);
+}
+
+.tag-item-delete:active {
+    transform: scale(0.9); /* Touch feedback */
 }
 
 /* Settings Page */
@@ -2357,15 +2426,16 @@ body.compact-view .recipe-card-preview {
     min-width: 150px;
     border: none;
     background: none;
-    padding: 8px;
-    font-size: 14px;
+    padding: 12px; /* Increased from 8px for better touch target */
+    min-height: 44px; /* WCAG minimum touch target */
+    font-size: 16px; /* Increased from 14px to prevent zoom on iOS */
     color: var(--text-primary);
     outline: none;
 }
 
 .tags-suggestions {
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 10px; /* Increased from 6px for better touch spacing */
     margin-top: 8px;
     display: none;
 }
@@ -2375,13 +2445,16 @@ body.compact-view .recipe-card-preview {
 }
 
 .tag-suggestion {
-    padding: 6px 12px;
+    padding: 10px 16px; /* Increased from 6px 12px for better touch target */
+    min-height: 44px; /* WCAG minimum touch target */
     border-radius: 16px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    font-size: 13px;
+    font-size: 14px; /* Increased from 13px for better readability */
     cursor: pointer;
     transition: all var(--transition-speed);
+    display: inline-flex;
+    align-items: center;
 }
 
 .tag-suggestion:hover {
@@ -2389,6 +2462,10 @@ body.compact-view .recipe-card-preview {
     color: white !important;
     border-color: var(--accent-primary);
     font-weight: 600;
+}
+
+.tag-suggestion:active {
+    transform: scale(0.96); /* Touch feedback */
 }
 
 .form-actions {
@@ -2529,8 +2606,10 @@ body.compact-view .recipe-card-preview {
     cursor: pointer;
     color: var(--text-secondary);
     padding: 0;
-    width: 40px;
-    height: 40px;
+    width: 44px; /* Increased from 40px for WCAG minimum */
+    height: 44px; /* Increased from 40px for WCAG minimum */
+    min-width: 44px; /* Ensure minimum size */
+    min-height: 44px; /* Ensure minimum size */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2542,6 +2621,11 @@ body.compact-view .recipe-card-preview {
 .modal-close:hover {
     background: var(--bg-tertiary);
     color: var(--text-primary);
+}
+
+.modal-close:active {
+    transform: scale(0.92); /* Touch feedback */
+    background: var(--border-color);
 }
 
 .modal-body {
@@ -2825,11 +2909,15 @@ body.compact-view .recipe-card-preview {
 }
 
 .search-result-item {
-    padding: 14px 18px;
+    padding: 16px 20px; /* Increased from 14px 18px for better touch target */
+    min-height: 60px; /* Ensure adequate touch target */
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .search-result-item:last-child {
@@ -2844,6 +2932,10 @@ body.compact-view .recipe-card-preview {
 .search-result-item:hover {
     background: var(--accent-primary);
     transform: translateX(4px);
+}
+
+.search-result-item:active {
+    transform: translateX(2px) scale(0.98); /* Touch feedback */
 }
 
 .search-result-item:hover .search-result-name {
@@ -3965,8 +4057,10 @@ body.is-ios .results-container {
     background: var(--bg-tertiary);
     border: none;
     color: var(--text-primary);
-    width: 36px;
-    height: 36px;
+    width: 44px; /* Increased from 36px for WCAG minimum */
+    height: 44px; /* Increased from 36px for WCAG minimum */
+    min-width: 44px; /* Ensure minimum size */
+    min-height: 44px; /* Ensure minimum size */
     border-radius: 50%;
     font-size: 28px;
     cursor: pointer;
@@ -3982,6 +4076,10 @@ body.is-ios .results-container {
     background: var(--accent-primary);
     color: white;
     transform: rotate(90deg);
+}
+
+.side-panel-close:active {
+    transform: rotate(90deg) scale(0.92); /* Touch feedback */
 }
 
 .side-panel-content {
