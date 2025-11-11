@@ -17,6 +17,7 @@ const DATA_DIR = path.join(__dirname, 'data');
 const RECIPES_FILE = path.join(DATA_DIR, 'recipes.json');
 const TAGS_FILE = path.join(DATA_DIR, 'tags.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+const SHOPPING_LIST_FILE = path.join(DATA_DIR, 'shopping-list.json');
 
 // Configuration constants
 const MAX_REQUEST_SIZE = 10 * 1024 * 1024; // 10MB
@@ -38,7 +39,8 @@ const serverStats = {
     lastSync: {
         recipes: null,
         tags: null,
-        settings: null
+        settings: null,
+        shoppingList: null
     }
 };
 
@@ -57,46 +59,95 @@ const MIME_TYPES = {
 };
 
 // ===== File Locking Mechanism =====
+/**
+ * Acquires an exclusive lock on a file to prevent concurrent write conflicts
+ *
+ * This implements a mutex (mutual exclusion) pattern using a Map to track locked files.
+ * Multiple concurrent requests trying to write to the same file will be queued and
+ * processed sequentially, preventing race conditions and data corruption.
+ *
+ * @param {string} filePath - The absolute path to the file to lock
+ * @throws {Error} If lock cannot be acquired within FILE_LOCK_TIMEOUT (5 seconds)
+ *
+ * Example race condition this prevents:
+ *   Request A: Save recipes (takes 100ms)
+ *   Request B: Save recipes (starts at 50ms)
+ *   Without locking: Both read → modify → write → DATA CORRUPTION
+ *   With locking: Request B waits for A to complete → No corruption
+ */
 async function acquireFileLock(filePath) {
     const startTime = Date.now();
 
+    // Poll until lock is available or timeout occurs
     while (fileLocks.get(filePath)) {
         if (Date.now() - startTime > FILE_LOCK_TIMEOUT) {
             throw new Error('Failed to acquire file lock: timeout');
         }
+        // Sleep briefly before checking again (prevents busy-waiting)
         await new Promise(resolve => setTimeout(resolve, FILE_LOCK_RETRY_INTERVAL));
     }
 
+    // Acquire the lock
     fileLocks.set(filePath, true);
 }
 
+/**
+ * Releases a file lock, allowing other operations to proceed
+ *
+ * @param {string} filePath - The absolute path to the file to unlock
+ */
 function releaseFileLock(filePath) {
     fileLocks.delete(filePath);
 }
 
 // ===== Atomic Write with Backup =====
+/**
+ * Performs an atomic file write with automatic backup creation
+ *
+ * This prevents data corruption from:
+ * - Partial writes (power loss, disk full, process crash)
+ * - Concurrent writes (prevented by file locking)
+ *
+ * Process:
+ * 1. Write data to a temporary file (.recipes.json.abc123.tmp)
+ * 2. Create backup of existing file (recipes.json.backup)
+ * 3. Atomically rename temp file to target (OS-level atomic operation)
+ *
+ * Benefits:
+ * - If step 1 fails: Original file unchanged, no data loss
+ * - If step 2 fails: Can still proceed with write
+ * - If step 3 fails: Original file unchanged, can retry
+ * - If anything fails: Backup file available for recovery
+ *
+ * @param {string} filePath - The absolute path to write to
+ * @param {string} data - The data to write (typically JSON string)
+ * @throws {Error} If write or rename fails (original file remains unchanged)
+ */
 async function atomicWrite(filePath, data) {
     const dir = path.dirname(filePath);
+    // Generate unique temp filename using cryptographic random bytes
     const tmpFile = path.join(dir, `.${path.basename(filePath)}.${randomBytes(6).toString('hex')}.tmp`);
     const backupFile = `${filePath}.backup`;
 
     try {
-        // Write to temporary file
+        // Step 1: Write to temporary file with secure permissions (rw-r--r--)
         await fs.writeFile(tmpFile, data, { mode: 0o644 });
 
-        // Create backup of existing file if it exists
+        // Step 2: Create backup of existing file if it exists
         try {
             await fs.copyFile(filePath, backupFile);
         } catch (err) {
-            // File doesn't exist yet, that's okay
+            // File doesn't exist yet (first write), that's okay
             if (err.code !== 'ENOENT') throw err;
         }
 
-        // Atomic rename
+        // Step 3: Atomic rename - this is the critical operation
+        // On POSIX systems, rename() is atomic at the filesystem level
+        // This ensures the file is never in a partially-written state
         await fs.rename(tmpFile, filePath);
 
     } catch (error) {
-        // Cleanup temp file if it exists
+        // Cleanup: Remove temp file if it was created but rename failed
         try {
             await fs.unlink(tmpFile);
         } catch {}
@@ -105,6 +156,19 @@ async function atomicWrite(filePath, data) {
 }
 
 // ===== Input Validation =====
+/**
+ * Validates recipe data before saving to prevent data corruption
+ *
+ * This protects against:
+ * - Malformed client data
+ * - Injection attacks
+ * - Type confusion bugs
+ * - Data corruption from client errors
+ *
+ * @param {Array} data - Array of recipe objects
+ * @throws {Error} With descriptive message if validation fails
+ * @returns {boolean} true if valid
+ */
 function validateRecipes(data) {
     if (!Array.isArray(data)) {
         throw new Error('Recipes must be an array');
@@ -155,6 +219,39 @@ function validateSettings(data) {
     return true;
 }
 
+/**
+ * Validates shopping list data before saving
+ *
+ * Shopping list items should have:
+ * - id: unique identifier
+ * - name: ingredient/item name
+ * - checked: boolean completion status
+ * - recipeId: optional reference to recipe (if from recipe)
+ *
+ * @param {Array} data - Array of shopping list item objects
+ * @throws {Error} With descriptive message if validation fails
+ * @returns {boolean} true if valid
+ */
+function validateShoppingList(data) {
+    if (!Array.isArray(data)) {
+        throw new Error('Shopping list must be an array');
+    }
+
+    for (const item of data) {
+        if (!item.id || (typeof item.id !== 'number' && typeof item.id !== 'string')) {
+            throw new Error('Each shopping list item must have an id');
+        }
+        if (!item.name || typeof item.name !== 'string') {
+            throw new Error('Each shopping list item must have a name');
+        }
+        if (typeof item.checked !== 'boolean') {
+            throw new Error('Each shopping list item must have a checked boolean');
+        }
+    }
+
+    return true;
+}
+
 // Initialize data directory and files
 async function initializeDataDirectory() {
     try {
@@ -188,6 +285,14 @@ async function initializeDataDirectory() {
         } catch {
             await fs.writeFile(SETTINGS_FILE, JSON.stringify({}, null, 2));
             console.log('✓ Initialized settings.json');
+        }
+
+        // Initialize shopping-list.json if it doesn't exist
+        try {
+            await fs.access(SHOPPING_LIST_FILE);
+        } catch {
+            await fs.writeFile(SHOPPING_LIST_FILE, JSON.stringify([], null, 2));
+            console.log('✓ Initialized shopping-list.json');
         }
     } catch (error) {
         console.error('Error initializing data directory:', error);
@@ -441,6 +546,88 @@ async function handleSaveSettings(req, res) {
     }
 }
 
+// ===== Shopping List Handlers =====
+/**
+ * GET /api/shopping-list
+ * Retrieves the shopping list from server storage
+ */
+async function handleGetShoppingList(req, res) {
+    try {
+        const data = await fs.readFile(SHOPPING_LIST_FILE, 'utf8');
+        serverStats.requests.successful++;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(data);
+        console.log('✓ GET /api/shopping-list');
+    } catch (error) {
+        serverStats.requests.failed++;
+        console.error('Error reading shopping list:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Failed to read shopping list' }));
+    }
+}
+
+/**
+ * POST /api/shopping-list
+ * Saves the shopping list with full data protection:
+ * - File locking to prevent concurrent write conflicts
+ * - Atomic write to prevent data corruption
+ * - Backup creation for disaster recovery
+ * - Input validation
+ * - Comprehensive error handling
+ */
+async function handleSaveShoppingList(req, res) {
+    let lockAcquired = false;
+    try {
+        const shoppingList = await parseBody(req);
+
+        // Validate input
+        validateShoppingList(shoppingList);
+
+        // Acquire file lock
+        await acquireFileLock(SHOPPING_LIST_FILE);
+        lockAcquired = true;
+
+        // Atomic write with backup
+        await atomicWrite(SHOPPING_LIST_FILE, JSON.stringify(shoppingList, null, 2));
+
+        // Update stats
+        serverStats.lastSync.shoppingList = new Date().toISOString();
+        serverStats.requests.successful++;
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+        console.log(`✓ POST /api/shopping-list (${shoppingList.length} items saved)`);
+    } catch (error) {
+        serverStats.requests.failed++;
+        console.error('Error saving shopping list:', error);
+
+        // Determine appropriate error code
+        let statusCode = 500;
+        let errorMessage = 'Failed to save shopping list';
+
+        if (error.message === 'Request too large') {
+            statusCode = 413;
+            errorMessage = 'Request too large';
+        } else if (error.message === 'Request timeout') {
+            statusCode = 408;
+            errorMessage = 'Request timeout';
+        } else if (error.message === 'Invalid JSON' || error.message.includes('must')) {
+            statusCode = 400;
+            errorMessage = error.message;
+        } else if (error.message === 'Failed to acquire file lock: timeout') {
+            statusCode = 503;
+            errorMessage = 'Server busy, please try again';
+        }
+
+        res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: errorMessage }));
+    } finally {
+        if (lockAcquired) {
+            releaseFileLock(SHOPPING_LIST_FILE);
+        }
+    }
+}
+
 // Health check handler
 async function handleHealthCheck(req, res) {
     try {
@@ -455,7 +642,8 @@ async function handleHealthCheck(req, res) {
         const dataFiles = {
             recipes: { exists: false, size: 0, count: 0, lastModified: null },
             tags: { exists: false, size: 0, count: 0, lastModified: null },
-            settings: { exists: false, size: 0, lastModified: null }
+            settings: { exists: false, size: 0, lastModified: null },
+            shoppingList: { exists: false, size: 0, count: 0, lastModified: null }
         };
 
         try {
@@ -486,6 +674,17 @@ async function handleHealthCheck(req, res) {
                 exists: true,
                 size: settingsStats.size,
                 lastModified: settingsStats.mtime.toISOString()
+            };
+        } catch (e) {}
+
+        try {
+            const shoppingListStats = await fs.stat(SHOPPING_LIST_FILE);
+            const shoppingListData = JSON.parse(await fs.readFile(SHOPPING_LIST_FILE, 'utf8'));
+            dataFiles.shoppingList = {
+                exists: true,
+                size: shoppingListStats.size,
+                count: Array.isArray(shoppingListData) ? shoppingListData.length : 0,
+                lastModified: shoppingListStats.mtime.toISOString()
             };
         } catch (e) {}
 
@@ -722,6 +921,15 @@ async function handleHealthCheck(req, res) {
                         ${dataFiles.settings.exists ? 'OK' : 'Not found'}
                     </span>
                 </div>
+                <div class="stat-row">
+                    <span class="stat-label">
+                        <span class="file-status ${dataFiles.shoppingList.exists ? 'online' : 'offline'}"></span>
+                        Shopping List
+                    </span>
+                    <span class="stat-value ${dataFiles.shoppingList.exists ? 'good' : 'error'}">
+                        ${dataFiles.shoppingList.exists ? dataFiles.shoppingList.count + ' items' : 'Not found'}
+                    </span>
+                </div>
             </div>
 
             <!-- Sync Status Card -->
@@ -738,6 +946,10 @@ async function handleHealthCheck(req, res) {
                 <div class="stat-row">
                     <span class="stat-label">Settings</span>
                     <span class="stat-value">${serverStats.lastSync.settings ? new Date(serverStats.lastSync.settings).toLocaleString() : 'Never'}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Shopping List</span>
+                    <span class="stat-value">${serverStats.lastSync.shoppingList ? new Date(serverStats.lastSync.shoppingList).toLocaleString() : 'Never'}</span>
                 </div>
             </div>
 
@@ -780,6 +992,10 @@ async function handleHealthCheck(req, res) {
                 <div class="stat-row">
                     <span class="stat-label">Settings File Size</span>
                     <span class="stat-value">${dataFiles.settings.exists ? (dataFiles.settings.size / 1024).toFixed(2) + ' KB' : 'N/A'}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Shopping List File Size</span>
+                    <span class="stat-value">${dataFiles.shoppingList.exists ? (dataFiles.shoppingList.size / 1024).toFixed(2) + ' KB' : 'N/A'}</span>
                 </div>
             </div>
         </div>
@@ -876,6 +1092,10 @@ const server = http.createServer(async (req, res) => {
             await handleGetSettings(req, res);
         } else if (url === '/api/settings' && method === 'POST') {
             await handleSaveSettings(req, res);
+        } else if (url === '/api/shopping-list' && method === 'GET') {
+            await handleGetShoppingList(req, res);
+        } else if (url === '/api/shopping-list' && method === 'POST') {
+            await handleSaveShoppingList(req, res);
         } else {
             res.writeHead(404, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'API endpoint not found' }));
