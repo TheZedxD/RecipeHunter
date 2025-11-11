@@ -10,6 +10,30 @@
     --border-radius: 8px;
     --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     --box-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.15);
+
+    /* Responsive Typography System - Mobile-First Fluid Scaling (320px - 768px) */
+    /* Base font size variables */
+    --font-size-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem); /* 16px - 18px */
+
+    /* Heading scale with fluid typography */
+    --font-size-h1: clamp(1.75rem, 1.5rem + 1.25vw, 2.5rem); /* 28px - 40px */
+    --font-size-h2: clamp(1.5rem, 1.3rem + 1vw, 2rem); /* 24px - 32px */
+    --font-size-h3: clamp(1.25rem, 1.125rem + 0.625vw, 1.5rem); /* 20px - 24px */
+    --font-size-h4: clamp(1.125rem, 1.05rem + 0.375vw, 1.25rem); /* 18px - 20px */
+    --font-size-h5: clamp(1rem, 0.95rem + 0.25vw, 1.125rem); /* 16px - 18px */
+    --font-size-h6: clamp(0.875rem, 0.85rem + 0.125vw, 1rem); /* 14px - 16px */
+
+    /* Body text sizes */
+    --font-size-lg: clamp(1.0625rem, 1rem + 0.3125vw, 1.25rem); /* 17px - 20px */
+    --font-size-md: clamp(0.9375rem, 0.9rem + 0.1875vw, 1.0625rem); /* 15px - 17px */
+    --font-size-sm: clamp(0.8125rem, 0.8rem + 0.0625vw, 0.875rem); /* 13px - 14px */
+    --font-size-xs: clamp(0.6875rem, 0.675rem + 0.0625vw, 0.75rem); /* 11px - 12px */
+
+    /* Line heights for optimal readability */
+    --line-height-tight: 1.3;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.6;
+    --line-height-loose: 1.75;
 }
 
 /* Theme Variables - Claude (Default) */
@@ -212,7 +236,8 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
-    line-height: 1.6;
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-relaxed);
     transition: background-color var(--transition-speed), color var(--transition-speed);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -228,6 +253,8 @@ body.modal-open {
 }
 
 html {
+    /* Set base font size to 16px minimum to prevent iOS auto-zoom on input focus */
+    font-size: 16px;
     scroll-behavior: smooth;
 }
 
@@ -289,16 +316,18 @@ html {
 }
 
 .preferences-section h3 {
-    font-size: 20px;
+    font-size: var(--font-size-h3);
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 8px;
+    line-height: var(--line-height-tight);
 }
 
 .preferences-description {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     color: var(--text-secondary);
     margin-bottom: 24px;
+    line-height: var(--line-height-relaxed);
 }
 
 .theme-grid {
@@ -407,15 +436,17 @@ html {
 }
 
 .theme-card-name {
-    font-size: 16px;
+    font-size: var(--font-size-base);
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 4px;
+    line-height: var(--line-height-normal);
 }
 
 .theme-card-description {
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     color: var(--text-secondary);
+    line-height: var(--line-height-normal);
 }
 
 .theme-card-check {
@@ -430,7 +461,7 @@ html {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: var(--font-size-base);
     font-weight: bold;
     opacity: 0;
     transition: opacity var(--transition-speed);
@@ -460,12 +491,13 @@ html {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 20px;
+    font-size: var(--font-size-h3);
     font-weight: 600;
     color: var(--text-primary);
     cursor: pointer;
     user-select: none;
     transition: all 0.2s ease;
+    line-height: var(--line-height-tight);
 }
 
 .logo:hover {
@@ -478,7 +510,7 @@ html {
 }
 
 .logo-icon {
-    font-size: 28px;
+    font-size: clamp(1.5rem, 1.4rem + 0.5vw, 1.75rem); /* 24px - 28px */
 }
 
 /* Sync Status Indicator */
@@ -488,15 +520,16 @@ html {
     gap: 6px;
     padding: 6px 12px;
     border-radius: 12px;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     font-weight: 500;
     transition: all 0.3s ease;
     margin-left: auto;
     margin-right: 16px;
+    line-height: var(--line-height-normal);
 }
 
 .sync-indicator .sync-icon {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     display: inline-block;
 }
 
@@ -584,7 +617,7 @@ html {
 }
 
 .nav-icon {
-    font-size: 18px;
+    font-size: var(--font-size-h4);
 }
 
 .nav-btn .new-badge {
@@ -711,13 +744,14 @@ html {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 18px;
+    font-size: var(--font-size-h4);
     font-weight: 600;
     color: var(--text-primary);
+    line-height: var(--line-height-tight);
 }
 
 .mobile-menu-logo .logo-icon {
-    font-size: 24px;
+    font-size: var(--font-size-h2);
 }
 
 .mobile-menu-close {
@@ -735,7 +769,7 @@ html {
 }
 
 .mobile-menu-close span {
-    font-size: 24px;
+    font-size: var(--font-size-h2);
     color: var(--text-primary);
     font-weight: bold;
     line-height: 1;
@@ -843,9 +877,10 @@ html {
 }
 
 .welcome-text p {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     color: var(--text-secondary);
     margin: 0;
+    line-height: var(--line-height-relaxed);
 }
 
 .try-demo-link {
@@ -1172,17 +1207,18 @@ html {
 }
 
 .page-header h2 {
-    font-size: 32px;
+    font-size: var(--font-size-h1);
     font-weight: 700;
     margin-bottom: 8px;
     color: var(--text-primary);
     word-wrap: break-word;
+    line-height: var(--line-height-tight);
 }
 
 .page-header p {
-    font-size: 16px;
+    font-size: var(--font-size-base);
     color: var(--text-secondary);
-    line-height: 1.6;
+    line-height: var(--line-height-relaxed);
     word-wrap: break-word;
 }
 
@@ -1234,18 +1270,20 @@ html {
 }
 
 .recipe-card-title {
-    font-size: 20px;
+    font-size: var(--font-size-h3);
     font-weight: 600;
     margin-bottom: 8px;
     color: var(--text-primary);
+    line-height: var(--line-height-tight);
 }
 
 .recipe-card-meta {
     display: flex;
     gap: 16px;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     color: var(--text-secondary);
     margin-bottom: 12px;
+    line-height: var(--line-height-normal);
 }
 
 .recipe-card-meta-item {
@@ -1265,10 +1303,11 @@ html {
     padding: 4px 10px;
     border-radius: 12px;
     background: var(--bg-tertiary);
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     color: var(--text-primary);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid transparent;
+    line-height: var(--line-height-normal);
 }
 
 .recipe-card-tag:hover {
@@ -1279,9 +1318,9 @@ html {
 }
 
 .recipe-card-preview {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: var(--line-height-relaxed);
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
@@ -1306,15 +1345,17 @@ html {
 }
 
 .empty-state h2 {
-    font-size: 28px;
+    font-size: var(--font-size-h2);
     margin-bottom: 12px;
     color: var(--text-primary);
+    line-height: var(--line-height-tight);
 }
 
 .empty-state p {
-    font-size: 16px;
+    font-size: var(--font-size-base);
     color: var(--text-secondary);
     margin-bottom: 32px;
+    line-height: var(--line-height-relaxed);
 }
 
 .empty-state-actions {
@@ -1355,13 +1396,14 @@ html {
     border-radius: var(--border-radius);
     border: none;
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: 500;
     transition: all var(--transition-speed);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
+    line-height: var(--line-height-normal);
 }
 
 .btn-primary {
@@ -2149,8 +2191,9 @@ body.compact-view .recipe-card-preview {
     display: block;
     margin-bottom: 8px;
     font-weight: 500;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     color: var(--text-primary);
+    line-height: var(--line-height-normal);
 }
 
 .form-group input[type="text"],
@@ -2468,18 +2511,19 @@ body.compact-view .recipe-card-preview {
 }
 
 .modal-header h2 {
-    font-size: 24px;
+    font-size: var(--font-size-h2);
     color: var(--text-primary);
     word-wrap: break-word;
     overflow-wrap: break-word;
     flex: 1;
     margin-right: 16px;
+    line-height: var(--line-height-tight);
 }
 
 .modal-close {
     background: none;
     border: none;
-    font-size: 32px;
+    font-size: clamp(1.75rem, 1.65rem + 0.5vw, 2rem); /* 28px - 32px */
     cursor: pointer;
     color: var(--text-secondary);
     padding: 0;
@@ -2490,6 +2534,7 @@ body.compact-view .recipe-card-preview {
     justify-content: center;
     border-radius: 50%;
     transition: all var(--transition-speed);
+    line-height: 1;
 }
 
 .modal-close:hover {
@@ -4561,7 +4606,7 @@ body.is-ios .results-container {
 }
 
 .fab-icon {
-    font-size: 32px;
+    font-size: clamp(1.75rem, 1.65rem + 0.5vw, 2rem); /* 28px - 32px */
     font-weight: 300;
     color: white;
     line-height: 1;
@@ -4733,16 +4778,18 @@ body.is-ios .results-container {
 }
 
 .first-time-header h2 {
-    font-size: 28px;
+    font-size: var(--font-size-h2);
     color: var(--text-primary);
     margin-bottom: 8px;
     font-weight: 700;
+    line-height: var(--line-height-tight);
 }
 
 .first-time-subtitle {
-    font-size: 18px;
+    font-size: var(--font-size-h4);
     color: var(--text-secondary);
     font-weight: 500;
+    line-height: var(--line-height-relaxed);
 }
 
 .first-time-steps {
