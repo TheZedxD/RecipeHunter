@@ -175,8 +175,8 @@ function validateRecipes(data) {
     }
 
     for (const recipe of data) {
-        if (!recipe.id || typeof recipe.id !== 'number') {
-            throw new Error('Each recipe must have a numeric id');
+        if (!recipe.id || (typeof recipe.id !== 'number' && typeof recipe.id !== 'string')) {
+            throw new Error('Each recipe must have an id');
         }
         if (!recipe.name || typeof recipe.name !== 'string') {
             throw new Error('Each recipe must have a name');
@@ -201,8 +201,8 @@ function validateTags(data) {
     }
 
     for (const tag of data) {
-        if (!tag.id || typeof tag.id !== 'number') {
-            throw new Error('Each tag must have a numeric id');
+        if (!tag.id || (typeof tag.id !== 'number' && typeof tag.id !== 'string')) {
+            throw new Error('Each tag must have an id');
         }
         if (!tag.name || typeof tag.name !== 'string') {
             throw new Error('Each tag must have a name');
@@ -1196,16 +1196,62 @@ const server = http.createServer(async (req, res) => {
 function getNetworkIP() {
     const os = require('os');
     const interfaces = os.networkInterfaces();
+    const candidates = [];
 
     for (const name of Object.keys(interfaces)) {
         for (const iface of interfaces[name]) {
             // Skip internal (localhost) and non-IPv4 addresses
             if (iface.family === 'IPv4' && !iface.internal) {
-                return iface.address;
+                candidates.push({ name, address: iface.address });
             }
         }
     }
+
+    // Prefer proper local network addresses over APIPA addresses
+    // Priority order:
+    // 1. 192.168.x.x (most common home/office networks)
+    // 2. 10.x.x.x (common corporate networks)
+    // 3. 172.16-31.x.x (less common corporate networks)
+    // 4. Any other non-APIPA address
+    // 5. APIPA addresses (169.254.x.x) as last resort
+
+    const preferred = candidates.find(c => c.address.startsWith('192.168.'));
+    if (preferred) return preferred.address;
+
+    const corporate10 = candidates.find(c => c.address.startsWith('10.'));
+    if (corporate10) return corporate10.address;
+
+    const corporate172 = candidates.find(c => {
+        const parts = c.address.split('.');
+        return parts[0] === '172' && parseInt(parts[1]) >= 16 && parseInt(parts[1]) <= 31;
+    });
+    if (corporate172) return corporate172.address;
+
+    // Avoid APIPA addresses if possible
+    const nonAPIPA = candidates.find(c => !c.address.startsWith('169.254.'));
+    if (nonAPIPA) return nonAPIPA.address;
+
+    // Last resort: use first candidate (even if APIPA)
+    if (candidates.length > 0) return candidates[0].address;
+
     return '127.0.0.1';
+}
+
+// Get all available network IPs for display
+function getAllNetworkIPs() {
+    const os = require('os');
+    const interfaces = os.networkInterfaces();
+    const ips = [];
+
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                ips.push({ interface: name, address: iface.address });
+            }
+        }
+    }
+
+    return ips;
 }
 
 // Start server
@@ -1215,10 +1261,25 @@ async function startServer() {
 
     server.listen(PORT, '0.0.0.0', () => {
         const networkIP = getNetworkIP();
+        const allIPs = getAllNetworkIPs();
+
         console.log('\n🍳 Recipe Hunter Server Started!\n');
         console.log(`   Local:   http://localhost:${PORT}`);
         console.log(`   Network: http://${networkIP}:${PORT}`);
         console.log(`   Health:  http://localhost:${PORT}/health\n`);
+
+        // Show all available network interfaces if there are multiple
+        if (allIPs.length > 1) {
+            console.log('📡 Available network interfaces:');
+            allIPs.forEach(ip => {
+                const isPreferred = ip.address === networkIP;
+                const marker = isPreferred ? '✓ (selected)' : ' ';
+                const isAPIPA = ip.address.startsWith('169.254.') ? ' [APIPA - may not work]' : '';
+                console.log(`   ${marker} ${ip.interface}: http://${ip.address}:${PORT}${isAPIPA}`);
+            });
+            console.log('');
+        }
+
         console.log('📱 Access from other devices on your network using the Network URL above');
         console.log('💾 Recipe data saved to: ' + DATA_DIR);
         console.log('📊 View server health dashboard at /health\n');
