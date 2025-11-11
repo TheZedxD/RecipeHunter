@@ -348,7 +348,7 @@ function handleTouchStart(e) {
     // Start long-press timer
     state.touchTimer = setTimeout(() => {
         // Get recipe from card
-        const recipeId = recipeCard.dataset.recipeId;
+        const recipeId = parseInt(recipeCard.dataset.recipeId);
         const recipe = state.recipes.find(r => r.id === recipeId);
 
         if (recipe) {
@@ -4284,7 +4284,7 @@ function showSearchPreview(query) {
                 return; // Let tag handler take care of it
             }
 
-            const recipeId = item.dataset.recipeId;
+            const recipeId = parseInt(item.dataset.recipeId);
             const recipe = state.recipes.find(r => r.id === recipeId);
             hideSearchPreview();
             if (recipe) {
@@ -4424,7 +4424,7 @@ function openSidePanel(recipe, sourceCard = null) {
     contentHTML += '<div class="rating-stars" data-recipe-id="' + recipe.id + '">';
     for (let i = 1; i <= 5; i++) {
         const filled = i <= rating;
-        contentHTML += `<span class="rating-star ${filled ? 'filled' : ''}" data-rating="${i}" onclick="setRecipeRating('${recipe.id}', ${i})">★</span>`;
+        contentHTML += `<span class="rating-star ${filled ? 'filled' : ''}" data-rating="${i}" onclick="setRecipeRating(${recipe.id}, ${i})">★</span>`;
     }
     contentHTML += '</div>';
     if (rating > 0) {
@@ -4882,11 +4882,11 @@ function openRecipeSelectionModal() {
     state.recipes.forEach(recipe => {
         const ingredientCount = recipe.ingredients ? recipe.ingredients.length : 0;
         html += `
-            <div class="recipe-selection-item" onclick="toggleRecipeSelection('${recipe.id}', this)">
+            <div class="recipe-selection-item" onclick="toggleRecipeSelection(${recipe.id}, this)">
                 <input type="checkbox"
                        class="recipe-selection-checkbox"
                        data-recipe-id="${recipe.id}"
-                       onclick="event.stopPropagation(); toggleRecipeSelection('${recipe.id}', this.parentElement)">
+                       onclick="event.stopPropagation(); toggleRecipeSelection(${recipe.id}, this.parentElement)">
                 <div class="recipe-selection-info">
                     <div class="recipe-selection-name">${recipe.name}</div>
                     <div class="recipe-selection-meta">${ingredientCount} ingredients</div>
@@ -4920,7 +4920,7 @@ function toggleRecipeSelection(recipeId, element) {
 
 function confirmRecipeSelection() {
     const checkboxes = document.querySelectorAll('.recipe-selection-checkbox:checked');
-    const selectedRecipeIds = Array.from(checkboxes).map(cb => cb.dataset.recipeId);
+    const selectedRecipeIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.recipeId));
 
     if (selectedRecipeIds.length === 0) {
         showToast('Please select at least one recipe', 'error');
