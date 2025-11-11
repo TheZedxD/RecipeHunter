@@ -2756,6 +2756,53 @@ function renderHelpPage() {
   "notes": "Optional notes"
 }</pre>
         </div>
+
+        <div class="help-section">
+            <h3>🔧 Maintenance & Data Management</h3>
+            <ul class="tips-list">
+                <li><strong>Regular Backups:</strong> Export your recipes regularly using the Data tab to prevent data loss. Both JSON and Document formats are available for different purposes.</li>
+                <li><strong>Browser Storage:</strong> Your recipes are stored in your browser's localStorage. Clearing browser data will delete your recipes, so always keep backups.</li>
+                <li><strong>Storage Limits:</strong> Most browsers allow 5-10MB of localStorage. If you have many recipes with images, consider exporting periodically.</li>
+                <li><strong>Syncing Across Devices:</strong> Export recipes from one device and import them on another to sync your collection manually.</li>
+                <li><strong>Server Storage:</strong> If enabled, your recipes can sync to a server. Check your settings to enable automatic backups.</li>
+                <li><strong>Images:</strong> Recipe images are stored as base64 data. Large images increase storage usage. Consider compressing images before uploading.</li>
+                <li><strong>Clean Up:</strong> Regularly review and delete unused recipes or duplicate entries to optimize storage and performance.</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>🛠️ Troubleshooting</h3>
+            <ul class="tips-list">
+                <li><strong>Recipes Not Saving:</strong> Check if your browser's localStorage is full or if you're in private/incognito mode. Export your data and clear old recipes.</li>
+                <li><strong>Import Fails:</strong> Ensure your JSON file follows the correct format. Check for syntax errors like missing commas or brackets.</li>
+                <li><strong>Images Not Displaying:</strong> Large images may fail to load. Try using smaller, compressed images (recommended: under 500KB per image).</li>
+                <li><strong>Search Not Working:</strong> Try refreshing the page. If the issue persists, check if JavaScript is enabled in your browser.</li>
+                <li><strong>Performance Issues:</strong> If the app is slow with many recipes, try exporting some to archive them and reduce the active collection size.</li>
+                <li><strong>Theme Not Changing:</strong> Clear browser cache and reload. Theme preferences are saved in localStorage.</li>
+                <li><strong>Mobile Menu Issues:</strong> Ensure your browser is up to date. Try closing and reopening the menu.</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>📊 Data Export Options</h3>
+            <ul class="tips-list">
+                <li><strong>Export as Documents (ZIP):</strong> Creates readable text files perfect for printing, sharing, or reading offline. Each recipe is a separate .txt file.</li>
+                <li><strong>Archive as JSON:</strong> Creates a machine-readable backup file that can be re-imported later. Use this for backups and transferring between devices.</li>
+                <li><strong>When to Use Each:</strong> Use Documents for sharing recipes with others. Use JSON for backups and migration.</li>
+                <li><strong>Best Practices:</strong> Export JSON backups monthly. Export Documents when you want to share specific recipes or create a cookbook.</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>🎨 Customization Tips</h3>
+            <ul class="tips-list">
+                <li><strong>Themes:</strong> Choose from 6 color themes (Claude, Dark, Light, Forest, Ocean, Sunset) to personalize your experience.</li>
+                <li><strong>View Modes:</strong> Switch between grid and list views to find the layout that works best for you.</li>
+                <li><strong>Rich Text Formatting:</strong> Add colors and highlights to recipe instructions and notes for better readability.</li>
+                <li><strong>Tags Organization:</strong> Create a consistent tagging system (e.g., meal type, cuisine, dietary restrictions) for easier filtering.</li>
+                <li><strong>Favorites:</strong> Use the star rating system to mark your best recipes and filter by rating.</li>
+            </ul>
+        </div>
     `;
 }
 
