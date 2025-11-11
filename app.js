@@ -43,7 +43,13 @@ const state = {
     touchTimer: null,
     touchStartX: 0,
     touchStartY: 0,
-    scrollPosition: 0
+    scrollPosition: 0,
+    sync: {
+        status: 'synced', // 'synced', 'syncing', 'offline', 'error'
+        lastSync: null,
+        isOnline: navigator.onLine,
+        pendingOperations: []
+    }
 };
 
 // ===== Modal Animation Helper =====
@@ -93,6 +99,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initializeApp() {
+    // Set up online/offline detection first
+    setupOnlineOfflineDetection();
+
+    // Initialize sync status
+    updateSyncStatus(navigator.onLine ? 'synced' : 'offline');
+
     await loadDataFromStorage();
 
     // Pre-populate with sample recipes on first load
@@ -351,26 +363,103 @@ function handleTouchEnd(e) {
 // ===== Server API Communication =====
 const API_BASE = window.location.origin;
 
-async function apiRequest(endpoint, options = {}) {
-    try {
-        const url = `${API_BASE}${endpoint}`;
-        const response = await fetch(url, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
+// Retry logic with exponential backoff
+async function apiRequestWithRetry(endpoint, options = {}, retries = 3) {
+    let lastError;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const url = `${API_BASE}${endpoint}`;
+
+            // Create AbortController for timeout (compatible approach)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                clearTimeout(timeoutId);
+                throw error;
             }
-        });
+        } catch (error) {
+            lastError = error;
+            console.warn(`API request attempt ${attempt + 1} failed:`, error);
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            // Don't retry on certain errors
+            if (error.name === 'AbortError' || (error.message && error.message.includes('400'))) {
+                throw error;
+            }
+
+            // If this isn't the last attempt, wait before retrying
+            if (attempt < retries) {
+                const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 1s, 2s, 4s
+                console.log(`Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
         }
-
-        return await response.json();
-    } catch (error) {
-        console.error('API request failed:', error);
-        throw error;
     }
+
+    // All retries failed
+    throw lastError;
+}
+
+async function apiRequest(endpoint, options = {}) {
+    return apiRequestWithRetry(endpoint, options, 3);
+}
+
+// Update sync status in UI
+function updateSyncStatus(status) {
+    state.sync.status = status;
+    const syncIndicator = document.getElementById('syncIndicator');
+    if (!syncIndicator) return;
+
+    const statusMap = {
+        'synced': { icon: '✓', text: 'Synced', class: 'synced' },
+        'syncing': { icon: '⟳', text: 'Syncing', class: 'syncing' },
+        'offline': { icon: '⚠', text: 'Offline', class: 'offline' },
+        'error': { icon: '✕', text: 'Sync Error', class: 'error' }
+    };
+
+    const statusInfo = statusMap[status] || statusMap['synced'];
+    syncIndicator.className = `sync-indicator ${statusInfo.class}`;
+    syncIndicator.innerHTML = `<span class="sync-icon">${statusInfo.icon}</span><span class="sync-text">${statusInfo.text}</span>`;
+
+    // Update last sync time if synced successfully
+    if (status === 'synced') {
+        state.sync.lastSync = new Date();
+    }
+}
+
+// Online/offline detection
+function setupOnlineOfflineDetection() {
+    window.addEventListener('online', () => {
+        state.sync.isOnline = true;
+        updateSyncStatus('synced');
+        showToast('Connection restored - syncing data...', 'success');
+        // Attempt to sync any pending operations
+        syncAllData();
+    });
+
+    window.addEventListener('offline', () => {
+        state.sync.isOnline = false;
+        updateSyncStatus('offline');
+        showToast('You are offline - changes will sync when connection is restored', 'info');
+    });
 }
 
 async function loadRecipesFromServer() {
@@ -637,28 +726,79 @@ function checkStorageQuota() {
 
 async function saveRecipesToStorage() {
     const hasLocalStorage = isLocalStorageAvailable();
+    updateSyncStatus('syncing');
 
     try {
-        // Save to server first
-        const serverSaved = await saveRecipesToServer(state.recipes);
-
-        // Also cache to localStorage
-        if (hasLocalStorage) {
+        // Try to save to server first (with retry logic)
+        if (state.sync.isOnline) {
             try {
-                const recipesJson = JSON.stringify(state.recipes);
-                localStorage.setItem('recipes', recipesJson);
-                checkStorageQuota();
-            } catch (e) {
-                console.warn('Failed to cache recipes to localStorage:', e);
-            }
-        }
+                await saveRecipesToServer(state.recipes);
 
-        if (!serverSaved && !hasLocalStorage) {
-            showToast('Unable to save recipes. Server connection unavailable.', 'error');
+                // Cache to localStorage for offline access
+                if (hasLocalStorage) {
+                    try {
+                        const recipesJson = JSON.stringify(state.recipes);
+                        localStorage.setItem('recipes', recipesJson);
+                        checkStorageQuota();
+                    } catch (e) {
+                        console.warn('Failed to cache recipes to localStorage:', e);
+                    }
+                }
+
+                updateSyncStatus('synced');
+                showToast('Recipes synced to server successfully', 'success', 2000);
+                return true;
+            } catch (serverError) {
+                console.error('Server sync failed:', serverError);
+
+                // Fallback to localStorage only
+                if (hasLocalStorage) {
+                    try {
+                        const recipesJson = JSON.stringify(state.recipes);
+                        localStorage.setItem('recipes', recipesJson);
+                        checkStorageQuota();
+                        updateSyncStatus('offline');
+                        showToast('Saved locally - will sync when server is available', 'warning');
+                        return true;
+                    } catch (e) {
+                        console.error('Failed to save to localStorage:', e);
+                        updateSyncStatus('error');
+                        showToast('Failed to save recipes. Please try again.', 'error');
+                        return false;
+                    }
+                } else {
+                    updateSyncStatus('error');
+                    showToast('Unable to save recipes. Server unavailable and no local storage.', 'error');
+                    return false;
+                }
+            }
+        } else {
+            // Offline mode - save to localStorage only
+            if (hasLocalStorage) {
+                try {
+                    const recipesJson = JSON.stringify(state.recipes);
+                    localStorage.setItem('recipes', recipesJson);
+                    checkStorageQuota();
+                    updateSyncStatus('offline');
+                    showToast('Saved locally (offline) - will sync when online', 'info');
+                    return true;
+                } catch (e) {
+                    console.error('Failed to save to localStorage:', e);
+                    updateSyncStatus('error');
+                    showToast('Failed to save recipes locally', 'error');
+                    return false;
+                }
+            } else {
+                updateSyncStatus('error');
+                showToast('Unable to save recipes. No local storage available.', 'error');
+                return false;
+            }
         }
     } catch (e) {
         console.error('Error saving recipes:', e);
+        updateSyncStatus('error');
         showToast('Failed to save recipes. Please try again.', 'error');
+        return false;
     }
 }
 
@@ -666,20 +806,52 @@ async function saveTagsToStorage() {
     const hasLocalStorage = isLocalStorageAvailable();
 
     try {
-        // Save to server first
-        await saveTagsToServer(state.tags);
-
-        // Also cache to localStorage
-        if (hasLocalStorage) {
+        // Try to save to server first (with retry logic)
+        if (state.sync.isOnline) {
             try {
-                const tagsJson = JSON.stringify(state.tags);
-                localStorage.setItem('tags', tagsJson);
-            } catch (e) {
-                console.warn('Failed to cache tags to localStorage:', e);
+                await saveTagsToServer(state.tags);
+
+                // Cache to localStorage for offline access
+                if (hasLocalStorage) {
+                    try {
+                        const tagsJson = JSON.stringify(state.tags);
+                        localStorage.setItem('tags', tagsJson);
+                    } catch (e) {
+                        console.warn('Failed to cache tags to localStorage:', e);
+                    }
+                }
+                return true;
+            } catch (serverError) {
+                console.error('Server sync failed for tags:', serverError);
+
+                // Fallback to localStorage only
+                if (hasLocalStorage) {
+                    try {
+                        const tagsJson = JSON.stringify(state.tags);
+                        localStorage.setItem('tags', tagsJson);
+                        return true;
+                    } catch (e) {
+                        console.error('Failed to save tags to localStorage:', e);
+                        return false;
+                    }
+                }
+            }
+        } else {
+            // Offline mode - save to localStorage only
+            if (hasLocalStorage) {
+                try {
+                    const tagsJson = JSON.stringify(state.tags);
+                    localStorage.setItem('tags', tagsJson);
+                    return true;
+                } catch (e) {
+                    console.error('Failed to save tags to localStorage:', e);
+                    return false;
+                }
             }
         }
     } catch (e) {
         console.error('Error saving tags:', e);
+        return false;
     }
 }
 
@@ -687,20 +859,90 @@ async function saveSettingsToStorage() {
     const hasLocalStorage = isLocalStorageAvailable();
 
     try {
-        // Save to server first
-        await saveSettingsToServer(state.settings);
-
-        // Also cache to localStorage
-        if (hasLocalStorage) {
+        // Try to save to server first (with retry logic)
+        if (state.sync.isOnline) {
             try {
-                const settingsJson = JSON.stringify(state.settings);
-                localStorage.setItem('settings', settingsJson);
-            } catch (e) {
-                console.warn('Failed to cache settings to localStorage:', e);
+                await saveSettingsToServer(state.settings);
+
+                // Cache to localStorage for offline access
+                if (hasLocalStorage) {
+                    try {
+                        const settingsJson = JSON.stringify(state.settings);
+                        localStorage.setItem('settings', settingsJson);
+                    } catch (e) {
+                        console.warn('Failed to cache settings to localStorage:', e);
+                    }
+                }
+                return true;
+            } catch (serverError) {
+                console.error('Server sync failed for settings:', serverError);
+
+                // Fallback to localStorage only
+                if (hasLocalStorage) {
+                    try {
+                        const settingsJson = JSON.stringify(state.settings);
+                        localStorage.setItem('settings', settingsJson);
+                        return true;
+                    } catch (e) {
+                        console.error('Failed to save settings to localStorage:', e);
+                        return false;
+                    }
+                }
+            }
+        } else {
+            // Offline mode - save to localStorage only
+            if (hasLocalStorage) {
+                try {
+                    const settingsJson = JSON.stringify(state.settings);
+                    localStorage.setItem('settings', settingsJson);
+                    return true;
+                } catch (e) {
+                    console.error('Failed to save settings to localStorage:', e);
+                    return false;
+                }
             }
         }
     } catch (e) {
         console.error('Error saving settings:', e);
+        return false;
+    }
+}
+
+// Manual sync function for all data
+async function syncAllData() {
+    if (!state.sync.isOnline) {
+        showToast('Cannot sync while offline', 'warning');
+        return false;
+    }
+
+    updateSyncStatus('syncing');
+    showToast('Syncing all data to server...', 'info', 2000);
+
+    try {
+        // Sync all data types
+        await saveRecipesToServer(state.recipes);
+        await saveTagsToServer(state.tags);
+        await saveSettingsToServer(state.settings);
+
+        // Update localStorage cache
+        if (isLocalStorageAvailable()) {
+            try {
+                localStorage.setItem('recipes', JSON.stringify(state.recipes));
+                localStorage.setItem('tags', JSON.stringify(state.tags));
+                localStorage.setItem('settings', JSON.stringify(state.settings));
+            } catch (e) {
+                console.warn('Failed to update localStorage cache:', e);
+            }
+        }
+
+        updateSyncStatus('synced');
+        showToast('All data synced successfully!', 'success');
+        return true;
+    } catch (error) {
+        console.error('Sync failed:', error);
+        updateSyncStatus('error');
+        showToast('Sync failed - please try again', 'error');
+        return false;
     }
 }
 
@@ -2590,6 +2832,24 @@ function renderSettingsPage() {
         </div>
 
         <div class="settings-section">
+            <h3>Server Sync</h3>
+            <div class="setting-item">
+                <div class="sync-status-info">
+                    <p class="setting-description">
+                        <strong>Status:</strong> <span id="syncStatusText">${state.sync.status === 'synced' ? 'All data synced' : state.sync.status === 'offline' ? 'Offline mode' : state.sync.status === 'syncing' ? 'Syncing...' : 'Sync error'}</span>
+                    </p>
+                    ${state.sync.lastSync ? `<p class="setting-description"><strong>Last sync:</strong> ${new Date(state.sync.lastSync).toLocaleString()}</p>` : ''}
+                </div>
+            </div>
+            <div class="setting-item">
+                <button class="btn btn-primary" id="manualSyncBtn" ${!state.sync.isOnline || state.sync.status === 'syncing' ? 'disabled' : ''}>
+                    🔄 Sync Now
+                </button>
+                <p class="setting-description">Manually sync all data with the server</p>
+            </div>
+        </div>
+
+        <div class="settings-section">
             <h3>Data Management</h3>
             <div class="setting-item">
                 <button class="btn btn-primary" onclick="exportAllRecipes()">
@@ -2669,6 +2929,31 @@ function renderSettingsPage() {
             }
         }
     });
+
+    // Setup manual sync button
+    const manualSyncBtn = document.getElementById('manualSyncBtn');
+    if (manualSyncBtn) {
+        manualSyncBtn.addEventListener('click', async () => {
+            manualSyncBtn.disabled = true;
+            manualSyncBtn.textContent = '⟳ Syncing...';
+
+            const success = await syncAllData();
+
+            manualSyncBtn.disabled = false;
+            manualSyncBtn.textContent = '🔄 Sync Now';
+
+            // Update sync status text in settings
+            const syncStatusText = document.getElementById('syncStatusText');
+            if (syncStatusText) {
+                syncStatusText.textContent = success ? 'All data synced' : 'Sync error';
+            }
+
+            // Re-render settings page to show updated sync time
+            if (success) {
+                renderSettingsPage();
+            }
+        });
+    }
 
     // Setup theme switchers
     document.querySelectorAll('.theme-card-small').forEach(card => {
