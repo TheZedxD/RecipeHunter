@@ -48,7 +48,14 @@ const state = {
         status: 'synced', // 'synced', 'syncing', 'offline', 'error'
         lastSync: null,
         isOnline: navigator.onLine,
-        pendingOperations: []
+        pendingOperations: [],
+        healthCheckInterval: null,
+        lastHealthCheck: null,
+        serverHealthy: false
+    },
+    conflictResolution: {
+        pendingConflicts: [],
+        currentConflict: null
     }
 };
 
@@ -105,6 +112,11 @@ async function initializeApp() {
     // Initialize sync status
     updateSyncStatus(navigator.onLine ? 'synced' : 'offline');
 
+    // Check server health on init
+    if (navigator.onLine) {
+        await checkServerHealth();
+    }
+
     await loadDataFromStorage();
 
     // Pre-populate with sample recipes on first load
@@ -118,6 +130,23 @@ async function initializeApp() {
     setupFirstTimeGuide();
     initializeTooltips();
     handleKeyboardVisibility();
+
+    // Start periodic health check pings
+    if (navigator.onLine) {
+        startHealthCheckPing();
+    }
+
+    // Stop health checks when page is hidden to save resources
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            // Don't stop entirely, just reduce frequency via the interval check
+        } else {
+            // Resume checking when page becomes visible
+            if (navigator.onLine && !state.sync.healthCheckInterval) {
+                startHealthCheckPing();
+            }
+        }
+    });
 }
 
 // ===== Mobile-Specific Features =====
@@ -451,6 +480,8 @@ function setupOnlineOfflineDetection() {
         state.sync.isOnline = true;
         updateSyncStatus('synced');
         showToast('Connection restored - syncing data...', 'success');
+        // Start health check pings
+        startHealthCheckPing();
         // Attempt to sync any pending operations
         syncAllData();
     });
@@ -459,6 +490,8 @@ function setupOnlineOfflineDetection() {
         state.sync.isOnline = false;
         updateSyncStatus('offline');
         showToast('You are offline - changes will sync when connection is restored', 'info');
+        // Stop health check pings
+        stopHealthCheckPing();
     });
 }
 
@@ -552,34 +585,105 @@ async function loadDataFromStorage() {
     }
 
     try {
-        // Try to load from server first
+        // Load from both sources for conflict detection
+        let localRecipes = null;
+        let localTags = null;
+        let localSettings = null;
+
+        if (hasLocalStorage) {
+            try {
+                const storedRecipes = localStorage.getItem('recipes');
+                if (storedRecipes) {
+                    localRecipes = JSON.parse(storedRecipes);
+                }
+            } catch (e) {
+                console.error('Error loading local recipes:', e);
+            }
+
+            try {
+                const storedTags = localStorage.getItem('tags');
+                if (storedTags) {
+                    localTags = JSON.parse(storedTags);
+                }
+            } catch (e) {
+                console.error('Error loading local tags:', e);
+            }
+
+            try {
+                const storedSettings = localStorage.getItem('settings');
+                if (storedSettings) {
+                    localSettings = JSON.parse(storedSettings);
+                }
+            } catch (e) {
+                console.error('Error loading local settings:', e);
+            }
+        }
+
+        // Try to load from server
         const serverRecipes = await loadRecipesFromServer();
         const serverTags = await loadTagsFromServer();
         const serverSettings = await loadSettingsFromServer();
 
-        // Process recipes from server
-        if (serverRecipes && Array.isArray(serverRecipes)) {
-            state.recipes = serverRecipes;
-            // Cache to localStorage
-            if (hasLocalStorage) {
-                try {
-                    localStorage.setItem('recipes', JSON.stringify(serverRecipes));
-                } catch (e) {
-                    console.warn('Failed to cache recipes to localStorage:', e);
-                }
-            }
-        } else if (hasLocalStorage) {
-            // Fallback to localStorage cache
-            const storedRecipes = localStorage.getItem('recipes');
-            if (storedRecipes) {
-                try {
-                    const parsedRecipes = JSON.parse(storedRecipes);
-                    if (Array.isArray(parsedRecipes)) {
-                        state.recipes = parsedRecipes;
+        // Detect conflicts
+        const conflicts = detectConflicts(
+            localRecipes,
+            serverRecipes,
+            localTags,
+            serverTags,
+            localSettings,
+            serverSettings
+        );
+
+        // If conflicts exist, resolve them
+        if (conflicts.length > 0) {
+            console.log(`Found ${conflicts.length} conflict(s), showing resolution UI`);
+            // Set initial data from server
+            if (serverRecipes) state.recipes = serverRecipes;
+            if (serverTags) state.tags = serverTags;
+            if (serverSettings) state.settings = { ...state.settings, ...serverSettings };
+
+            // Show conflict resolution modal and wait for user input
+            await resolveConflicts(conflicts);
+        } else {
+            // No conflicts - use server data if available, fallback to local
+            if (serverRecipes && Array.isArray(serverRecipes)) {
+                state.recipes = serverRecipes;
+                // Cache to localStorage
+                if (hasLocalStorage) {
+                    try {
+                        localStorage.setItem('recipes', JSON.stringify(serverRecipes));
+                    } catch (e) {
+                        console.warn('Failed to cache recipes to localStorage:', e);
                     }
-                } catch (e) {
-                    console.error('Error parsing cached recipes:', e);
                 }
+            } else if (localRecipes && Array.isArray(localRecipes)) {
+                state.recipes = localRecipes;
+            }
+
+            if (serverTags && Array.isArray(serverTags)) {
+                state.tags = serverTags;
+                if (hasLocalStorage) {
+                    try {
+                        localStorage.setItem('tags', JSON.stringify(serverTags));
+                    } catch (e) {
+                        console.warn('Failed to cache tags to localStorage:', e);
+                    }
+                }
+            } else if (localTags && Array.isArray(localTags)) {
+                state.tags = localTags;
+            }
+
+            if (serverSettings && typeof serverSettings === 'object') {
+                state.settings = { ...state.settings, ...serverSettings };
+                if (hasLocalStorage) {
+                    try {
+                        localStorage.setItem('settings', JSON.stringify(serverSettings));
+                    } catch (e) {
+                        console.warn('Failed to cache settings to localStorage:', e);
+                    }
+                }
+            } else if (localSettings && typeof localSettings === 'object') {
+                state.settings = { ...state.settings, ...localSettings };
             }
         }
 
@@ -804,6 +908,7 @@ async function saveRecipesToStorage() {
 
 async function saveTagsToStorage() {
     const hasLocalStorage = isLocalStorageAvailable();
+    const timestamp = new Date().toISOString();
 
     try {
         // Try to save to server first (with retry logic)
@@ -816,6 +921,8 @@ async function saveTagsToStorage() {
                     try {
                         const tagsJson = JSON.stringify(state.tags);
                         localStorage.setItem('tags', tagsJson);
+                        // Save timestamp metadata
+                        localStorage.setItem('tags_meta', JSON.stringify({ lastModified: timestamp }));
                     } catch (e) {
                         console.warn('Failed to cache tags to localStorage:', e);
                     }
@@ -829,6 +936,8 @@ async function saveTagsToStorage() {
                     try {
                         const tagsJson = JSON.stringify(state.tags);
                         localStorage.setItem('tags', tagsJson);
+                        // Save timestamp metadata
+                        localStorage.setItem('tags_meta', JSON.stringify({ lastModified: timestamp }));
                         return true;
                     } catch (e) {
                         console.error('Failed to save tags to localStorage:', e);
@@ -842,6 +951,8 @@ async function saveTagsToStorage() {
                 try {
                     const tagsJson = JSON.stringify(state.tags);
                     localStorage.setItem('tags', tagsJson);
+                    // Save timestamp metadata
+                    localStorage.setItem('tags_meta', JSON.stringify({ lastModified: timestamp }));
                     return true;
                 } catch (e) {
                     console.error('Failed to save tags to localStorage:', e);
@@ -857,6 +968,7 @@ async function saveTagsToStorage() {
 
 async function saveSettingsToStorage() {
     const hasLocalStorage = isLocalStorageAvailable();
+    const timestamp = new Date().toISOString();
 
     try {
         // Try to save to server first (with retry logic)
@@ -869,6 +981,8 @@ async function saveSettingsToStorage() {
                     try {
                         const settingsJson = JSON.stringify(state.settings);
                         localStorage.setItem('settings', settingsJson);
+                        // Save timestamp metadata
+                        localStorage.setItem('settings_meta', JSON.stringify({ lastModified: timestamp }));
                     } catch (e) {
                         console.warn('Failed to cache settings to localStorage:', e);
                     }
@@ -882,6 +996,8 @@ async function saveSettingsToStorage() {
                     try {
                         const settingsJson = JSON.stringify(state.settings);
                         localStorage.setItem('settings', settingsJson);
+                        // Save timestamp metadata
+                        localStorage.setItem('settings_meta', JSON.stringify({ lastModified: timestamp }));
                         return true;
                     } catch (e) {
                         console.error('Failed to save settings to localStorage:', e);
@@ -895,6 +1011,8 @@ async function saveSettingsToStorage() {
                 try {
                     const settingsJson = JSON.stringify(state.settings);
                     localStorage.setItem('settings', settingsJson);
+                    // Save timestamp metadata
+                    localStorage.setItem('settings_meta', JSON.stringify({ lastModified: timestamp }));
                     return true;
                 } catch (e) {
                     console.error('Failed to save settings to localStorage:', e);
@@ -946,9 +1064,307 @@ async function syncAllData() {
     }
 }
 
+// ===== Server Health Check System =====
+async function checkServerHealth() {
+    try {
+        const health = await apiRequest('/api/health');
+
+        if (health && health.status === 'healthy') {
+            state.sync.serverHealthy = true;
+            state.sync.lastHealthCheck = new Date();
+
+            // If we were offline and now we're online, attempt to sync
+            if (state.sync.status === 'offline' || state.sync.status === 'error') {
+                updateSyncStatus('synced');
+                showToast('Server connection restored', 'success', 2000);
+                // Try to sync any pending changes
+                await syncAllData();
+            }
+
+            return true;
+        } else {
+            state.sync.serverHealthy = false;
+            return false;
+        }
+    } catch (error) {
+        console.warn('Health check failed:', error);
+        state.sync.serverHealthy = false;
+
+        if (state.sync.status !== 'offline') {
+            updateSyncStatus('offline');
+        }
+
+        return false;
+    }
+}
+
+function startHealthCheckPing() {
+    // Clear any existing interval
+    if (state.sync.healthCheckInterval) {
+        clearInterval(state.sync.healthCheckInterval);
+    }
+
+    // Check immediately
+    checkServerHealth();
+
+    // Then check every 30 seconds
+    state.sync.healthCheckInterval = setInterval(() => {
+        // Only ping if page is visible (don't waste resources on background tabs)
+        if (document.visibilityState === 'visible') {
+            checkServerHealth();
+        }
+    }, 30000); // 30 seconds
+
+    console.log('✓ Health check ping started (30s interval)');
+}
+
+function stopHealthCheckPing() {
+    if (state.sync.healthCheckInterval) {
+        clearInterval(state.sync.healthCheckInterval);
+        state.sync.healthCheckInterval = null;
+        console.log('✓ Health check ping stopped');
+    }
+}
+
+// Manual refresh sync status
+async function refreshSyncStatus() {
+    updateSyncStatus('syncing');
+    showToast('Checking server status...', 'info', 1500);
+
+    const healthy = await checkServerHealth();
+
+    if (healthy) {
+        showToast('Server is online and healthy', 'success', 2000);
+    } else {
+        showToast('Unable to reach server', 'warning', 2000);
+    }
+}
+
+// ===== Conflict Resolution System =====
+function hasConflict(localData, serverData, localTimestamp, serverTimestamp) {
+    if (!localData || !serverData) return false;
+    if (!localTimestamp || !serverTimestamp) return false;
+
+    // Check if data has actually changed
+    const dataChanged = JSON.stringify(localData) !== JSON.stringify(serverData);
+    if (!dataChanged) return false;
+
+    // Check if both have been modified (potential conflict)
+    const localTime = new Date(localTimestamp).getTime();
+    const serverTime = new Date(serverTimestamp).getTime();
+
+    // If timestamps are within 5 seconds, consider it same modification
+    const timeDiff = Math.abs(localTime - serverTime);
+    if (timeDiff < 5000) return false;
+
+    // Both versions exist with different timestamps and different data
+    return true;
+}
+
+function detectConflicts(localRecipes, serverRecipes, localTags, serverTags, localSettings, serverSettings) {
+    const conflicts = [];
+
+    // Check recipe conflicts - compare individual recipes by ID
+    if (localRecipes && serverRecipes) {
+        const localMap = new Map(localRecipes.map(r => [r.id, r]));
+        const serverMap = new Map(serverRecipes.map(r => [r.id, r]));
+
+        for (const [id, localRecipe] of localMap) {
+            const serverRecipe = serverMap.get(id);
+            if (serverRecipe && hasConflict(
+                localRecipe,
+                serverRecipe,
+                localRecipe.updatedAt,
+                serverRecipe.updatedAt
+            )) {
+                conflicts.push({
+                    type: 'recipe',
+                    id: id,
+                    name: localRecipe.name,
+                    local: localRecipe,
+                    server: serverRecipe,
+                    localTime: localRecipe.updatedAt,
+                    serverTime: serverRecipe.updatedAt
+                });
+            }
+        }
+    }
+
+    // Check tags conflicts - compare entire tags array
+    const localTagsStr = localStorage.getItem('tags_meta');
+    const serverTagsStr = serverTags ? JSON.stringify(serverTags) : null;
+
+    if (localTagsStr && serverTagsStr && localTags && serverTags) {
+        try {
+            const localMeta = JSON.parse(localTagsStr);
+            if (hasConflict(localTags, serverTags, localMeta.lastModified, serverTags.lastModified)) {
+                conflicts.push({
+                    type: 'tags',
+                    local: localTags,
+                    server: serverTags,
+                    localTime: localMeta.lastModified,
+                    serverTime: serverTags.lastModified
+                });
+            }
+        } catch (e) {
+            console.warn('Error checking tags conflict:', e);
+        }
+    }
+
+    // Check settings conflicts
+    const localSettingsStr = localStorage.getItem('settings_meta');
+    const serverSettingsStr = serverSettings ? JSON.stringify(serverSettings) : null;
+
+    if (localSettingsStr && serverSettingsStr && localSettings && serverSettings) {
+        try {
+            const localMeta = JSON.parse(localSettingsStr);
+            if (hasConflict(localSettings, serverSettings, localMeta.lastModified, serverSettings.lastModified)) {
+                conflicts.push({
+                    type: 'settings',
+                    local: localSettings,
+                    server: serverSettings,
+                    localTime: localMeta.lastModified,
+                    serverTime: serverSettings.lastModified
+                });
+            }
+        } catch (e) {
+            console.warn('Error checking settings conflict:', e);
+        }
+    }
+
+    return conflicts;
+}
+
+async function showConflictResolutionModal(conflict) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('conflictModal');
+        const closeBtn = document.getElementById('conflictModalClose');
+        const keepLocalBtn = document.getElementById('keepLocalBtn');
+        const keepServerBtn = document.getElementById('keepServerBtn');
+        const localDetail = document.getElementById('localConflictDetail');
+        const serverDetail = document.getElementById('serverConflictDetail');
+        const description = document.getElementById('conflictDescription');
+
+        // Set conflict details
+        let itemName = '';
+        if (conflict.type === 'recipe') {
+            itemName = `Recipe: "${conflict.name}"`;
+        } else if (conflict.type === 'tags') {
+            itemName = 'Tags';
+        } else if (conflict.type === 'settings') {
+            itemName = 'Settings';
+        }
+
+        description.textContent = `Changes were made to ${itemName} on different devices. Choose which version to keep:`;
+
+        const localDate = new Date(conflict.localTime).toLocaleString();
+        const serverDate = new Date(conflict.serverTime).toLocaleString();
+
+        localDetail.textContent = `Modified: ${localDate}`;
+        serverDetail.textContent = `Modified: ${serverDate}`;
+
+        // Store current conflict
+        state.conflictResolution.currentConflict = conflict;
+
+        // Show modal
+        modal.classList.add('visible');
+
+        const handleKeepLocal = () => {
+            cleanup();
+            resolve('local');
+        };
+
+        const handleKeepServer = () => {
+            cleanup();
+            resolve('server');
+        };
+
+        const handleClose = () => {
+            cleanup();
+            resolve('server'); // Default to server version if closed
+        };
+
+        const cleanup = () => {
+            modal.classList.remove('visible');
+            keepLocalBtn.removeEventListener('click', handleKeepLocal);
+            keepServerBtn.removeEventListener('click', handleKeepServer);
+            closeBtn.removeEventListener('click', handleClose);
+            state.conflictResolution.currentConflict = null;
+        };
+
+        keepLocalBtn.addEventListener('click', handleKeepLocal);
+        keepServerBtn.addEventListener('click', handleKeepServer);
+        closeBtn.addEventListener('click', handleClose);
+    });
+}
+
+async function resolveConflicts(conflicts) {
+    for (const conflict of conflicts) {
+        const choice = await showConflictResolutionModal(conflict);
+
+        if (choice === 'local') {
+            // Keep local version - upload to server
+            if (conflict.type === 'recipe') {
+                const recipeIndex = state.recipes.findIndex(r => r.id === conflict.id);
+                if (recipeIndex >= 0) {
+                    state.recipes[recipeIndex] = conflict.local;
+                }
+                await saveRecipesToServer(state.recipes);
+                showToast(`Kept local version of "${conflict.name}"`, 'success');
+            } else if (conflict.type === 'tags') {
+                state.tags = conflict.local;
+                await saveTagsToServer(state.tags);
+                showToast('Kept local tags', 'success');
+            } else if (conflict.type === 'settings') {
+                state.settings = conflict.local;
+                await saveSettingsToServer(state.settings);
+                showToast('Kept local settings', 'success');
+            }
+        } else {
+            // Keep server version - update local
+            if (conflict.type === 'recipe') {
+                const recipeIndex = state.recipes.findIndex(r => r.id === conflict.id);
+                if (recipeIndex >= 0) {
+                    state.recipes[recipeIndex] = conflict.server;
+                }
+                showToast(`Kept server version of "${conflict.name}"`, 'success');
+            } else if (conflict.type === 'tags') {
+                state.tags = conflict.server;
+                showToast('Kept server tags', 'success');
+            } else if (conflict.type === 'settings') {
+                state.settings = { ...state.settings, ...conflict.server };
+                showToast('Kept server settings', 'success');
+            }
+        }
+    }
+
+    // Save everything to localStorage after conflict resolution
+    if (isLocalStorageAvailable()) {
+        try {
+            localStorage.setItem('recipes', JSON.stringify(state.recipes));
+            localStorage.setItem('tags', JSON.stringify(state.tags));
+            localStorage.setItem('settings', JSON.stringify(state.settings));
+        } catch (e) {
+            console.warn('Failed to save after conflict resolution:', e);
+        }
+    }
+
+    // Re-render the UI
+    renderRecipes();
+}
+
 // ===== Event Listeners Setup =====
 function setupEventListeners() {
     // Search is handled by setupRealTimeSearch
+
+    // Sync indicator click to manually refresh
+    const syncIndicator = document.getElementById('syncIndicator');
+    if (syncIndicator) {
+        syncIndicator.style.cursor = 'pointer';
+        syncIndicator.addEventListener('click', () => {
+            refreshSyncStatus();
+        });
+    }
 
     // Navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {

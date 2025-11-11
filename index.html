@@ -33,7 +33,7 @@
                     <span class="logo-text">Recipe Hunter</span>
                 </div>
                 <!-- Sync Status Indicator -->
-                <div class="sync-indicator synced" id="syncIndicator">
+                <div class="sync-indicator synced" id="syncIndicator" title="Click to refresh sync status">
                     <span class="sync-icon">✓</span>
                     <span class="sync-text">Synced</span>
                 </div>
@@ -493,6 +493,33 @@ You can format text with colors and styles!"></div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" id="cancelRecipeSelectionBtn">Cancel</button>
                 <button class="btn btn-primary" id="confirmRecipeSelectionBtn">Add to Shopping List</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sync Conflict Resolution Modal -->
+    <div class="modal" id="conflictModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔄 Sync Conflict Detected</h2>
+                <button class="modal-close" id="conflictModalClose" aria-label="Close conflict resolution">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description" id="conflictDescription">
+                    Changes were made on different devices. Choose which version to keep:
+                </p>
+                <div class="conflict-options">
+                    <div class="conflict-option">
+                        <h4>📱 This Device</h4>
+                        <p class="conflict-detail" id="localConflictDetail">Modified recently on this device</p>
+                        <button class="btn btn-primary" id="keepLocalBtn">Keep This Device's Version</button>
+                    </div>
+                    <div class="conflict-option">
+                        <h4>☁️ Server</h4>
+                        <p class="conflict-detail" id="serverConflictDetail">Synced from another device</p>
+                        <button class="btn btn-primary" id="keepServerBtn">Keep Server Version</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
