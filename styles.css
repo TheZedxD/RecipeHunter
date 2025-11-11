@@ -727,15 +727,25 @@ html {
     bottom: 0;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     z-index: 1998;
     opacity: 0;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     transition: opacity var(--transition-speed);
+    will-change: opacity; /* GPU acceleration for fade */
 }
 
 .mobile-menu-overlay.active {
     display: block;
     opacity: 1;
+}
+
+/* Optimize mobile menu overlay blur on mobile */
+@media (max-width: 768px) {
+    .mobile-menu-overlay {
+        backdrop-filter: blur(2px); /* Reduced for mobile performance */
+        -webkit-backdrop-filter: blur(2px);
+    }
 }
 
 /* ===== Mobile Slide-In Menu ===== */
@@ -750,17 +760,18 @@ html {
     background: var(--bg-secondary);
     box-shadow: 4px 0 20px var(--shadow-color);
     z-index: 1999;
-    transform: translateX(-100%);
+    transform: translateX(-100%) translateZ(0);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     padding-top: max(20px, env(safe-area-inset-top));
     padding-bottom: max(20px, env(safe-area-inset-bottom));
+    will-change: transform; /* GPU acceleration hint */
 }
 
 .mobile-menu.active {
-    transform: translateX(0);
+    transform: translateX(0) translateZ(0);
 }
 
 .mobile-menu-header {
@@ -1298,13 +1309,14 @@ html {
     border-radius: var(--border-radius);
     padding: 24px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: var(--box-shadow);
     position: relative;
     overflow: hidden;
-    will-change: transform;
     max-width: 100%;
     word-wrap: break-word;
+    contain: layout style paint; /* CSS containment for better rendering performance */
+    transform: translateZ(0); /* Force GPU layer */
 }
 
 .recipe-card:hover {
@@ -1317,6 +1329,22 @@ html {
 
 .recipe-card:hover .recipe-card-image {
     transform: scale(1.05);
+}
+
+/* Disable expensive hover effects on mobile for better performance */
+@media (max-width: 768px) {
+    .recipe-card {
+        transition: transform 0.2s ease-out; /* Faster, simpler transition on mobile */
+    }
+
+    .recipe-card:hover {
+        transform: translateY(-4px); /* Reduced movement on mobile */
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12); /* Simpler shadow on mobile */
+    }
+
+    .recipe-card:hover .recipe-card-image {
+        transform: scale(1.02); /* Reduced scale on mobile */
+    }
 }
 
 .recipe-card-header {
@@ -2396,6 +2424,15 @@ body.compact-view .recipe-card-preview {
     border-radius: var(--border-radius);
     margin-bottom: 12px;
     transition: transform 0.4s ease-out;
+    will-change: transform; /* GPU acceleration for image transforms */
+    transform: translateZ(0); /* Force GPU layer */
+}
+
+/* Optimize image transitions on mobile */
+@media (max-width: 768px) {
+    .recipe-card-image {
+        transition: transform 0.25s ease-out; /* Faster transition on mobile */
+    }
 }
 
 .modal-image {
@@ -2548,13 +2585,15 @@ body.compact-view .recipe-card-preview {
     border-radius: var(--border-radius);
     max-width: 800px;
     width: calc(100% - 32px);
-    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px); /* Use dynamic viewport height for mobile keyboard handling */
     margin: 16px;
     overflow-y: auto;
     overflow-x: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: modalEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: modalEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Slightly faster for mobile */
     position: relative;
+    will-change: transform, opacity; /* GPU acceleration hint for animation */
+    transform: translateZ(0); /* Force GPU layer */
 }
 
 .modal.closing .modal-content {
@@ -2591,33 +2630,33 @@ body.compact-view .recipe-card-preview {
 @keyframes modalEnter {
     from {
         opacity: 0;
-        transform: scale(0.9) translateY(20px);
+        transform: translateY(20px);
     }
     to {
         opacity: 1;
-        transform: scale(1) translateY(0);
+        transform: translateY(0);
     }
 }
 
 @keyframes modalEnterDramatic {
     from {
         opacity: 0;
-        transform: scale(0.85) translateY(30px);
+        transform: translateY(30px);
     }
     to {
         opacity: 1;
-        transform: scale(1) translateY(0);
+        transform: translateY(0);
     }
 }
 
 @keyframes modalExit {
     from {
         opacity: 1;
-        transform: scale(1) translateY(0);
+        transform: translateY(0);
     }
     to {
         opacity: 0;
-        transform: scale(0.95) translateY(-20px);
+        transform: translateY(-10px);
     }
 }
 
@@ -3213,16 +3252,36 @@ body.compact-view .recipe-card-preview {
     font-size: 14px;
     animation: toastSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     word-wrap: break-word;
+    will-change: transform, opacity; /* GPU acceleration hint */
+    transform: translateZ(0); /* Force GPU layer */
 }
 
 @keyframes toastSlideIn {
     from {
         opacity: 0;
-        transform: translateX(120%) scale(0.9);
+        transform: translateX(120%) translateZ(0);
     }
     to {
         opacity: 1;
-        transform: translateX(0) scale(1);
+        transform: translateX(0) translateZ(0);
+    }
+}
+
+/* Optimize toast animation on mobile - simpler, faster */
+@media (max-width: 768px) {
+    .toast {
+        animation: toastSlideInMobile 0.25s ease-out; /* Faster on mobile */
+    }
+
+    @keyframes toastSlideInMobile {
+        from {
+            opacity: 0;
+            transform: translateY(20px) translateZ(0);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) translateZ(0);
+        }
     }
 }
 
@@ -4030,13 +4089,22 @@ body.is-ios .results-container {
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 9998;
     opacity: 0;
     visibility: hidden;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                visibility 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                backdrop-filter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s;
+    will-change: opacity; /* GPU acceleration for fade */
+}
+
+/* Reduce backdrop blur on mobile for better performance */
+@media (max-width: 768px) {
+    .side-panel-overlay {
+        backdrop-filter: blur(3px); /* Reduced from 8px for mobile performance */
+        -webkit-backdrop-filter: blur(3px);
+        background: rgba(0, 0, 0, 0.6); /* Slightly darker to compensate for less blur */
+    }
 }
 
 .side-panel-overlay.active {
@@ -4061,25 +4129,26 @@ body.is-ios .results-container {
     visibility: hidden;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.9);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translate(-50%, -50%) scale(0.9) translateZ(0);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s;
+    will-change: transform, opacity; /* GPU acceleration hint */
 }
 
 .side-panel.expanding {
     opacity: 1;
     visibility: visible;
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -50%) scale(0.9) translateZ(0);
 }
 
 .side-panel.active {
     opacity: 1;
     visibility: visible;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -50%) scale(1) translateZ(0);
 }
 
 .side-panel.collapsing {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -50%) scale(0.9) translateZ(0);
 }
 
 .side-panel-header {
@@ -4761,21 +4830,23 @@ body.is-ios .results-container {
     justify-content: center;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
                 0 8px 24px rgba(139, 92, 246, 0.3);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 2500;
     outline: none;
     -webkit-tap-highlight-color: transparent;
+    will-change: transform; /* GPU acceleration hint */
+    transform: translateZ(0); /* Force GPU layer */
 }
 
 .fab:hover {
-    transform: scale(1.1) translateY(-2px);
+    transform: scale(1.1) translateY(-2px) translateZ(0);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2),
                 0 12px 32px rgba(139, 92, 246, 0.4);
     background: var(--accent-secondary);
 }
 
 .fab:active {
-    transform: scale(0.95);
+    transform: scale(0.95) translateZ(0);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
                 0 4px 16px rgba(139, 92, 246, 0.25);
 }
@@ -5645,13 +5716,74 @@ body.is-ios .results-container {
     animation: pulse 2s infinite;
 }
 
+/* ===== Mobile Modal Optimizations ===== */
+@media (max-width: 768px) {
+    /* Reduce backdrop blur on mobile for better performance */
+    .modal {
+        backdrop-filter: blur(2px); /* Reduced from 4px for better mobile performance */
+        -webkit-backdrop-filter: blur(2px);
+    }
+
+    /* Optimize modal content for mobile */
+    .modal-content {
+        max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
+        margin: 8px;
+        width: calc(100% - 16px);
+        border-radius: 16px; /* Slightly larger radius for mobile */
+        animation-duration: 0.25s; /* Faster animations on mobile */
+    }
+
+    /* Ensure modal header is always accessible on mobile */
+    .modal-header {
+        padding: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--bg-secondary);
+        border-radius: 16px 16px 0 0;
+    }
+
+    /* Optimize modal body for mobile scrolling */
+    .modal-body {
+        padding: 16px;
+        overscroll-behavior: contain; /* Prevent scroll chaining */
+        touch-action: pan-y; /* Optimize touch scrolling */
+    }
+
+    /* Ensure modal close button is easily tappable on mobile */
+    .modal-close {
+        width: 48px; /* Larger touch target on mobile */
+        height: 48px;
+        min-width: 48px;
+        min-height: 48px;
+        font-size: 2rem;
+    }
+
+    /* Optimize modal actions for mobile */
+    .modal-actions {
+        padding: 12px 16px;
+        flex-direction: column-reverse; /* Primary action at top on mobile */
+        gap: 8px;
+        position: sticky;
+        bottom: 0;
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        border-radius: 0 0 16px 16px;
+    }
+
+    .modal-actions .btn {
+        width: 100%; /* Full width buttons on mobile */
+        min-height: 48px; /* Larger touch targets */
+    }
+}
+
 /* ===== Recipe Editor Modal Mobile Fixes ===== */
 @media (max-width: 768px) {
     .recipe-editor-modal .modal-content {
         display: flex;
         flex-direction: column;
-        height: 100vh;
-        height: 100dvh;
+        height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     }
 
     .recipe-editor-modal .modal-header {
@@ -5667,6 +5799,7 @@ body.is-ios .results-container {
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         padding: 20px 16px;
+        overscroll-behavior: contain; /* Prevent scroll chaining on iOS */
     }
 
     .recipe-form {
@@ -5682,6 +5815,25 @@ body.is-ios .results-container {
         width: 100%;
         max-width: 300px;
         margin: 0 auto;
+    }
+
+    /* Optimize form inputs for mobile keyboards */
+    .form-group input,
+    .form-group textarea,
+    .rich-text-editor {
+        font-size: 16px; /* Prevent iOS zoom on focus */
+    }
+
+    /* Ensure rich text editors don't get obscured by keyboard */
+    .rich-text-editor {
+        min-height: 120px; /* Reduced from default for mobile */
+        max-height: 250px; /* Ensure it doesn't take too much space */
+    }
+
+    /* When keyboard is visible, adjust FAB and other fixed elements */
+    body.keyboard-visible .fab,
+    body.keyboard-visible .toast {
+        transform: translateY(-150px); /* Move up when keyboard is visible */
     }
 }
 

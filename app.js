@@ -2385,6 +2385,7 @@ function createRecipeCard(recipe) {
         img.className = 'recipe-card-image';
         img.src = recipe.image;
         img.alt = recipe.name;
+        img.loading = 'lazy'; // Lazy load images for better performance
         card.appendChild(img);
     }
 
@@ -2632,7 +2633,7 @@ function openRecipeModal(recipe) {
 
     // Image
     if (recipe.image) {
-        bodyHTML += `<img src="${recipe.image}" alt="${recipe.name}" class="modal-image">`;
+        bodyHTML += `<img src="${recipe.image}" alt="${recipe.name}" class="modal-image" loading="lazy">`;
     }
 
     // Meta information
@@ -2771,9 +2772,11 @@ function openRecipeModal(recipe) {
     // Save current scroll position
     state.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
 
-    // Set body position fixed with top offset
+    // Properly lock body scroll for all devices
     document.body.style.position = 'fixed';
     document.body.style.top = `-${state.scrollPosition}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
 
     modal.classList.add('visible');
     document.body.classList.add('modal-open'); // Prevent body scroll on mobile
@@ -4428,7 +4431,7 @@ function openSidePanel(recipe, sourceCard = null) {
 
     // Image
     if (recipe.image && state.settings.showImages) {
-        contentHTML += `<img src="${recipe.image}" alt="${recipe.name}" class="side-panel-recipe-image">`;
+        contentHTML += `<img src="${recipe.image}" alt="${recipe.name}" class="side-panel-recipe-image" loading="lazy">`;
     }
 
     // Rating
