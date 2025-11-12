@@ -547,6 +547,131 @@ You can format text with colors and styles!"></div>
         </div>
     </div>
 
+    <!-- Word Document Import Verification Modal -->
+    <div class="modal" id="wordImportModal">
+        <div class="modal-content modal-content-xlarge">
+            <div class="modal-header">
+                <h2>📄 Review Imported Recipe</h2>
+                <button class="modal-close" id="wordImportClose" aria-label="Close import verification">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="word-import-container">
+                    <!-- Confidence Indicators -->
+                    <div class="confidence-indicators" id="confidenceIndicators">
+                        <div class="confidence-item">
+                            <span class="confidence-label">Title:</span>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" id="titleConfidence"></div>
+                            </div>
+                            <span class="confidence-score" id="titleScore">0%</span>
+                        </div>
+                        <div class="confidence-item">
+                            <span class="confidence-label">Ingredients:</span>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" id="ingredientsConfidence"></div>
+                            </div>
+                            <span class="confidence-score" id="ingredientsScore">0%</span>
+                        </div>
+                        <div class="confidence-item">
+                            <span class="confidence-label">Instructions:</span>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" id="instructionsConfidence"></div>
+                            </div>
+                            <span class="confidence-score" id="instructionsScore">0%</span>
+                        </div>
+                        <div class="confidence-item overall">
+                            <span class="confidence-label">Overall:</span>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" id="overallConfidence"></div>
+                            </div>
+                            <span class="confidence-score" id="overallScore">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Tabbed Interface -->
+                    <div class="word-import-tabs">
+                        <button class="word-tab active" data-tab="parsed">Parsed Data</button>
+                        <button class="word-tab" data-tab="original">Original Document</button>
+                    </div>
+
+                    <!-- Parsed Data Tab -->
+                    <div class="word-tab-content active" id="parsedDataTab">
+                        <!-- Title -->
+                        <div class="form-group">
+                            <label for="wordRecipeTitle">Recipe Title*</label>
+                            <input type="text" id="wordRecipeTitle" class="form-control" maxlength="200" placeholder="Enter recipe title">
+                        </div>
+
+                        <!-- Images -->
+                        <div class="form-group" id="wordImagesGroup" style="display: none;">
+                            <label>Recipe Images (select one or more)</label>
+                            <div class="word-images-grid" id="wordImagesGrid">
+                                <!-- Image checkboxes will be inserted here -->
+                            </div>
+                        </div>
+
+                        <!-- Metadata Row -->
+                        <div class="metadata-row">
+                            <div class="form-group">
+                                <label for="wordPrepTime">Prep Time</label>
+                                <input type="text" id="wordPrepTime" class="form-control" placeholder="e.g., 15 min">
+                            </div>
+                            <div class="form-group">
+                                <label for="wordCookTime">Cook Time</label>
+                                <input type="text" id="wordCookTime" class="form-control" placeholder="e.g., 30 min">
+                            </div>
+                            <div class="form-group">
+                                <label for="wordServings">Servings</label>
+                                <input type="number" id="wordServings" class="form-control" min="1" placeholder="e.g., 4">
+                            </div>
+                        </div>
+
+                        <!-- Ingredients -->
+                        <div class="form-group">
+                            <label>Ingredients* <span class="item-count" id="ingredientsCount">0 items</span></label>
+                            <div class="editable-list" id="wordIngredientsList">
+                                <!-- Ingredient items will be inserted here -->
+                            </div>
+                            <button class="btn btn-secondary btn-sm" id="addIngredientBtn">+ Add Ingredient</button>
+                        </div>
+
+                        <!-- Instructions -->
+                        <div class="form-group">
+                            <label>Instructions* <span class="item-count" id="instructionsCount">0 steps</span></label>
+                            <div class="editable-list" id="wordInstructionsList">
+                                <!-- Instruction items will be inserted here -->
+                            </div>
+                            <button class="btn btn-secondary btn-sm" id="addInstructionBtn">+ Add Instruction</button>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="form-group">
+                            <label for="wordNotes">Notes</label>
+                            <textarea id="wordNotes" class="form-control" rows="3" placeholder="Any additional notes or tips"></textarea>
+                        </div>
+
+                        <!-- Tags -->
+                        <div class="form-group">
+                            <label for="wordTags">Tags (comma-separated)</label>
+                            <input type="text" id="wordTags" class="form-control" placeholder="e.g., Dinner, Italian, Quick">
+                        </div>
+                    </div>
+
+                    <!-- Original Document Tab -->
+                    <div class="word-tab-content" id="originalDocTab">
+                        <div class="original-doc-viewer" id="originalDocViewer">
+                            <!-- Original HTML content will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelWordImportBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveWordImportBtn">Save Recipe</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Action Button -->
     <button class="fab" id="fabBtn" onclick="openRecipeEditorModal()" aria-label="Add new recipe" title="Add new recipe">
         <span class="fab-icon">+</span>
@@ -570,8 +695,8 @@ You can format text with colors and styles!"></div>
                 <div class="first-time-step">
                     <div class="step-number">2</div>
                     <div class="step-content">
-                        <h3>Import from JSON</h3>
-                        <p>Or import recipes from JSON files in the Data section</p>
+                        <h3>Import Recipes</h3>
+                        <p>Import from JSON files or Word documents (.docx) in the Data section</p>
                     </div>
                 </div>
                 <div class="first-time-step">
@@ -598,6 +723,12 @@ You can format text with colors and styles!"></div>
             </div>
         </div>
     </div>
+
+    <!-- Mammoth.js for Word document parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+
+    <!-- Word Document Parser Module -->
+    <script src="word-parser.js"></script>
 
     <script src="app.js"></script>
 </body>
