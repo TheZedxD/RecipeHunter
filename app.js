@@ -3641,9 +3641,18 @@ function handleFilesDrop(files) {
     const jsonFiles = fileArray.filter(file =>
         file.name.endsWith('.json') || file.name.endsWith('.txt')
     );
+    const wordFiles = fileArray.filter(file =>
+        file.name.endsWith('.docx') || file.name.endsWith('.doc')
+    );
 
-    if (jsonFiles.length === 0) {
-        showToast('No valid JSON files found', 'error');
+    if (jsonFiles.length === 0 && wordFiles.length === 0) {
+        showToast('No valid files found. Please upload JSON, TXT, or Word documents.', 'error');
+        return;
+    }
+
+    // Handle Word documents separately
+    if (wordFiles.length > 0) {
+        handleWordDocumentImport(wordFiles[0]); // Process first Word document
         return;
     }
 
@@ -5258,6 +5267,454 @@ async function importSampleRecipes() {
         hideLoadingState();
     }
 }
+
+// ===== Word Document Import Functionality =====
+let currentParsedRecipe = null;
+
+async function handleWordDocumentImport(file) {
+    const modal = document.getElementById('wordImportModal');
+    const modalBody = modal.querySelector('.modal-body');
+
+    // Show loading state
+    modalBody.innerHTML = `
+        <div class="word-import-loading">
+            <div class="spinner"></div>
+            <p>Parsing Word document...</p>
+            <div class="word-import-progress">
+                <div class="word-import-progress-bar" style="width: 50%"></div>
+            </div>
+        </div>
+    `;
+
+    modal.classList.add('active');
+
+    try {
+        // Parse the Word document
+        const result = await WordRecipeParser.parseWordDocument(file);
+
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to parse Word document');
+        }
+
+        // Store the parsed recipe globally
+        currentParsedRecipe = result;
+
+        // Restore modal content
+        modalBody.innerHTML = `
+            <div class="word-import-container">
+                <!-- Confidence Indicators -->
+                <div class="confidence-indicators" id="confidenceIndicators">
+                    <div class="confidence-item">
+                        <span class="confidence-label">Title:</span>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="titleConfidence"></div>
+                        </div>
+                        <span class="confidence-score" id="titleScore">0%</span>
+                    </div>
+                    <div class="confidence-item">
+                        <span class="confidence-label">Ingredients:</span>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="ingredientsConfidence"></div>
+                        </div>
+                        <span class="confidence-score" id="ingredientsScore">0%</span>
+                    </div>
+                    <div class="confidence-item">
+                        <span class="confidence-label">Instructions:</span>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="instructionsConfidence"></div>
+                        </div>
+                        <span class="confidence-score" id="instructionsScore">0%</span>
+                    </div>
+                    <div class="confidence-item overall">
+                        <span class="confidence-label">Overall:</span>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="overallConfidence"></div>
+                        </div>
+                        <span class="confidence-score" id="overallScore">0%</span>
+                    </div>
+                </div>
+
+                <!-- Tabbed Interface -->
+                <div class="word-import-tabs">
+                    <button class="word-tab active" data-tab="parsed">Parsed Data</button>
+                    <button class="word-tab" data-tab="original">Original Document</button>
+                </div>
+
+                <!-- Parsed Data Tab -->
+                <div class="word-tab-content active" id="parsedDataTab">
+                    <!-- Title -->
+                    <div class="form-group">
+                        <label for="wordRecipeTitle">Recipe Title*</label>
+                        <input type="text" id="wordRecipeTitle" class="form-control" maxlength="200" placeholder="Enter recipe title">
+                    </div>
+
+                    <!-- Images -->
+                    <div class="form-group" id="wordImagesGroup" style="display: none;">
+                        <label>Recipe Images (select one or more)</label>
+                        <div class="word-images-grid" id="wordImagesGrid">
+                            <!-- Image checkboxes will be inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Metadata Row -->
+                    <div class="metadata-row">
+                        <div class="form-group">
+                            <label for="wordPrepTime">Prep Time</label>
+                            <input type="text" id="wordPrepTime" class="form-control" placeholder="e.g., 15 min">
+                        </div>
+                        <div class="form-group">
+                            <label for="wordCookTime">Cook Time</label>
+                            <input type="text" id="wordCookTime" class="form-control" placeholder="e.g., 30 min">
+                        </div>
+                        <div class="form-group">
+                            <label for="wordServings">Servings</label>
+                            <input type="number" id="wordServings" class="form-control" min="1" placeholder="e.g., 4">
+                        </div>
+                    </div>
+
+                    <!-- Ingredients -->
+                    <div class="form-group">
+                        <label>Ingredients* <span class="item-count" id="ingredientsCount">0 items</span></label>
+                        <div class="editable-list" id="wordIngredientsList">
+                            <!-- Ingredient items will be inserted here -->
+                        </div>
+                        <button class="btn btn-secondary btn-sm" id="addIngredientBtn">+ Add Ingredient</button>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="form-group">
+                        <label>Instructions* <span class="item-count" id="instructionsCount">0 steps</span></label>
+                        <div class="editable-list" id="wordInstructionsList">
+                            <!-- Instruction items will be inserted here -->
+                        </div>
+                        <button class="btn btn-secondary btn-sm" id="addInstructionBtn">+ Add Instruction</button>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="form-group">
+                        <label for="wordNotes">Notes</label>
+                        <textarea id="wordNotes" class="form-control" rows="3" placeholder="Any additional notes or tips"></textarea>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="form-group">
+                        <label for="wordTags">Tags (comma-separated)</label>
+                        <input type="text" id="wordTags" class="form-control" placeholder="e.g., Dinner, Italian, Quick">
+                    </div>
+                </div>
+
+                <!-- Original Document Tab -->
+                <div class="word-tab-content" id="originalDocTab">
+                    <div class="original-doc-viewer" id="originalDocViewer">
+                        <!-- Original HTML content will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Populate the modal with parsed data
+        populateWordImportModal(result);
+
+        // Setup event listeners
+        setupWordImportEventListeners();
+
+    } catch (error) {
+        console.error('Error importing Word document:', error);
+        modalBody.innerHTML = `
+            <div class="word-import-loading">
+                <p style="color: var(--danger-color);">❌ Error: ${error.message}</p>
+                <p>Please check the document format and try again.</p>
+            </div>
+        `;
+
+        setTimeout(() => {
+            modal.classList.remove('active');
+        }, 3000);
+    }
+}
+
+function populateWordImportModal(result) {
+    const { recipe, confidence, rawHtml } = result;
+
+    // Update confidence bars
+    updateConfidenceBar('titleConfidence', 'titleScore', confidence.title);
+    updateConfidenceBar('ingredientsConfidence', 'ingredientsScore', confidence.ingredients);
+    updateConfidenceBar('instructionsConfidence', 'instructionsScore', confidence.instructions);
+    updateConfidenceBar('overallConfidence', 'overallScore', confidence.overall);
+
+    // Populate form fields
+    document.getElementById('wordRecipeTitle').value = recipe.name || '';
+    document.getElementById('wordPrepTime').value = recipe.prepTime || '';
+    document.getElementById('wordCookTime').value = recipe.cookTime || '';
+    document.getElementById('wordServings').value = recipe.servings || '';
+    document.getElementById('wordNotes').value = recipe.notes || '';
+
+    // Populate images if any
+    if (recipe.images && recipe.images.length > 0) {
+        const imagesGroup = document.getElementById('wordImagesGroup');
+        const imagesGrid = document.getElementById('wordImagesGrid');
+        imagesGroup.style.display = 'block';
+
+        imagesGrid.innerHTML = recipe.images.map((img, index) => `
+            <div class="word-image-item ${index === 0 ? 'selected' : ''}" onclick="toggleWordImage(this)">
+                <img src="${img}" alt="Recipe image ${index + 1}">
+                <input type="checkbox" class="word-image-checkbox" ${index === 0 ? 'checked' : ''} data-image-src="${img}">
+                <div class="word-image-label">Image ${index + 1}</div>
+            </div>
+        `).join('');
+    }
+
+    // Populate ingredients
+    populateEditableList('wordIngredientsList', recipe.ingredients, 'ingredient');
+    updateItemCount('ingredientsCount', recipe.ingredients.length, 'items');
+
+    // Populate instructions
+    populateEditableList('wordInstructionsList', recipe.instructions, 'instruction');
+    updateItemCount('instructionsCount', recipe.instructions.length, 'steps');
+
+    // Populate original document viewer
+    document.getElementById('originalDocViewer').innerHTML = rawHtml || '<p>No preview available</p>';
+}
+
+function updateConfidenceBar(barId, scoreId, value) {
+    const bar = document.getElementById(barId);
+    const score = document.getElementById(scoreId);
+
+    bar.style.width = value + '%';
+    score.textContent = value + '%';
+
+    // Color code based on confidence
+    if (value >= 80) {
+        bar.style.background = '#4CAF50'; // Green
+    } else if (value >= 60) {
+        bar.style.background = '#8BC34A'; // Light green
+    } else if (value >= 40) {
+        bar.style.background = '#FFC107'; // Yellow
+    } else {
+        bar.style.background = '#FF5722'; // Red
+    }
+}
+
+function populateEditableList(containerId, items, type) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = items.map((item, index) => `
+        <div class="editable-list-item">
+            <span class="item-number">${index + 1}</span>
+            <textarea class="item-text" placeholder="Enter ${type}">${item}</textarea>
+            <button onclick="removeListItem(this)">✕</button>
+        </div>
+    `).join('');
+}
+
+function updateItemCount(countId, count, label) {
+    const countElem = document.getElementById(countId);
+    countElem.textContent = `${count} ${label}`;
+}
+
+function setupWordImportEventListeners() {
+    // Tab switching
+    const tabs = document.querySelectorAll('.word-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetTab = tab.dataset.tab;
+
+            // Update tab buttons
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            // Update tab content
+            document.getElementById('parsedDataTab').classList.remove('active');
+            document.getElementById('originalDocTab').classList.remove('active');
+
+            if (targetTab === 'parsed') {
+                document.getElementById('parsedDataTab').classList.add('active');
+            } else {
+                document.getElementById('originalDocTab').classList.add('active');
+            }
+        });
+    });
+
+    // Add ingredient button
+    document.getElementById('addIngredientBtn').addEventListener('click', () => {
+        const list = document.getElementById('wordIngredientsList');
+        const count = list.children.length + 1;
+        const newItem = document.createElement('div');
+        newItem.className = 'editable-list-item';
+        newItem.innerHTML = `
+            <span class="item-number">${count}</span>
+            <textarea class="item-text" placeholder="Enter ingredient"></textarea>
+            <button onclick="removeListItem(this)">✕</button>
+        `;
+        list.appendChild(newItem);
+        updateItemCount('ingredientsCount', count, 'items');
+        newItem.querySelector('textarea').focus();
+    });
+
+    // Add instruction button
+    document.getElementById('addInstructionBtn').addEventListener('click', () => {
+        const list = document.getElementById('wordInstructionsList');
+        const count = list.children.length + 1;
+        const newItem = document.createElement('div');
+        newItem.className = 'editable-list-item';
+        newItem.innerHTML = `
+            <span class="item-number">${count}</span>
+            <textarea class="item-text" placeholder="Enter instruction"></textarea>
+            <button onclick="removeListItem(this)">✕</button>
+        `;
+        list.appendChild(newItem);
+        updateItemCount('instructionsCount', count, 'steps');
+        newItem.querySelector('textarea').focus();
+    });
+
+    // Close modal
+    document.getElementById('wordImportClose').addEventListener('click', closeWordImportModal);
+    document.getElementById('cancelWordImportBtn').addEventListener('click', closeWordImportModal);
+
+    // Save recipe
+    document.getElementById('saveWordImportBtn').addEventListener('click', saveWordImportRecipe);
+}
+
+function removeListItem(button) {
+    const list = button.parentElement.parentElement;
+    const item = button.parentElement;
+    item.remove();
+
+    // Renumber items
+    const items = list.querySelectorAll('.editable-list-item');
+    items.forEach((item, index) => {
+        item.querySelector('.item-number').textContent = index + 1;
+    });
+
+    // Update count
+    if (list.id === 'wordIngredientsList') {
+        updateItemCount('ingredientsCount', items.length, 'items');
+    } else if (list.id === 'wordInstructionsList') {
+        updateItemCount('instructionsCount', items.length, 'steps');
+    }
+}
+
+function toggleWordImage(imageItem) {
+    imageItem.classList.toggle('selected');
+    const checkbox = imageItem.querySelector('.word-image-checkbox');
+    checkbox.checked = !checkbox.checked;
+}
+
+function closeWordImportModal() {
+    const modal = document.getElementById('wordImportModal');
+    modal.classList.remove('active');
+    currentParsedRecipe = null;
+}
+
+function saveWordImportRecipe() {
+    // Collect data from form
+    const title = document.getElementById('wordRecipeTitle').value.trim();
+    const prepTime = document.getElementById('wordPrepTime').value.trim();
+    const cookTime = document.getElementById('wordCookTime').value.trim();
+    const servings = document.getElementById('wordServings').value;
+    const notes = document.getElementById('wordNotes').value.trim();
+    const tags = document.getElementById('wordTags').value
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+
+    // Collect ingredients
+    const ingredientItems = document.querySelectorAll('#wordIngredientsList .item-text');
+    const ingredients = Array.from(ingredientItems)
+        .map(item => item.value.trim())
+        .filter(text => text.length > 0);
+
+    // Collect instructions
+    const instructionItems = document.querySelectorAll('#wordInstructionsList .item-text');
+    const instructions = Array.from(instructionItems)
+        .map(item => item.value.trim())
+        .filter(text => text.length > 0);
+
+    // Collect selected images
+    const selectedImages = Array.from(document.querySelectorAll('.word-image-checkbox:checked'))
+        .map(cb => cb.dataset.imageSrc);
+
+    // Validate
+    if (!title) {
+        showToast('Please enter a recipe title', 'error');
+        return;
+    }
+
+    if (ingredients.length === 0) {
+        showToast('Please add at least one ingredient', 'error');
+        return;
+    }
+
+    if (instructions.length === 0) {
+        showToast('Please add at least one instruction', 'error');
+        return;
+    }
+
+    // Create recipe object
+    const recipe = {
+        id: generateId(),
+        name: title,
+        ingredients: ingredients,
+        instructions: instructions,
+        tags: tags,
+        prepTime: prepTime || null,
+        cookTime: cookTime || null,
+        servings: servings ? parseInt(servings, 10) : null,
+        notes: notes,
+        image: selectedImages.length > 0 ? selectedImages[0] : null, // Use first selected image
+        isFavorite: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    // Add recipe to state
+    state.recipes.unshift(recipe);
+
+    // Extract and add new tags
+    const allTags = new Set(state.tags.map(t => t.name));
+    tags.forEach(tag => {
+        if (!allTags.has(tag)) {
+            state.tags.push({
+                id: generateId(),
+                name: tag,
+                color: getRandomColor(),
+                defaultVisible: true
+            });
+        }
+    });
+
+    // Save and update UI
+    saveRecipesToStorage();
+    saveTags();
+    renderRecipes();
+
+    // Close modal and show success
+    closeWordImportModal();
+    showToast(`Recipe "${title}" imported successfully!`, 'success');
+
+    // Show import results
+    const importResults = document.getElementById('importResults');
+    importResults.innerHTML = `
+        <h3>Import Results:</h3>
+        <div class="import-result-item success">
+            ✓ Successfully imported: ${title}
+        </div>
+        <div style="margin-top: 12px; padding: 12px; background: var(--background-secondary); border-radius: 6px;">
+            <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
+                Confidence scores - Title: ${currentParsedRecipe.confidence.title}%,
+                Ingredients: ${currentParsedRecipe.confidence.ingredients}%,
+                Instructions: ${currentParsedRecipe.confidence.instructions}%
+            </p>
+        </div>
+    `;
+    importResults.classList.add('visible');
+}
+
+// Make Word import functions globally available
+window.handleWordDocumentImport = handleWordDocumentImport;
+window.removeListItem = removeListItem;
+window.toggleWordImage = toggleWordImage;
+window.closeWordImportModal = closeWordImportModal;
+window.saveWordImportRecipe = saveWordImportRecipe;
 
 // Make functions available globally
 window.navigateTo = navigateTo;
