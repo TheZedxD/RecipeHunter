@@ -133,16 +133,22 @@
                             </button>
                         </div>
                         <div class="quick-tags-container">
-                            <div class="quick-tags" id="quickTags">
-                                <!-- Tags will be dynamically inserted here -->
-                            </div>
-                            <div class="filter-actions">
-                                <button class="favorites-toggle-btn" id="toggleFavoritesBtn" onclick="toggleFavoritesView()">
-                                    <span class="fav-icon">☆</span> Show Favorites
-                                </button>
-                                <button class="clear-filters-btn" id="clearFiltersBtn" style="display: none;">
-                                    <span>✕</span> Clear filters
-                                </button>
+                            <button class="tags-collapse-toggle" id="tagsCollapseToggle" aria-expanded="true" aria-controls="tagsCollapsibleContent" aria-label="Toggle tag filters">
+                                <span class="collapse-chevron">▼</span>
+                                <span class="collapse-label">Filter Tags</span>
+                            </button>
+                            <div class="tags-collapsible-content" id="tagsCollapsibleContent">
+                                <div class="quick-tags" id="quickTags">
+                                    <!-- Tags will be dynamically inserted here -->
+                                </div>
+                                <div class="filter-actions">
+                                    <button class="favorites-toggle-btn" id="toggleFavoritesBtn" onclick="toggleFavoritesView()">
+                                        <span class="fav-icon">☆</span> Show Favorites
+                                    </button>
+                                    <button class="clear-filters-btn" id="clearFiltersBtn" style="display: none;">
+                                        <span>✕</span> Clear filters
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

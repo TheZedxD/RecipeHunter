@@ -1715,6 +1715,23 @@ function setupEventListeners() {
     if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener('click', clearAllFilters);
     }
+
+    // Tags Collapse Toggle
+    const tagsCollapseToggle = document.getElementById('tagsCollapseToggle');
+    if (tagsCollapseToggle) {
+        tagsCollapseToggle.addEventListener('click', toggleTagsCollapse);
+
+        // Keyboard support for toggle button
+        tagsCollapseToggle.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleTagsCollapse();
+            }
+        });
+
+        // Initialize collapse state on load
+        initializeTagsCollapseState();
+    }
 }
 
 function setupImportListeners() {
@@ -2171,6 +2188,96 @@ function clearAllFilters() {
     updateFilterStatus();
 
     showToast(`Cleared ${count} filter${count !== 1 ? 's' : ''}`, 'success', 2000);
+}
+
+// ===== Tags Collapse/Expand Functionality =====
+function initializeTagsCollapseState() {
+    const tagsCollapsibleContent = document.getElementById('tagsCollapsibleContent');
+    const tagsCollapseToggle = document.getElementById('tagsCollapseToggle');
+    const chevron = tagsCollapseToggle?.querySelector('.collapse-chevron');
+
+    if (!tagsCollapsibleContent || !tagsCollapseToggle) return;
+
+    // Check if we have a saved state in localStorage
+    let isCollapsed = false;
+
+    if (isLocalStorageAvailable()) {
+        try {
+            const savedState = localStorage.getItem('tagsCollapsed');
+            if (savedState !== null) {
+                isCollapsed = savedState === 'true';
+            } else {
+                // Default: collapsed on mobile, expanded on desktop
+                isCollapsed = window.innerWidth < 768;
+            }
+        } catch (e) {
+            console.warn('Failed to read tags collapse state:', e);
+            // Default: collapsed on mobile, expanded on desktop
+            isCollapsed = window.innerWidth < 768;
+        }
+    } else {
+        // No localStorage available, use default
+        isCollapsed = window.innerWidth < 768;
+    }
+
+    // Apply the initial state
+    if (isCollapsed) {
+        tagsCollapsibleContent.classList.add('collapsed');
+        tagsCollapseToggle.setAttribute('aria-expanded', 'false');
+        if (chevron) {
+            chevron.style.transform = 'rotate(-90deg)';
+        }
+    } else {
+        tagsCollapsibleContent.classList.remove('collapsed');
+        tagsCollapseToggle.setAttribute('aria-expanded', 'true');
+        if (chevron) {
+            chevron.style.transform = 'rotate(0deg)';
+        }
+    }
+}
+
+function toggleTagsCollapse() {
+    const tagsCollapsibleContent = document.getElementById('tagsCollapsibleContent');
+    const tagsCollapseToggle = document.getElementById('tagsCollapseToggle');
+    const chevron = tagsCollapseToggle?.querySelector('.collapse-chevron');
+
+    if (!tagsCollapsibleContent || !tagsCollapseToggle) return;
+
+    const isCurrentlyCollapsed = tagsCollapsibleContent.classList.contains('collapsed');
+
+    if (isCurrentlyCollapsed) {
+        // Expand
+        tagsCollapsibleContent.classList.remove('collapsed');
+        tagsCollapseToggle.setAttribute('aria-expanded', 'true');
+        if (chevron) {
+            chevron.style.transform = 'rotate(0deg)';
+        }
+
+        // Save state to localStorage
+        if (isLocalStorageAvailable()) {
+            try {
+                localStorage.setItem('tagsCollapsed', 'false');
+            } catch (e) {
+                console.warn('Failed to save tags collapse state:', e);
+            }
+        }
+    } else {
+        // Collapse
+        tagsCollapsibleContent.classList.add('collapsed');
+        tagsCollapseToggle.setAttribute('aria-expanded', 'false');
+        if (chevron) {
+            chevron.style.transform = 'rotate(-90deg)';
+        }
+
+        // Save state to localStorage
+        if (isLocalStorageAvailable()) {
+            try {
+                localStorage.setItem('tagsCollapsed', 'true');
+            } catch (e) {
+                console.warn('Failed to save tags collapse state:', e);
+            }
+        }
+    }
 }
 
 function updateFilterStatus() {
