@@ -932,6 +932,70 @@ html {
     align-items: flex-start;
 }
 
+/* Tags Collapse Toggle Button */
+.tags-collapse-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    min-height: 44px;
+    min-width: 44px;
+}
+
+.tags-collapse-toggle:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--accent-primary);
+    transform: translateY(-1px);
+}
+
+.tags-collapse-toggle:focus-visible {
+    outline: 3px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.tags-collapse-toggle:active {
+    transform: translateY(0);
+}
+
+.collapse-chevron {
+    font-size: 12px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-block;
+}
+
+.collapse-label {
+    font-weight: 600;
+}
+
+/* Collapsible Content */
+.tags-collapsible-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-height: 1000px;
+    overflow: hidden;
+    opacity: 1;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tags-collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+}
+
 .filter-actions {
     display: flex;
     gap: 12px;
