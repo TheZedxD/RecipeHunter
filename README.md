@@ -91,24 +91,101 @@ A modern, feature-rich recipe management web application with a beautiful UI ins
 
 ## Getting Started
 
+### Platform Support
+
+Recipe Hunter is designed to work seamlessly across multiple operating systems:
+
+**✅ Fully Supported Platforms:**
+- **Linux:**
+  - Ubuntu (20.04+)
+  - Debian (10+)
+  - **Linux Mint (20+)** ⭐
+  - **CachyOS** ⭐
+  - Arch Linux
+  - Manjaro
+  - EndeavourOS
+  - Fedora (35+)
+  - RHEL/CentOS (8+)
+  - openSUSE
+- **Windows:** 10, 11
+- **macOS:** 10.15+
+
 ### Quick Start
 
 **IMPORTANT:** Due to browser security restrictions (CORS), you must run a local web server to use Recipe Hunter. Opening `index.html` directly from the file system will cause errors when loading sample recipes.
 
-#### Option 1: Using Node.js (Recommended)
+#### Linux / macOS
+
+**Using the Startup Script (Easiest):**
+```bash
+chmod +x start.sh    # First time only - makes script executable
+./start.sh           # Run the server
+```
+
+The script will:
+- Automatically detect your Linux distribution (CachyOS, Linux Mint, Ubuntu, etc.)
+- Find the best available runtime (Node.js or Python)
+- Provide specific installation instructions if needed
+- Start the server with network access support
+
+**Manual Methods:**
+
+##### Option 1: Using Node.js (Recommended)
 1. Make sure you have [Node.js](https://nodejs.org/) installed (version 12 or higher)
 2. Open a terminal in the Recipe Hunter folder
-3. Run: `npm start`
+3. Run: `npm start` or `node server.js`
 4. Open your browser to: `http://localhost:8080`
 
-#### Option 2: Using Python 3
+**Installing Node.js on your system:**
+- **Ubuntu/Debian/Linux Mint:** `sudo apt update && sudo apt install -y nodejs npm`
+- **CachyOS/Arch/Manjaro:** `sudo pacman -S nodejs npm`
+- **Fedora/RHEL:** `sudo dnf install nodejs`
+- **macOS:** `brew install node`
+
+##### Option 2: Using Python 3
 1. Make sure you have Python 3 installed
 2. Open a terminal in the Recipe Hunter folder
 3. Run: `python3 serve.py`
 4. Open your browser to: `http://localhost:8080`
 
-#### Option 3: Using any other HTTP server
+**Installing Python on your system:**
+- **Ubuntu/Debian/Linux Mint:** `sudo apt update && sudo apt install -y python3`
+- **CachyOS/Arch/Manjaro:** `sudo pacman -S python`
+- **Fedora/RHEL:** `sudo dnf install python3`
+- **macOS:** `brew install python3`
+
+#### Windows
+
+**Using the Startup Script (Easiest):**
+1. Double-click `START-SERVER.bat`
+2. The script will automatically detect Node.js or Python and start the server
+3. Open your browser to: `http://localhost:8080`
+
+**Manual Methods:**
+
+##### Option 1: Using Node.js (Recommended)
+1. Install [Node.js](https://nodejs.org/) (LTS version recommended)
+2. Open Command Prompt or PowerShell in the Recipe Hunter folder
+3. Run: `npm start` or `node server.js`
+4. Open your browser to: `http://localhost:8080`
+
+##### Option 2: Using Python 3
+1. Install [Python](https://www.python.org/) (3.8 or higher)
+2. ⚠️ During installation, check "Add Python to PATH"
+3. Open Command Prompt or PowerShell in the Recipe Hunter folder
+4. Run: `python serve.py`
+5. Open your browser to: `http://localhost:8080`
+
+#### Other Options
 You can use any HTTP server of your choice (e.g., `http-server`, VS Code's Live Server extension, etc.)
+
+### Network Access (All Platforms)
+
+When the server starts, it will show two URLs:
+- **Local:** `http://localhost:8080` - Access from this computer only
+- **Network:** `http://[YOUR-IP]:8080` - Access from other devices on your network
+
+Share the Network URL with phones, tablets, or other computers on the same WiFi/LAN to access your recipes from anywhere on your network!
 
 Once the server is running:
 1. Navigate to `http://localhost:8080` in your browser

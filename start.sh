@@ -70,6 +70,72 @@ echo "runtime on your system (Node.js or Python)."
 echo
 
 ################################################################################
+# SECTION 1.5: Detect Linux Distribution for Better Error Messages
+################################################################################
+
+DISTRO="Unknown"
+DISTRO_FAMILY="Unknown"
+PKG_MANAGER="Unknown"
+
+# Detect Linux distribution
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    DISTRO=$NAME
+
+    # Detect distribution family and package manager
+    case $ID in
+        ubuntu|debian|linuxmint|pop|elementary|zorin)
+            DISTRO_FAMILY="Debian/Ubuntu"
+            PKG_MANAGER="apt"
+            ;;
+        fedora|rhel|centos|rocky|almalinux)
+            DISTRO_FAMILY="Red Hat"
+            PKG_MANAGER="dnf"
+            ;;
+        arch|manjaro|cachyos|endeavouros|garuda)
+            DISTRO_FAMILY="Arch Linux"
+            PKG_MANAGER="pacman"
+            ;;
+        opensuse|opensuse-leap|opensuse-tumbleweed|sles)
+            DISTRO_FAMILY="SUSE"
+            PKG_MANAGER="zypper"
+            ;;
+        gentoo)
+            DISTRO_FAMILY="Gentoo"
+            PKG_MANAGER="emerge"
+            ;;
+        void)
+            DISTRO_FAMILY="Void Linux"
+            PKG_MANAGER="xbps-install"
+            ;;
+        alpine)
+            DISTRO_FAMILY="Alpine"
+            PKG_MANAGER="apk"
+            ;;
+        *)
+            # Try to detect from ID_LIKE
+            if echo "$ID_LIKE" | grep -q "debian\|ubuntu"; then
+                DISTRO_FAMILY="Debian/Ubuntu"
+                PKG_MANAGER="apt"
+            elif echo "$ID_LIKE" | grep -q "rhel\|fedora"; then
+                DISTRO_FAMILY="Red Hat"
+                PKG_MANAGER="dnf"
+            elif echo "$ID_LIKE" | grep -q "arch"; then
+                DISTRO_FAMILY="Arch Linux"
+                PKG_MANAGER="pacman"
+            elif echo "$ID_LIKE" | grep -q "suse"; then
+                DISTRO_FAMILY="SUSE"
+                PKG_MANAGER="zypper"
+            fi
+            ;;
+    esac
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    DISTRO="macOS"
+    DISTRO_FAMILY="macOS"
+    PKG_MANAGER="brew"
+fi
+
+################################################################################
 # SECTION 2: Detect and Use Node.js (Preferred Runtime)
 ################################################################################
 # Node.js is the preferred runtime for Recipe Hunter because it provides:
@@ -80,6 +146,11 @@ echo
 ################################################################################
 
 print_section "[1/3] Checking for Node.js..."
+
+if [ "$DISTRO" != "Unknown" ]; then
+    echo "   Detected: $DISTRO ($DISTRO_FAMILY)"
+    echo
+fi
 
 if command -v node &> /dev/null; then
     print_success "Node.js is installed"
@@ -238,17 +309,75 @@ echo
 echo "   Installation methods:"
 echo
 
-# Detect OS and provide specific instructions
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    echo "   ${BOLD}For Ubuntu/Debian:${NC}"
-    echo "      curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -"
-    echo "      sudo apt-get install -y nodejs"
+# Provide specific instructions based on detected distribution
+if [ "$PKG_MANAGER" != "Unknown" ]; then
+    echo -e "   ${BOLD}For Your System ($DISTRO):${NC}"
+    case $PKG_MANAGER in
+        apt)
+            echo "      curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -"
+            echo "      sudo apt-get install -y nodejs"
+            echo
+            echo "      Or for Linux Mint/Ubuntu:"
+            echo "      sudo apt update && sudo apt install -y nodejs npm"
+            ;;
+        dnf)
+            echo "      sudo dnf install nodejs"
+            echo
+            echo "      Or using NodeSource (recommended):"
+            echo "      curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -"
+            echo "      sudo dnf install -y nodejs"
+            ;;
+        pacman)
+            echo "      sudo pacman -S nodejs npm"
+            echo
+            if [ "$ID" = "cachyos" ]; then
+                echo "      ${GREEN}CachyOS Note:${NC} Use the standard Arch repos or CachyOS repos"
+                echo "      Both contain nodejs. You can also use:"
+                echo "      sudo pacman -Syu nodejs npm"
+            fi
+            ;;
+        zypper)
+            echo "      sudo zypper install nodejs npm"
+            ;;
+        brew)
+            echo "      brew install node"
+            echo
+            echo "      Or download installer from: https://nodejs.org/"
+            ;;
+        emerge)
+            echo "      sudo emerge --ask net-libs/nodejs"
+            ;;
+        xbps-install)
+            echo "      sudo xbps-install -S nodejs"
+            ;;
+        apk)
+            echo "      sudo apk add nodejs npm"
+            ;;
+        *)
+            echo "      Download from: https://nodejs.org/"
+            ;;
+    esac
     echo
-    echo "   ${BOLD}For Fedora:${NC}"
-    echo "      sudo dnf install nodejs"
-    echo
-    echo "   ${BOLD}For Arch Linux:${NC}"
-    echo "      sudo pacman -S nodejs npm"
+fi
+
+# Show alternative package manager options
+if [[ "$OSTYPE" == "linux-gnu"* ]] && [ "$PKG_MANAGER" != "Unknown" ]; then
+    echo "   ${BOLD}Alternative Installation Methods:${NC}"
+
+    case $DISTRO_FAMILY in
+        "Debian/Ubuntu")
+            echo "   • Ubuntu/Debian/Linux Mint:"
+            echo "     sudo apt update && sudo apt install -y nodejs npm"
+            ;;
+        "Arch Linux")
+            echo "   • Arch Linux/Manjaro/CachyOS/EndeavourOS:"
+            echo "     sudo pacman -S nodejs npm"
+            ;;
+        "Red Hat")
+            echo "   • Fedora/RHEL/CentOS:"
+            echo "     sudo dnf install nodejs npm"
+            ;;
+    esac
     echo
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo "   ${BOLD}For macOS:${NC}"
@@ -274,16 +403,70 @@ echo
 echo "   Installation methods:"
 echo
 
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    echo "   ${BOLD}For Ubuntu/Debian:${NC}"
-    echo "      sudo apt-get update"
-    echo "      sudo apt-get install python3"
+# Provide specific instructions based on detected distribution
+if [ "$PKG_MANAGER" != "Unknown" ]; then
+    echo -e "   ${BOLD}For Your System ($DISTRO):${NC}"
+    case $PKG_MANAGER in
+        apt)
+            echo "      sudo apt-get update"
+            echo "      sudo apt-get install python3"
+            echo
+            echo "      Or for Linux Mint/Ubuntu (includes pip):"
+            echo "      sudo apt update && sudo apt install -y python3 python3-pip"
+            ;;
+        dnf)
+            echo "      sudo dnf install python3"
+            ;;
+        pacman)
+            echo "      sudo pacman -S python"
+            echo
+            if [ "$ID" = "cachyos" ]; then
+                echo "      ${GREEN}CachyOS Note:${NC} Python is available in standard repos"
+                echo "      sudo pacman -Syu python"
+            fi
+            ;;
+        zypper)
+            echo "      sudo zypper install python3"
+            ;;
+        brew)
+            echo "      brew install python3"
+            echo
+            echo "      Or download installer from: https://www.python.org/"
+            ;;
+        emerge)
+            echo "      sudo emerge --ask dev-lang/python"
+            ;;
+        xbps-install)
+            echo "      sudo xbps-install -S python3"
+            ;;
+        apk)
+            echo "      sudo apk add python3"
+            ;;
+        *)
+            echo "      Download from: https://www.python.org/"
+            ;;
+    esac
     echo
-    echo "   ${BOLD}For Fedora:${NC}"
-    echo "      sudo dnf install python3"
-    echo
-    echo "   ${BOLD}For Arch Linux:${NC}"
-    echo "      sudo pacman -S python"
+fi
+
+# Show alternative package manager options
+if [[ "$OSTYPE" == "linux-gnu"* ]] && [ "$PKG_MANAGER" != "Unknown" ]; then
+    echo "   ${BOLD}Alternative Installation Methods:${NC}"
+
+    case $DISTRO_FAMILY in
+        "Debian/Ubuntu")
+            echo "   • Ubuntu/Debian/Linux Mint:"
+            echo "     sudo apt update && sudo apt install -y python3"
+            ;;
+        "Arch Linux")
+            echo "   • Arch Linux/Manjaro/CachyOS/EndeavourOS:"
+            echo "     sudo pacman -S python"
+            ;;
+        "Red Hat")
+            echo "   • Fedora/RHEL/CentOS:"
+            echo "     sudo dnf install python3"
+            ;;
+    esac
     echo
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo "   ${BOLD}For macOS:${NC}"

@@ -1,7 +1,7 @@
 {
   "name": "recipe-hunter",
-  "version": "1.0.0",
-  "description": "Your Personal Recipe Manager",
+  "version": "2.5.0",
+  "description": "Your Personal Recipe Manager - Cross-platform recipe management with CachyOS and Linux Mint support",
   "main": "app.js",
   "scripts": {
     "start": "node server.js",
@@ -12,7 +12,12 @@
     "recipe",
     "manager",
     "cooking",
-    "food"
+    "food",
+    "cross-platform",
+    "linux",
+    "windows",
+    "cachyos",
+    "linux-mint"
   ],
   "author": "",
   "license": "MIT",
