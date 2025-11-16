@@ -1967,11 +1967,11 @@ function setTheme(themeName) {
 }
 
 function applyTheme() {
-    let savedTheme = 'claude'; // Default theme
+    let savedTheme = 'light'; // Default theme
 
     if (isLocalStorageAvailable()) {
         try {
-            savedTheme = localStorage.getItem('theme') || 'claude';
+            savedTheme = localStorage.getItem('theme') || 'light';
         } catch (e) {
             console.warn('Unable to load theme preference:', e);
         }
@@ -4061,7 +4061,7 @@ function archiveRecipesAsJSON() {
 // Backward compatibility
 const exportAllRecipes = archiveRecipesAsJSON;
 
-// Export recipes as formatted text documents in a ZIP file
+// Export recipes as formatted Word documents with images in a ZIP file
 async function exportRecipesAsDocuments() {
     // Check if there are recipes to export
     if (!state.recipes || state.recipes.length === 0) {
@@ -4070,11 +4070,14 @@ async function exportRecipesAsDocuments() {
     }
 
     try {
-        showLoadingState('Preparing recipe documents...');
+        showLoadingState('Preparing recipe documents with images...');
 
-        // Dynamically load JSZip if not already loaded
+        // Dynamically load required libraries
         if (typeof JSZip === 'undefined') {
             await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+        }
+        if (typeof docx === 'undefined') {
+            await loadScript('https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js');
         }
 
         const zip = new JSZip();
@@ -4095,7 +4098,7 @@ async function exportRecipesAsDocuments() {
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-+|-+$/g, '');
-            return `${paddedIndex}-${safeName}.txt`;
+            return `${paddedIndex}-${safeName}.docx`;
         }
 
         // Helper function to format date
@@ -4111,79 +4114,185 @@ async function exportRecipesAsDocuments() {
             });
         }
 
-        // Generate text documents for each recipe
-        state.recipes.forEach((recipe, index) => {
+        // Helper function to convert base64 to array buffer
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64.split(',')[1]);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes;
+        }
+
+        // Generate Word documents for each recipe
+        for (let index = 0; index < state.recipes.length; index++) {
+            const recipe = state.recipes[index];
             const recipeNum = index + 1;
             const recipeName = recipe.name || 'Untitled Recipe';
-            const recipeNameUpper = recipeName.toUpperCase();
 
-            // Format ingredients
-            let ingredientsText = '';
-            if (recipe.ingredients && recipe.ingredients.length > 0) {
-                ingredientsText = recipe.ingredients
-                    .map((ing, idx) => `  ${idx + 1}. ${stripHtml(ing)}`)
-                    .join('\n');
-            } else {
-                ingredientsText = '  None listed';
+            const children = [];
+
+            // Title
+            children.push(
+                new docx.Paragraph({
+                    text: recipeName.toUpperCase(),
+                    heading: docx.HeadingLevel.HEADING_1,
+                    alignment: docx.AlignmentType.CENTER,
+                    spacing: { after: 200 }
+                })
+            );
+
+            // Add image if available
+            if (recipe.image) {
+                try {
+                    const imageData = base64ToArrayBuffer(recipe.image);
+                    children.push(
+                        new docx.Paragraph({
+                            children: [
+                                new docx.ImageRun({
+                                    data: imageData,
+                                    transformation: {
+                                        width: 400,
+                                        height: 300
+                                    }
+                                })
+                            ],
+                            alignment: docx.AlignmentType.CENTER,
+                            spacing: { after: 200 }
+                        })
+                    );
+                } catch (err) {
+                    console.warn('Could not add image for recipe:', recipeName, err);
+                }
             }
 
-            // Format instructions
-            let instructionsText = '';
-            if (recipe.instructions && recipe.instructions.length > 0) {
-                instructionsText = recipe.instructions
-                    .map((inst, idx) => {
-                        const cleanInst = stripHtml(inst);
-                        return `  Step ${idx + 1}: ${cleanInst}`;
-                    })
-                    .join('\n\n');
-            } else {
-                instructionsText = '  None listed';
-            }
+            // Details Section
+            children.push(
+                new docx.Paragraph({
+                    text: 'DETAILS',
+                    heading: docx.HeadingLevel.HEADING_2,
+                    spacing: { before: 200, after: 100 }
+                }),
+                new docx.Paragraph({
+                    text: `Prep Time: ${recipe.prepTime || 'N/A'}`,
+                    spacing: { after: 50 }
+                }),
+                new docx.Paragraph({
+                    text: `Cook Time: ${recipe.cookTime || 'N/A'}`,
+                    spacing: { after: 50 }
+                }),
+                new docx.Paragraph({
+                    text: `Servings: ${recipe.servings || 'N/A'}`,
+                    spacing: { after: 100 }
+                })
+            );
 
-            // Format tags
+            // Tags
             const tagsText = recipe.tags && recipe.tags.length > 0
                 ? recipe.tags.join(', ')
                 : 'None';
+            children.push(
+                new docx.Paragraph({
+                    text: `Tags: ${tagsText}`,
+                    spacing: { after: 200 }
+                })
+            );
 
-            // Format notes
-            const notesText = recipe.notes
-                ? stripHtml(recipe.notes)
-                : 'No notes';
+            // Ingredients Section
+            children.push(
+                new docx.Paragraph({
+                    text: 'INGREDIENTS',
+                    heading: docx.HeadingLevel.HEADING_2,
+                    spacing: { before: 200, after: 100 }
+                })
+            );
 
-            // Create the formatted text content
-            const content = `═══════════════════════════════════════
-   ${recipeNameUpper}
-═══════════════════════════════════════
+            if (recipe.ingredients && recipe.ingredients.length > 0) {
+                recipe.ingredients.forEach((ing, idx) => {
+                    children.push(
+                        new docx.Paragraph({
+                            text: `${idx + 1}. ${stripHtml(ing)}`,
+                            spacing: { after: 50 }
+                        })
+                    );
+                });
+            } else {
+                children.push(
+                    new docx.Paragraph({
+                        text: 'None listed',
+                        spacing: { after: 100 }
+                    })
+                );
+            }
 
-DETAILS:
-───────────────────────────────────────
-⏱️  Prep Time: ${recipe.prepTime || 'N/A'} min
-🔥 Cook Time: ${recipe.cookTime || 'N/A'} min
-🍽️  Servings: ${recipe.servings || 'N/A'}
+            // Instructions Section
+            children.push(
+                new docx.Paragraph({
+                    text: 'INSTRUCTIONS',
+                    heading: docx.HeadingLevel.HEADING_2,
+                    spacing: { before: 200, after: 100 }
+                })
+            );
 
-TAGS: ${tagsText}
+            if (recipe.instructions && recipe.instructions.length > 0) {
+                recipe.instructions.forEach((inst, idx) => {
+                    const cleanInst = stripHtml(inst);
+                    children.push(
+                        new docx.Paragraph({
+                            text: `Step ${idx + 1}: ${cleanInst}`,
+                            spacing: { after: 100 }
+                        })
+                    );
+                });
+            } else {
+                children.push(
+                    new docx.Paragraph({
+                        text: 'None listed',
+                        spacing: { after: 100 }
+                    })
+                );
+            }
 
-INGREDIENTS:
-───────────────────────────────────────
-${ingredientsText}
+            // Notes Section
+            if (recipe.notes) {
+                children.push(
+                    new docx.Paragraph({
+                        text: 'NOTES',
+                        heading: docx.HeadingLevel.HEADING_2,
+                        spacing: { before: 200, after: 100 }
+                    }),
+                    new docx.Paragraph({
+                        text: stripHtml(recipe.notes),
+                        spacing: { after: 200 }
+                    })
+                );
+            }
 
-INSTRUCTIONS:
-───────────────────────────────────────
-${instructionsText}
+            // Metadata
+            children.push(
+                new docx.Paragraph({
+                    text: `Created: ${formatDate(recipe.createdAt)}`,
+                    spacing: { before: 200, after: 50 }
+                }),
+                new docx.Paragraph({
+                    text: `Updated: ${formatDate(recipe.updatedAt)}`,
+                    spacing: { after: 100 }
+                })
+            );
 
-NOTES:
-───────────────────────────────────────
-${notesText}
+            // Create the Word document
+            const doc = new docx.Document({
+                sections: [{
+                    properties: {},
+                    children: children
+                }]
+            });
 
-───────────────────────────────────────
-Created: ${formatDate(recipe.createdAt)}
-Updated: ${formatDate(recipe.updatedAt)}
-`;
-
-            // Add file to the recipes folder
+            // Generate the document
+            const blob = await docx.Packer.toBlob(doc);
             const filename = formatFilename(recipeNum, recipeName);
-            recipesFolder.file(filename, content);
-        });
+            recipesFolder.file(filename, blob);
+        }
 
         // Create README file
         const readmeContent = `═══════════════════════════════════════
@@ -4194,11 +4303,17 @@ Total Recipes: ${state.recipes.length}
 Export Date: ${formatDate(Date.now())}
 
 This archive contains your recipe collection
-exported from Recipe Hunter.
+exported from Recipe Hunter as Microsoft Word
+documents (.docx format).
 
-Each recipe is saved as a separate text file
+Each recipe is saved as a separate Word document
 in the 'recipes' folder, numbered and named
-for easy reference.
+for easy reference. Recipe images are embedded
+in the Word documents where available.
+
+You can open these files in Microsoft Word,
+Google Docs, LibreOffice, or any compatible
+word processor.
 
 To import these recipes back into Recipe Hunter,
 use the JSON backup feature instead.
@@ -4220,12 +4335,12 @@ use the JSON backup feature instead.
         URL.revokeObjectURL(url);
 
         hideLoadingState();
-        showToast('Recipe documents exported successfully!', 'success');
+        showToast(`Successfully exported ${state.recipes.length} recipe(s) as Word documents with images!`, 'success');
 
     } catch (error) {
         console.error('Error exporting recipes as documents:', error);
         hideLoadingState();
-        showToast('Failed to export recipe documents', 'error');
+        showToast('Failed to export recipe documents. Please try again.', 'error');
     }
 }
 
